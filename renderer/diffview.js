@@ -3,7 +3,7 @@
  * Before / after comparison, like the review view in an editor.
  *   lines: [{ t: 'eq' | 'add' | 'del' | 'gap', x, a, b, n }]
  *   - "unified": one column, removed lines in red above added lines in green
- *   - "split":   old version on the left, new version on the right, changes side by side
+ *   - "split":   old version on the left (50%), new version on the right (50%), changes side by side
  * Unchanged stretches are folded into a clickable "N unchanged lines" row unless opts.full is set.
  */
 (function () {
@@ -14,6 +14,43 @@
     if (cls) n.className = cls;
     if (text !== undefined) n.textContent = text;
     return n;
+  }
+
+  function escapeHtml(s) {
+    return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  /**
+   * Fast, vivid syntax highlighting for code lines across TS, JS, Python, JSON, HTML, CSS, Go, Rust, Bash
+   */
+  function highlightLine(rawCode) {
+    if (!rawCode) return '&nbsp;';
+    let lastIndex = 0;
+    let html = '';
+    // Order matters: comments and strings first so inner keywords/symbols are protected
+    const re = /(\/\/[^\n]*|#[^\n]*)|('(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*"|`(?:[^`\\]|\\.)*`)|(\b(?:const|let|var|function|class|import|export|from|as|return|if|else|for|while|do|switch|case|default|break|continue|new|this|super|async|await|try|catch|finally|throw|typeof|instanceof|void|interface|type|enum|implements|extends|public|private|protected|readonly|static|get|set|def|lambda|elif|pass|in|is|not|and|or|yield|with|assert|fn|pub|mut|struct|impl|trait|select|insert|update|delete)\b)|(\b(?:true|false|null|undefined|None|True|False|NaN|Infinity)\b)|(\b(?:0x[0-9a-fA-F]+|\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)\b)|(\b[A-Z][a-zA-Z0-9_$]*\b)|(\b[a-zA-Z_$][a-zA-Z0-9_$]*(?=\s*\())/g;
+
+    let match;
+    while ((match = re.exec(rawCode)) !== null) {
+      if (match.index > lastIndex) {
+        html += escapeHtml(rawCode.slice(lastIndex, match.index));
+      }
+      const [full, cmt, str, kwd, lit, num, typ, fn] = match;
+      const escaped = escapeHtml(full);
+      if (cmt) html += `<span class="syn-cmt">${escaped}</span>`;
+      else if (str) html += `<span class="syn-str">${escaped}</span>`;
+      else if (kwd) html += `<span class="syn-kwd">${escaped}</span>`;
+      else if (lit) html += `<span class="syn-lit">${escaped}</span>`;
+      else if (num) html += `<span class="syn-num">${escaped}</span>`;
+      else if (typ) html += `<span class="syn-typ">${escaped}</span>`;
+      else if (fn) html += `<span class="syn-fn">${escaped}</span>`;
+      else html += escaped;
+      lastIndex = re.lastIndex;
+    }
+    if (lastIndex < rawCode.length) {
+      html += escapeHtml(rawCode.slice(lastIndex));
+    }
+    return html;
   }
 
   /** Fold long unchanged stretches. Gap rows coming from the server stay as they are. */
@@ -76,15 +113,53 @@
       tr.appendChild(el('td', 'ln', l.a !== undefined ? String(l.a) : ''));
       tr.appendChild(el('td', 'ln', l.b !== undefined ? String(l.b) : ''));
       tr.appendChild(el('td', 'sign', l.t === 'add' ? '+' : l.t === 'del' ? '−' : ''));
-      tr.appendChild(el('td', 'code', l.x));
+      
+      const tdCode = el('td', 'code');
+      const inner = el('div', 'code-inner');
+      inner.innerHTML = highlightLine(l.x);
+      tdCode.appendChild(inner);
+      tr.appendChild(tdCode);
+
       tb.appendChild(tr);
     }
     table.appendChild(tb);
     return table;
   }
 
+  function makeSplitCodeCell(lineObj, typeCls) {
+    const td = el('td', 'code' + (typeCls ? ' ' + typeCls : ''));
+    const inner = el('div', 'code-inner');
+    if (lineObj && lineObj.x !== undefined) {
+      inner.innerHTML = highlightLine(lineObj.x);
+    } else {
+      inner.innerHTML = '&nbsp;';
+    }
+    td.appendChild(inner);
+    return td;
+  }
+
   function splitTable(rows, onExpand) {
     const table = el('table', 'diff split');
+
+    // Locked column groups: 46px line numbers + exactly 50% split in middle
+    const cg = document.createElement('colgroup');
+    cg.innerHTML = '<col class="col-ln"><col class="col-code"><col class="col-ln"><col class="col-code">';
+    table.appendChild(cg);
+
+    // Side-by-side header row
+    const thead = el('thead', 'diff-split-head');
+    const headTr = el('tr');
+    const thLeft = el('th', 'split-head-cell left');
+    thLeft.colSpan = 2;
+    thLeft.textContent = 'Original (Baseline)';
+    const thRight = el('th', 'split-head-cell right');
+    thRight.colSpan = 2;
+    thRight.textContent = 'Modified (Current)';
+    headTr.appendChild(thLeft);
+    headTr.appendChild(thRight);
+    thead.appendChild(headTr);
+    table.appendChild(thead);
+
     const tb = el('tbody');
     let dels = [];
     let adds = [];
@@ -95,14 +170,15 @@
         const a = adds[k];
         const tr = el('tr');
         tr.appendChild(el('td', 'ln' + (d ? ' del' : ' blank'), d ? String(d.a) : ''));
-        tr.appendChild(el('td', 'code' + (d ? ' del' : ' blank'), d ? d.x : ''));
+        tr.appendChild(makeSplitCodeCell(d, d ? 'del' : 'blank'));
         tr.appendChild(el('td', 'ln' + (a ? ' add' : ' blank'), a ? String(a.b) : ''));
-        tr.appendChild(el('td', 'code' + (a ? ' add' : ' blank'), a ? a.x : ''));
+        tr.appendChild(makeSplitCodeCell(a, a ? 'add' : 'blank'));
         tb.appendChild(tr);
       }
       dels = [];
       adds = [];
     };
+
     for (const r of rows) {
       if (r.gap !== undefined) {
         flush();
@@ -121,9 +197,9 @@
         flush();
         const tr = el('tr');
         tr.appendChild(el('td', 'ln', String(l.a)));
-        tr.appendChild(el('td', 'code', l.x));
+        tr.appendChild(makeSplitCodeCell(l, ''));
         tr.appendChild(el('td', 'ln', String(l.b)));
-        tr.appendChild(el('td', 'code', l.x));
+        tr.appendChild(makeSplitCodeCell(l, ''));
         tb.appendChild(tr);
       }
     }
@@ -143,7 +219,7 @@
         expanded.add(start);
         draw();
       };
-      const wrap = el('div', 'diff-wrap');
+      const wrap = el('div', 'diff-wrap' + (o.mode === 'split' ? ' is-split' : ' is-unified'));
       wrap.appendChild(o.mode === 'split' ? splitTable(rows, onExpand) : unifiedTable(rows, onExpand));
       container.appendChild(wrap);
     };
