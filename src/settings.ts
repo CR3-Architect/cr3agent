@@ -72,14 +72,14 @@ export const PRESETS: ProviderPreset[] = [
   { name: 'LM Studio (this Mac)', baseUrl: 'http://localhost:1234/v1', needsKey: false, exampleModel: '', free: true, note: 'Runs on your Mac. Start its local server first.' },
   { name: 'OpenCode Zen', baseUrl: 'https://opencode.ai/zen/v1', needsKey: true, exampleModel: '', free: true, keyUrl: 'https://opencode.ai/auth', note: 'Has several free models (names ending in -free). Needs an account key.' },
   { name: 'OpenRouter', baseUrl: 'https://openrouter.ai/api/v1', needsKey: true, exampleModel: '', free: true, keyUrl: 'https://openrouter.ai/keys', note: 'Many models marked :free. Free use has daily request limits.' },
-  { name: 'Google Gemini', baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai', needsKey: true, exampleModel: '', free: true, keyUrl: 'https://aistudio.google.com/apikey', note: 'Free tier with rate limits. Good for long files.' },
-  { name: 'Groq', baseUrl: 'https://api.groq.com/openai/v1', needsKey: true, exampleModel: '', free: true, keyUrl: 'https://console.groq.com/keys', note: 'Free tier, very fast, small daily limits.' },
-  { name: 'Cerebras', baseUrl: 'https://api.cerebras.ai/v1', needsKey: true, exampleModel: '', free: true, keyUrl: 'https://cloud.cerebras.ai', note: 'Free tier with daily token limits.' },
-  { name: 'Mistral', baseUrl: 'https://api.mistral.ai/v1', needsKey: true, exampleModel: '', free: true, keyUrl: 'https://console.mistral.ai/api-keys', note: 'Free experiment tier (read their data terms).' },
+  { name: 'Google Gemini', baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai', needsKey: true, exampleModel: 'gemini-2.5-flash', free: true, keyUrl: 'https://aistudio.google.com/apikey', note: 'Free tier with rate limits. Good for long files.' },
+  { name: 'Groq', baseUrl: 'https://api.groq.com/openai/v1', needsKey: true, exampleModel: 'llama-3.3-70b-versatile', free: true, keyUrl: 'https://console.groq.com/keys', note: 'Free tier, ultra-fast, supports full tool calling.' },
+  { name: 'Cerebras', baseUrl: 'https://api.cerebras.ai/v1', needsKey: true, exampleModel: 'llama-3.3-70b', free: true, keyUrl: 'https://cloud.cerebras.ai', note: 'Free tier with daily token limits.' },
+  { name: 'Mistral', baseUrl: 'https://api.mistral.ai/v1', needsKey: true, exampleModel: 'codestral-latest', free: true, keyUrl: 'https://console.mistral.ai/api-keys', note: 'Free experiment tier (read their data terms).' },
   { name: 'NVIDIA NIM', baseUrl: 'https://integrate.api.nvidia.com/v1', needsKey: true, exampleModel: '', free: true, keyUrl: 'https://build.nvidia.com', note: 'Free developer credits and rate-limited free endpoints.' },
-  { name: 'OpenAI', baseUrl: 'https://api.openai.com/v1', needsKey: true, exampleModel: '', keyUrl: 'https://platform.openai.com/api-keys' },
-  { name: 'Together AI', baseUrl: 'https://api.together.xyz/v1', needsKey: true, exampleModel: '', keyUrl: 'https://api.together.ai/settings/api-keys' },
-  { name: 'DeepSeek', baseUrl: 'https://api.deepseek.com/v1', needsKey: true, exampleModel: '', keyUrl: 'https://platform.deepseek.com/api_keys', note: 'Very cheap, not free.' },
+  { name: 'OpenAI', baseUrl: 'https://api.openai.com/v1', needsKey: true, exampleModel: 'gpt-4o-mini', keyUrl: 'https://platform.openai.com/api-keys' },
+  { name: 'Together AI', baseUrl: 'https://api.together.xyz/v1', needsKey: true, exampleModel: 'meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo', keyUrl: 'https://api.together.ai/settings/api-keys' },
+  { name: 'DeepSeek', baseUrl: 'https://api.deepseek.com/v1', needsKey: true, exampleModel: 'deepseek-chat', keyUrl: 'https://platform.deepseek.com/api_keys', note: 'Very cheap, not free.' },
   { name: 'Custom (OpenAI-compatible)', baseUrl: 'http://localhost:8000/v1', needsKey: false, exampleModel: '', note: 'Any server that speaks the OpenAI chat API (vLLM, llama.cpp, your own).' },
 ];
 
@@ -190,12 +190,56 @@ export function setActive(current: StoredSettings, id: string, model?: unknown):
   return next;
 }
 
+/** Models that do not support OpenAI-style tool calling or are non-chat (audio, guard, embeddings, tts, etc.). */
+export function isToolSupportedModel(name: string): boolean {
+  if (!name || typeof name !== 'string') return false;
+  return !/(?:^|\/)(?:allam|whisper|prompt-guard|guard|embedding|embed|moderation|tts|audio|dall-e|rerank|realtime)/i.test(name);
+}
+
+/** Sort models prioritizing capable coding and tool-calling models. */
+export function sortModelsWithPriority(models: string[]): string[] {
+  function score(m: string): number {
+    const lower = m.toLowerCase();
+    if (lower === 'llama-3.3-70b-versatile') return 0;
+    if (lower === 'llama-3.1-8b-instant') return 1;
+    if (lower.includes('qwen2.5-coder') || lower.includes('qwen3.8') || lower.includes('qwen/qwen3.8')) return 2;
+    if (lower.includes('deepseek-coder') || lower.includes('deepseek-chat')) return 3;
+    if (lower.includes('gpt-4o')) return 4;
+    if (lower.includes('llama-3.3') || lower.includes('llama-3.1')) return 5;
+    if (lower.includes('codestral')) return 6;
+    if (lower.includes('gpt-oss-120b')) return 7;
+    if (lower.includes('gpt-oss')) return 8;
+    if (lower.includes('coder') || lower.includes('code')) return 9;
+    return 20;
+  }
+  return [...models].sort((a, b) => {
+    const sa = score(a);
+    const sb = score(b);
+    if (sa !== sb) return sa - sb;
+    return a.localeCompare(b);
+  });
+}
+
 export function setProviderModels(current: StoredSettings, id: string, models: string[]): StoredSettings {
   const next = clone(current);
   const p = next.providers.find((x) => x.id === id);
   if (!p) throw new Error('That provider no longer exists.');
-  p.models = [...new Set(models.filter((m) => typeof m === 'string' && m.trim() !== ''))].sort((a, b) => a.localeCompare(b)).slice(0, MAX_MODELS);
-  if (p.model === '' && p.models[0]) p.model = p.models[0];
+
+  const valid = models.filter((m) => typeof m === 'string' && m.trim() !== '');
+  const filtered = valid.filter((m) => isToolSupportedModel(m));
+  const candidateList = filtered.length > 0 ? filtered : valid;
+
+  // For Groq endpoints, ensure flagship tool-calling models are available
+  if (/api\.groq\.com/i.test(p.baseUrl)) {
+    for (const gm of ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant']) {
+      if (!candidateList.includes(gm)) candidateList.push(gm);
+    }
+  }
+
+  p.models = sortModelsWithPriority([...new Set(candidateList)]).slice(0, MAX_MODELS);
+  if ((!p.model || !isToolSupportedModel(p.model)) && p.models[0]) {
+    p.model = p.models[0];
+  }
   return next;
 }
 
@@ -291,7 +335,7 @@ export function clearAccount(current: StoredSettings, kind: 'github' | 'google')
 /** The other providers' chosen models, in list order: what to try when the active model fails. */
 export function fallbackProviders(s: StoredSettings): StoredProvider[] {
   if (!s.autoFallback) return [];
-  return s.providers.filter((p) => p.id !== s.activeProviderId && p.model.trim() !== '');
+  return s.providers.filter((p) => p.id !== s.activeProviderId && p.model.trim() !== '' && isToolSupportedModel(p.model));
 }
 
 export function activeProvider(s: StoredSettings): StoredProvider {
@@ -464,5 +508,15 @@ export async function fetchModelList(baseUrl: string, apiKey: string | undefined
     .map((m) => (typeof m === 'string' ? m : typeof (m as any)?.id === 'string' ? (m as any).id : typeof (m as any)?.name === 'string' ? (m as any).name : ''))
     .filter(Boolean);
   if (ids.length === 0) throw new Error('The server answered, but listed no models.');
-  return ids;
+
+  const filtered = ids.filter((m) => isToolSupportedModel(m));
+  const candidateList = filtered.length > 0 ? filtered : ids;
+
+  if (/api\.groq\.com/i.test(baseUrl)) {
+    for (const gm of ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant']) {
+      if (!candidateList.includes(gm)) candidateList.push(gm);
+    }
+  }
+
+  return [...new Set(candidateList)];
 }
