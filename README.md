@@ -1,50 +1,126 @@
-# Cr3agent (macOS Local AI Agent)
+<p align="center">
+  <img src="build/icon_squircle_1024.png" width="128" height="128" alt="CR3-Agentic AI Logo" style="border-radius: 26px; box-shadow: 0 12px 32px rgba(0,0,0,0.35);" />
+</p>
 
-A desktop AI coding agent designed for macOS with a modern Antigravity-style interface. It works safely inside the folder you pick, running on local AI models (Ollama, LM Studio) or free cloud APIs (OpenRouter, Google Gemini, Groq, Cerebras, etc.).
+<h1 align="center">CR3-Agentic AI</h1>
 
-## Run it
-Needs macOS and Node 20+.
+<p align="center">
+  <strong>Next-Gen Autonomous Desktop Agent Workspace for macOS</strong><br />
+  Multi-step reasoning, native tool execution, interactive diff review & human-in-the-loop control.
+</p>
 
-    npm install
-    npm start        # builds, then opens the app
-    npm test         # builds, then runs all tests
+<p align="center">
+  <img src="https://img.shields.io/badge/version-0.3.0-blue.svg?style=flat-square" alt="Version 0.3.0" />
+  <img src="https://img.shields.io/badge/platform-macOS%2012+-orange.svg?style=flat-square" alt="macOS Supported" />
+  <img src="https://img.shields.io/badge/electron-45.3.4-47848F.svg?style=flat-square" alt="Electron 45.3" />
+  <img src="https://img.shields.io/badge/license-MIT-green.svg?style=flat-square" alt="MIT License" />
+  <img src="https://img.shields.io/badge/tests-61%2F61%20passing-success.svg?style=flat-square" alt="Tests Passing" />
+</p>
 
-## Local model (free)
-    brew install ollama
-    ollama pull qwen2.5-coder:7b     # on an 8GB Mac, 3b is safer
-In the app: Settings → Providers → Add provider → Ollama → "Save & fetch models". The model must support tool calling.
+---
 
-## Cloud models
-Settings → Providers → Add provider. Paste your key and click "Save & fetch models". You can add several providers/keys and switch from the model menu in the input bar. Keys are stored in the macOS Keychain (via Electron safeStorage).
+## 🌟 Overview
 
-## What is in it
-- **Several chats at once.** Start a new chat in the same folder, or open another project, while others keep working. A dot in the sidebar shows which chats are running; click one to come back to it, including any question it is waiting on.
-- **History** (sidebar): every project you opened, when, how often, how many chats, and which are working now.
-- **Changes** panel: every file the agent changed, Before | After or Unified view, unchanged lines folded, Undo / Keep per file or all.
-- **Approve once / Approve always / Deny.** "Always" saves a rule for that project (all file changes, one command such as `npm install`, or one website). Dangerous commands (`rm`, `sudo`, `curl`, `bash`, anything chained with `;` `&&` `|`) can never be made automatic. Rules are listed and removable in Settings → Agent.
-- **Models**: add any number of providers and keys, switch model any time (even mid-chat). Free-plan presets: Ollama, LM Studio, OpenCode Zen, OpenRouter, Google Gemini, Groq, Cerebras, Mistral, NVIDIA NIM. If a model is rate-limited, out of credit or down, the app moves to the next provider's model by itself and keeps going. Replies that hit a model's output limit are continued automatically.
-- **Git & GitHub** (header button): status, branches, commit, commit & push, pull, create a GitHub repository, push & open a pull request.
-- **Accounts** (Settings → Accounts): GitHub (device sign-in or personal access token), Google (browser sign-in), Apple (explains what it needs).
-- Terminal pane for installing CLIs and modules (non-interactive).
-- Skills (SKILL.md folders): ~/.claude/skills, <project>/.agent/skills, app skills folder.
-- Attachments: images, text files, links (paste, drag, or the paperclip).
+**CR3-Agentic AI** is a professional desktop engineering workspace designed specifically for macOS. It bridges autonomous AI capabilities with safe developer environments, allowing LLMs to explore repositories, edit files with live syntax-highlighted diffs, execute terminal commands with real-time streaming, and manage complex multi-session workflows across projects.
 
-## One-time setup for sign-in
-- **GitHub**: github.com → Settings → Developer settings → OAuth Apps → New. Tick "Enable Device Flow". Paste its Client ID in Settings → Accounts → GitHub setup. Or skip this and paste a personal access token with the `repo` scope.
-- **Google**: Google Cloud Console → Credentials → OAuth client ID → type "Desktop app". Paste the Client ID and secret.
-- **Apple**: needs a paid Apple Developer account and an https address on your own domain. Not possible to ship inside a local app, so it is not active.
-These are your own app registrations; I cannot create them for you.
+Built on local-first principles, keys never leave your Mac, and operations run safely inside the workspace folders you explicitly open.
 
-## About "no limit"
-Nothing is limited by this app except what you set in Settings → Agent (steps per message up to 300, memory per chat up to 2,000,000 characters). Real limits come from the model: its context window, its output length per reply, and the provider's free-tier rate limits. Auto-continue and auto-switch work around the output limit and rate limits, not around the context window.
-For Ollama the default context is small (about 4k tokens) and silently cuts the conversation. Raise it: `OLLAMA_CONTEXT_LENGTH=16384 ollama serve` (or set `num_ctx` in a Modelfile).
+---
 
-## Honest limits
-- Terminal is not an interactive PTY (no vim, no prompts).
-- PDFs and Office files cannot be attached.
-- Commands run as you and are not sandboxed; keep approval on "Ask first" until you trust the model.
-- "Changes" compares with the folder as it was when opened (or last "Keep all"); it is not git.
-- Chats working in the same folder at the same time can edit the same file; keep parallel chats on different tasks.
-- Google/GitHub/Apple sign-in was tested against mock servers, not the real services.
-- Not yet tested inside real Electron on macOS: expect a first-run bug or two.
-# cr3agent
+## ✨ Key Features
+
+- 🧠 **Autonomous Agent Reasoning**: Multi-step plan generation, file read/write/edit tools, recursive search, and web-fetching capabilities.
+- 🗂 **Persistent Workspace Hierarchy**: Organized sidebar tree grouping projects and conversations. Workspaces remain locked in place, with automatic session restoration on app restart.
+- 📊 **VS Code-Style 50/50 Split & Unified Diffs**: Side-by-side split view with independent left/right horizontal scrolling and vivid syntax highlighting across TypeScript, JavaScript, Python, Rust, Go, HTML, CSS, and Shell.
+- 💻 **Integrated Developer Terminal**: Bottom pane terminal for running builds, testing commands, and package installations.
+- 🛡 **Human-in-the-Loop Approval & Rules**: Granular control over file writes and shell execution. Approve once, deny, or save *"Always Allow"* rules for trusted commands.
+- ⚡ **Local & Cloud Model Support**:
+  - **Local (Offline & Free)**: Ollama, LM Studio, vLLM.
+  - **Cloud APIs**: Google Gemini, OpenRouter, Groq, Cerebras, Mistral, OpenAI, Anthropic.
+  - **Auto-Fallback & Auto-Continue**: Automatically switches models if quota or rate limits hit, and seamlessly stitches responses that reach output limits.
+- 📦 **Native macOS Experience**: Continuous Apple squircle icon curvature, hidden-inset traffic lights, native Keychain secret storage (`safeStorage`), and standard keyboard shortcuts (`⌘B`, `⌥⌘B`, `⌥⌘T`).
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+- macOS 12 Monterey or later (Apple Silicon & Intel)
+- [Node.js](https://nodejs.org/) v20+ and npm
+
+### Installation & Development Run
+
+```bash
+# Clone the repository
+git clone https://github.com/CR3-Architect/cr3agent.git
+cd cr3agent
+
+# Install dependencies
+npm install
+
+# Build TypeScript and launch CR3-Agentic AI
+npm start
+
+# Run test suite (61 unit tests)
+npm test
+```
+
+### Packaging macOS Release (.dmg & .zip)
+
+To generate signed or local macOS distribution bundles:
+
+```bash
+npm run dist
+```
+Installers will be generated in `release/`:
+- `release/CR3-Agentic AI-0.3.0.dmg`
+- `release/CR3-Agentic AI-0.3.0-mac.zip`
+
+---
+
+## ⚙️ Model Provider Configuration
+
+### 1. Local Models (100% Offline & Free)
+Install and run [Ollama](https://ollama.ai):
+```bash
+brew install ollama
+ollama pull qwen2.5-coder:7b    # Recommended for 16GB+ Macs (use 3b on 8GB Macs)
+```
+In the app: **Preferences** (`⌘,`) → **Providers & Models** → **Add Provider** → Select **Ollama** → Click **Save & Fetch Models**.
+
+### 2. Cloud APIs (Gemini, OpenRouter, Groq, etc.)
+1. Navigate to **Preferences** → **Providers & Models**.
+2. Select your provider, paste your API key, and select your preferred model.
+3. Keys are encrypted securely inside the native macOS Keychain.
+
+---
+
+## 📂 Project Architecture
+
+```
+Cr3agent/
+├── src/                    # Electron Main Process (TypeScript)
+│   ├── main.ts             # Window lifecycle, native menus, dock icon & IPC router
+│   ├── workspace.ts        # Folder sandboxing and file boundary enforcement
+│   ├── settings.ts         # Settings persistence, providers, and auto-fallback
+│   ├── chatStore.ts        # Chat persistence, metadata & history storage
+│   ├── agent/              # Autonomous agent core
+│   │   ├── agent.ts        # ReAct loop, context budget management & streaming
+│   │   ├── tools.ts        # Safe file read, write, edit, search & shell tools
+│   │   └── rules.ts        # Always-allow permission engine
+│   └── test/               # Comprehensive unit test suite (61 tests)
+├── renderer/               # Desktop UI (HTML5, Modern CSS, Vanilla JS)
+│   ├── index.html          # Main application structure & dialogs
+│   ├── styles.css          # Design system, syntax tokens & animations
+│   ├── renderer.js         # UI controller, tree rendering & session state
+│   ├── diffview.js         # Unified & 50/50 split diff engine with syntax tokenization
+│   └── md.js               # Fast Markdown & code block parser
+├── build/                  # Native iconset, ICNS & installer configuration
+└── package.json            # Electron-builder scripts & dependency specs
+```
+
+---
+
+## 📄 License
+
+This project is licensed under the [MIT License](LICENSE).

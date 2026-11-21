@@ -761,7 +761,7 @@
     const projPathEl = $('projPath');
 
     const curChat = (S.chats || []).find((c) => c.id === S.app?.chatId) || (S.allChats || []).find((c) => c.id === S.app?.chatId);
-    const chatTitle = curChat?.title || (S.app?.chatId ? 'CR3-Agentic AI Agent Setup' : '');
+    const chatTitle = curChat?.title || (f ? 'New Conversation' : '');
 
     if (projNameEl) projNameEl.textContent = f ? baseName(f) : 'CR3-Agentic AI';
     if (topSepEl) topSepEl.hidden = !chatTitle;
@@ -795,57 +795,85 @@
 
     if (!f) {
       els.emptyTitle.textContent = 'CR3-Agentic AI';
-      els.emptyText.textContent = 'Autonomous desktop AI agent workspace. Choose a project folder to begin or open a recent workspace:';
+      els.emptyText.textContent = 'Autonomous desktop AI agent workspace. Open a project folder to begin:';
 
-      const openBtn = h('button', 'chip primary-chip');
+      const openBtn = h('button', 'empty-btn primary');
       openBtn.appendChild(iconSpan('folder'));
-      openBtn.appendChild(h('span', '', 'Open Project Folder…'));
+      openBtn.appendChild(h('span', '', 'Open Folder…'));
       openBtn.addEventListener('click', pickFolder);
       els.emptyActions.appendChild(openBtn);
 
       const recent = (S.app?.settings?.recentFolders || []).slice(0, 3);
-      for (const rf of recent) {
-        const rc = h('button', 'chip recent-proj-chip');
-        rc.appendChild(iconSpan('folder'));
-        rc.appendChild(h('span', '', baseName(rf)));
-        rc.title = rf;
-        rc.addEventListener('click', () => openProject(rf));
-        els.emptyActions.appendChild(rc);
+      if (recent.length > 0) {
+        const recWrap = h('div', 'empty-recent-wrap');
+        const recLbl = h('div', 'empty-recent-lbl', 'Recent workspaces:');
+        recWrap.appendChild(recLbl);
+        const recList = h('div', 'empty-recent-list');
+        for (const rf of recent) {
+          const rc = h('button', 'empty-recent-item');
+          rc.appendChild(iconSpan('folder'));
+          rc.appendChild(h('span', 'ellipsis', baseName(rf)));
+          rc.title = rf;
+          rc.addEventListener('click', () => openProject(rf));
+          recList.appendChild(rc);
+        }
+        recWrap.appendChild(recList);
+        els.emptyActions.appendChild(recWrap);
       }
       return;
     }
 
-    els.emptyTitle.textContent = `What should we do in ${baseName(f)}?`;
-    els.emptyText.textContent = 'Explore the codebase, implement features, run terminal commands, or review diffs:';
+    els.emptyTitle.textContent = `What would you like to build?`;
+    els.emptyText.textContent = `Autonomous coding assistant for ${baseName(f)}. Start with a quick workflow:`;
 
     const WORKFLOW_CARDS = [
-      { ico: 'search', label: 'Explore Architecture', prompt: 'Explore and summarize the architecture, key entrypoints, and design patterns of this repository.' },
-      { ico: 'terminal', label: 'Run Tests & Fix', prompt: 'Run the test suite, report any failures, and implement fixes for broken tests.' },
-      { ico: 'diff', label: 'Review Changes', prompt: 'Review recent git changes and summarize modifications and potential edge cases.' },
-      { ico: 'sparkles', label: 'Implement Feature', prompt: 'Help me plan and implement the next feature in this project.' },
+      {
+        ico: 'search',
+        title: 'Explore Architecture',
+        desc: 'Map modules, imports, and core design patterns',
+        prompt: 'Explore and summarize the repository architecture, key entrypoints, and patterns.'
+      },
+      {
+        ico: 'terminal',
+        title: 'Run Tests & Fix',
+        desc: 'Execute test suites and repair broken assertions',
+        prompt: 'Run the project tests, analyze failures, and apply necessary code fixes.'
+      },
+      {
+        ico: 'diff',
+        title: 'Review Changes',
+        desc: 'Inspect modified lines, diffs, and uncommitted edits',
+        prompt: 'Review current uncommitted git changes and summarize impact.'
+      },
+      {
+        ico: 'sparkles',
+        title: 'Implement Feature',
+        desc: 'Design, write, and verify a new feature end-to-end',
+        prompt: 'Help me plan and implement a new feature in this codebase.'
+      },
     ];
 
+    const grid = h('div', 'empty-action-grid');
     for (const w of WORKFLOW_CARDS) {
-      const b = h('button', 'chip workflow-chip');
-      b.appendChild(iconSpan(w.ico));
-      b.appendChild(h('span', 'wf-label', w.label));
-      b.addEventListener('click', () => {
+      const card = h('button', 'empty-card');
+      card.type = 'button';
+
+      const top = h('div', 'ec-head');
+      top.appendChild(iconSpan(w.ico));
+      top.appendChild(h('span', 'ec-title', w.title));
+      card.appendChild(top);
+
+      const desc = h('div', 'ec-desc', w.desc);
+      card.appendChild(desc);
+
+      card.addEventListener('click', () => {
         els.input.value = w.prompt;
         autoGrow();
         els.input.focus();
       });
-      els.emptyActions.appendChild(b);
+      grid.appendChild(card);
     }
-
-    for (const t of SUGGESTIONS.slice(0, 3)) {
-      const b = h('button', 'chip subtle-chip', t);
-      b.addEventListener('click', () => {
-        els.input.value = t;
-        autoGrow();
-        els.input.focus();
-      });
-      els.emptyActions.appendChild(b);
-    }
+    els.emptyActions.appendChild(grid);
   }
 
   // ---------- navigation history ----------
@@ -1146,10 +1174,7 @@
         if (isCurFolder && !filter) {
           const hasNewChat = !fChats.some((c) => c.id === S.app.chatId);
           if (hasNewChat) {
-            const newEl = h('div', 'sb-item sb-session-item on sb-new-session');
-            newEl.appendChild(iconSpan('plus'));
-            newEl.appendChild(h('span', 'label ellipsis', 'New conversation'));
-            if (S.runningChats.has(S.app.chatId)) newEl.appendChild(h('span', 'run-dot'));
+            const newEl = createSessionItem({ id: S.app.chatId, title: 'New Conversation' }, true);
             tree.appendChild(newEl);
           }
         }
