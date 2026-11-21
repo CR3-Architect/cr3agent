@@ -1,0 +1,394 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self'; script-src 'self'; img-src 'self' data: blob:" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Cr3agent</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="app" class="app">
+
+    <!-- ===== sidebar ===== -->
+    <aside id="sidebar" class="sidebar">
+      <div class="sb-top drag">
+        <div class="sb-nav-tools no-drag">
+          <button id="sbToggle" class="icon-btn small" title="Toggle sidebar (⌘B)" aria-label="Toggle sidebar"></button>
+          <button id="navBackBtn" class="icon-btn small" title="Back (⌘[)" aria-label="Back" disabled></button>
+          <button id="navForwardBtn" class="icon-btn small" title="Forward (⌘])" aria-label="Forward" disabled></button>
+          <button id="sbSearchBtn" class="icon-btn small" title="Search conversations (⌘F)" aria-label="Search"></button>
+        </div>
+      </div>
+
+      <div id="sbSearchWrap" class="sb-search-wrap no-drag" hidden>
+        <span class="ico sb-search-icon" data-icon="search"></span>
+        <input id="sbSearch" type="text" placeholder="Search conversations..." spellcheck="false" autocomplete="off" />
+        <button id="sbSearchClear" class="icon-btn tiny sb-search-clear" title="Clear search" hidden aria-label="Clear search"></button>
+      </div>
+
+      <button id="newChatBtn" class="sb-new no-drag">
+        <span class="ico" data-icon="plus"></span>
+        <span class="sb-new-label">New Conversation</span>
+      </button>
+
+      <div class="sb-quick-actions no-drag">
+        <button id="sbAutomationsBtn" class="sb-nav-item" title="Automations">
+          <span class="ico" data-icon="clock"></span>
+          <span>Automations</span>
+        </button>
+        <button id="sbCustomizationsBtn" class="sb-nav-item" title="Customizations">
+          <span class="ico" data-icon="sliders"></span>
+          <span>Customizations</span>
+        </button>
+      </div>
+
+      <div class="sb-scroll">
+        <!-- Projects Section Group -->
+        <div class="sb-section-group">
+          <div class="sb-section-head">
+            <span class="sb-section-label">Projects</span>
+            <div class="sb-section-actions">
+              <button id="sbFilterProjectsBtn" class="icon-btn tiny" title="Filter" aria-label="Filter"></button>
+              <button id="openFolderBtn" class="icon-btn tiny" title="Open or add folder (⌘O)" aria-label="Open folder"></button>
+            </div>
+          </div>
+
+          <!-- Active Project Card & Sessions -->
+          <div id="activeProjectSection" class="sb-project-card">
+            <div class="sb-project-head" id="sbCurrentProjHeader">
+              <button id="sbProjectToggle" class="icon-btn tiny sb-fold-btn" title="Toggle project sessions" aria-label="Toggle sessions"></button>
+              <span class="ico proj-icon" data-icon="folder"></span>
+              <span id="sbActiveProjName" class="sb-proj-title ellipsis">No folder open</span>
+              <span class="spacer"></span>
+              <div class="proj-hover-actions">
+                <button id="sbCurrentProjMenuBtn" class="icon-btn tiny" title="Project options" aria-label="Project options"></button>
+                <button id="sbCurrentProjNewChatBtn" class="icon-btn tiny" title="New conversation in project" aria-label="New conversation"></button>
+              </div>
+            </div>
+            
+            <div id="chatList" class="sb-list sb-chat-list"></div>
+            
+            <button id="sbToggleAllSessions" class="sb-show-more-btn" hidden>
+              <span class="ico tiny" data-icon="chevronDown"></span>
+              <span id="sbToggleAllSessionsLabel">Show all sessions</span>
+            </button>
+          </div>
+
+          <!-- Other Projects / Recent Folders -->
+          <div id="projectList" class="sb-other-projects"></div>
+        </div>
+
+        <!-- Conversations Section Group -->
+        <div id="conversationsSection" class="sb-section-group">
+          <div class="sb-section-head">
+            <span class="sb-section-label">Conversations</span>
+          </div>
+          <div id="conversationsList" class="sb-list sb-conversations-list"></div>
+        </div>
+      </div>
+
+      <div class="sb-bottom">
+        <button id="settingsBtn" class="sb-link"><span class="ico" data-icon="gear"></span>Settings</button>
+      </div>
+
+      <!-- Hidden compatibility buttons for existing listeners -->
+      <div hidden>
+        <button id="historyBtn"></button>
+        <button id="skillsBtn"></button>
+        <button id="accountBtn"><span id="accountLabel"></span></button>
+        <button id="recentProjectsToggle"></button>
+        <div id="recentProjectsSection"></div>
+      </div>
+    </aside>
+
+    <!-- ===== main ===== -->
+    <section class="main">
+      <header class="main-top drag">
+        <button id="sbShow" class="icon-btn no-drag" title="Show sidebar (⌘B)" aria-label="Show sidebar" hidden></button>
+        <div class="proj-title">
+          <span id="projName" class="proj-name">No folder open</span>
+          <span id="projPath" class="proj-path"></span>
+        </div>
+        <span class="spacer"></span>
+        <button id="changesBtn" class="top-btn no-drag" title="See which files and lines changed (⌥⌘B)"><span class="ico" data-icon="diff"></span>Changes<span id="changesBadge" class="badge" hidden></span></button>
+        <button id="gitBtn" class="top-btn no-drag" title="Commit, push, pull and open pull requests"><span class="ico" data-icon="branch"></span>Git</button>
+        <button id="terminalBtn" class="top-btn no-drag" title="Run commands in this folder (⌃`)"><span class="ico" data-icon="terminal"></span>Terminal</button>
+      </header>
+
+      <div class="main-body">
+        <div class="chat-col">
+          <div id="messages" class="messages">
+            <div id="empty" class="empty">
+              <div class="empty-mark"><span class="ico big" data-icon="folder"></span></div>
+              <h1 id="emptyTitle">Pick a folder to start</h1>
+              <p id="emptyText">The agent reads, edits and runs things only inside the folder you choose, and shows you every change.</p>
+              <div id="emptyActions" class="chips"></div>
+            </div>
+          </div>
+
+          <div class="composer-wrap">
+            <div id="composer" class="composer">
+              <div id="attachRow" class="attach-row" hidden></div>
+              <textarea id="input" rows="1" placeholder="Open a folder to start" disabled></textarea>
+              <div class="composer-bar">
+                <button id="attachBtn" class="icon-btn" title="Add pictures, files or a link" aria-label="Attach"></button>
+                <button id="approvalBtn" class="pill" title="When the agent must ask you first"><span class="ico" data-icon="shield"></span><span id="approvalLabel">Ask first</span><span class="ico tiny" data-icon="chevron"></span></button>
+                <span class="spacer"></span>
+                <button id="modelBtn" class="pill" title="Provider and model"><span id="modelLabel">Model</span><span class="ico tiny" data-icon="chevron"></span></button>
+                <button id="sendBtn" class="send-btn" title="Send (Enter)" aria-label="Send" disabled></button>
+                <button id="stopBtn" class="send-btn stop" title="Stop" aria-label="Stop" hidden></button>
+              </div>
+            </div>
+            <div id="status" class="status" hidden></div>
+          </div>
+
+          <section id="terminalPane" class="terminal" hidden>
+            <div class="term-head">
+              <span class="ico" data-icon="terminal"></span><strong>Terminal</strong>
+              <span id="termCwd" class="muted small mono"></span>
+              <span class="spacer"></span>
+              <button id="termClear" class="icon-btn small" title="Clear" aria-label="Clear"></button>
+              <button id="termStop" class="icon-btn small" title="Stop the running command" aria-label="Stop command" hidden></button>
+              <button id="termClose" class="icon-btn small" title="Close" aria-label="Close terminal"></button>
+            </div>
+            <pre id="termOut" class="term-out"></pre>
+            <div class="term-row"><span class="term-prompt">$</span><input id="termInput" type="text" spellcheck="false" autocomplete="off" placeholder="npm install, git status, brew install ripgrep…" /></div>
+            <div class="term-note">Runs one command at a time with your Mac's PATH. Interactive programs (vim, password prompts) are not supported.</div>
+          </section>
+        </div>
+
+        <div id="splitter" class="splitter" hidden></div>
+
+        <aside id="changesPane" class="changes" hidden>
+          <!-- Modern Modified Files Header -->
+          <div class="ch-top-bar">
+            <div class="ch-file-info">
+              <span class="ico ch-file-icon" data-icon="file"></span>
+              <div class="ch-file-title-wrap">
+                <span id="chFileName" class="ch-file-name" title="No file selected">Modified Files</span>
+                <span id="chFileStatus" class="ch-status-pill" hidden></span>
+                <span id="chFileDiffStat" class="ch-diff-stat" hidden></span>
+              </div>
+            </div>
+            <span class="spacer"></span>
+            <div class="ch-top-actions">
+              <div class="seg" role="group" aria-label="Layout">
+                <button id="modeUnified" class="seg-btn on" title="Unified diff view">Unified</button>
+                <button id="modeSplit" class="seg-btn" title="Side-by-side diff view">Split</button>
+              </div>
+              <label class="check small" title="Show whole file including unchanged lines">
+                <input id="chFull" type="checkbox" /> Whole file
+              </label>
+              <button id="chKeepFile" class="btn small primary" title="Keep this file's changes" hidden>Keep</button>
+              <button id="chRevertFile" class="btn small danger-text" title="Undo this file's changes" hidden>Undo</button>
+              <button id="chClose" class="icon-btn small ch-close-btn" title="Close modified files panel (⌥⌘B)" aria-label="Close panel"></button>
+            </div>
+          </div>
+
+          <!-- Single-Line Breadcrumb File Path (e.g. folder > sub_folder > ... > file.ext) -->
+          <div class="ch-path-bar">
+            <div id="chBreadcrumbs" class="ch-breadcrumbs" title="File location in project">
+              <span class="muted small">Select a file to compare changes</span>
+            </div>
+            <button id="chRevealFile" class="icon-btn tiny" title="Reveal in Finder" hidden aria-label="Reveal in Finder"></button>
+          </div>
+
+          <!-- Horizontal Modified Files Tabs Strip -->
+          <div id="chFileTabs" class="ch-file-tabs"></div>
+
+          <!-- Compatibility anchors -->
+          <span id="chFile" hidden></span>
+          <div id="chList" hidden></div>
+
+          <!-- Diff / Code Viewer -->
+          <div class="ch-viewer">
+            <div id="chDiff" class="ch-diff">
+              <div class="ch-empty">Select a file to compare the before and after versions.</div>
+            </div>
+          </div>
+
+          <!-- Bottom Action Footer with Batch Operations and Summary -->
+          <div class="ch-footer">
+            <span id="chSummary" class="ch-footer-summary muted small">No changes yet</span>
+            <span class="spacer"></span>
+            <button id="chRefresh" class="icon-btn small" title="Refresh changes" aria-label="Refresh"></button>
+            <button id="chKeepAll" class="btn small">Keep all</button>
+            <button id="chRevertAll" class="btn small danger-text">Undo all</button>
+          </div>
+        </aside>
+      </div>
+    </section>
+  </div>
+
+  <input id="fileInput" type="file" multiple hidden accept="image/*,.txt,.md,.json,.js,.ts,.tsx,.jsx,.py,.dart,.java,.kt,.swift,.c,.cc,.cpp,.h,.hpp,.cs,.go,.rs,.rb,.php,.sh,.zsh,.yml,.yaml,.toml,.ini,.xml,.html,.css,.scss,.sql,.csv,.log,.env,.gradle,.lua,.asm,.s,.cfg,.conf,.lock" />
+  <div id="toast" class="toast" hidden></div>
+  <div id="menu" class="popmenu" hidden></div>
+  <div id="submenu" class="popmenu popmenu-sub" hidden></div>
+  <div id="dropHint" class="drop-hint" hidden>Drop pictures or files to attach them</div>
+
+  <!-- ===== rename dialog ===== -->
+  <dialog id="renameDialog" class="dlg">
+    <div class="dlg-head"><h2>Rename Conversation</h2><button id="renameClose" class="icon-btn" aria-label="Close"></button></div>
+    <form id="renameForm" class="dlg-body" autocomplete="off">
+      <label>Title
+        <input id="renameInput" type="text" spellcheck="false" required />
+      </label>
+      <div class="form-actions">
+        <button type="button" id="renameCancel" class="btn">Cancel</button>
+        <button type="submit" id="renameSave" class="btn primary">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- ===== settings ===== -->
+  <dialog id="settingsDialog" class="dlg wide">
+    <div class="dlg-head"><h2>Settings</h2><button id="settingsClose" class="icon-btn" aria-label="Close"></button></div>
+    <div class="tabs" role="tablist">
+      <button class="tab on" data-tab="providers">Providers &amp; API keys</button>
+      <button class="tab" data-tab="agent">Agent</button>
+      <button class="tab" data-tab="accounts">Accounts</button>
+    </div>
+
+    <div id="tab-providers" class="tab-body">
+      <div class="prov-layout">
+        <div class="prov-side">
+          <div id="provList" class="prov-list"></div>
+          <button id="provAdd" class="btn full"><span class="ico" data-icon="plus"></span>Add provider</button>
+        </div>
+        <form id="provForm" class="prov-form" autocomplete="off">
+          <label>Name <input id="pfName" type="text" /></label>
+          <label>Base URL <input id="pfUrl" type="text" spellcheck="false" placeholder="https://openrouter.ai/api/v1" />
+            <small>Any OpenAI-compatible server. Ollama and LM Studio run on this Mac; OpenRouter, OpenAI, Together and others are online.</small></label>
+          <label>API key <input id="pfKey" type="password" spellcheck="false" autocomplete="off" placeholder="" />
+            <small id="pfKeyHint"></small></label>
+          <div id="pfPresetNote" class="preset-note" hidden><span id="pfPresetText"></span><button type="button" id="pfKeyLink" class="btn small" hidden>Get a key ↗</button></div>
+          <label id="pfClearRow" class="check small" hidden><input id="pfClear" type="checkbox" /> Remove the saved key</label>
+          <label>Model <input id="pfModel" type="text" spellcheck="false" list="pfModels" placeholder="Type a model name, or fetch the list" />
+            <datalist id="pfModels"></datalist>
+            <small id="pfModelHint">Must support tool calling. Use “Fetch models” to see what this provider offers.</small></label>
+          <p id="pfStatus" class="form-status" hidden></p>
+          <div class="form-actions">
+            <button type="button" id="pfDelete" class="btn danger-text">Delete</button>
+            <span class="spacer"></span>
+            <button type="button" id="pfFetch" class="btn">Save &amp; fetch models</button>
+            <button type="submit" id="pfSave" class="btn">Save</button>
+            <button type="button" id="pfActivate" class="btn primary">Use this provider</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div id="tab-agent" class="tab-body" hidden>
+      <form id="agentForm" class="agent-form">
+        <label>When should the agent ask you first?
+          <select id="afApproval">
+            <option value="ask">Before every file change, command or web request (safest)</option>
+            <option value="edits">Only before commands and web requests</option>
+            <option value="auto">Never (use only in throwaway folders)</option>
+          </select>
+        </label>
+        <div class="two-col">
+          <label>Max steps per message <input id="afSteps" type="number" min="1" max="300" /></label>
+          <label>Memory per chat (characters) <input id="afContext" type="number" min="8000" max="2000000" step="1000" />
+            <small>Older messages are dropped past this. Raise it for models with a big context window.</small></label>
+        </div>
+        <label class="check"><input id="afFallback" type="checkbox" /> If a model is rate-limited, out of credit or down, switch to the next provider’s model and keep going</label>
+        <p class="muted small">The next models are the other providers in your list that have a model chosen, in list order. Long replies that hit a model’s output limit are continued automatically.</p>
+        <h3 class="sub-h">“Approve always” rules for this project</h3>
+        <div id="afRules" class="rules-list"></div>
+        <p class="muted small">Commands run as you, with your permissions. File tools are limited to the project folder; commands are not. API keys are stored in your Mac Keychain.</p>
+        <p id="afStatus" class="form-status" hidden></p>
+        <div class="form-actions"><span class="spacer"></span><button type="submit" class="btn primary">Save</button></div>
+      </form>
+    </div>
+
+    <div id="tab-accounts" class="tab-body" hidden>
+      <p class="muted small acct-intro">Signing in is optional. <strong>GitHub</strong> lets the app push, pull and open pull requests for you. <strong>Google</strong> and <strong>Apple</strong> only identify you on this Mac: this app has no cloud service, so they do not unlock anything else.</p>
+
+      <div class="acct-card">
+        <div class="acct-head"><span class="ico" data-icon="branch"></span><strong>GitHub</strong><span id="ghState" class="acct-state"></span><span class="spacer"></span><button id="ghSignIn" class="btn primary small">Sign in with GitHub</button><button id="ghOut" class="btn small" hidden>Disconnect</button></div>
+        <div id="ghDevice" class="device-box" hidden></div>
+        <div id="ghTokenRow" class="acct-row">
+          <input id="ghToken" type="password" spellcheck="false" autocomplete="off" placeholder="…or paste a personal access token (needs the “repo” scope)" />
+          <button id="ghTokenBtn" class="btn small">Connect</button>
+        </div>
+        <details class="acct-setup"><summary>GitHub setup (one time)</summary>
+          <p class="muted small">Create an OAuth App at github.com → Settings → Developer settings → OAuth Apps. Tick <em>Enable Device Flow</em>. Any homepage URL works. Paste its Client ID here. No secret is needed.</p>
+          <div class="acct-row"><input id="ghClient" type="text" spellcheck="false" placeholder="Client ID (starts with Iv or Ov)" /><button id="ghClientBtn" class="btn small">Save</button></div>
+        </details>
+        <p id="ghStatus" class="form-status" hidden></p>
+      </div>
+
+      <div class="acct-card">
+        <div class="acct-head"><span class="ico" data-icon="user"></span><strong>Google</strong><span id="ggState" class="acct-state"></span><span class="spacer"></span><button id="ggSignIn" class="btn primary small">Sign in with Google</button><button id="ggOut" class="btn small" hidden>Disconnect</button></div>
+        <details class="acct-setup"><summary>Google setup (one time)</summary>
+          <p class="muted small">In Google Cloud Console create an OAuth client of type <em>Desktop app</em> and paste its Client ID and secret. (For a desktop app Google calls the secret “not confidential”.)</p>
+          <div class="acct-row"><input id="ggClient" type="text" spellcheck="false" placeholder="Client ID (….apps.googleusercontent.com)" /></div>
+          <div class="acct-row"><input id="ggSecret" type="password" spellcheck="false" autocomplete="off" placeholder="Client secret" /><button id="ggClientBtn" class="btn small">Save</button></div>
+        </details>
+        <p id="ggStatus" class="form-status" hidden></p>
+      </div>
+
+      <div class="acct-card">
+        <div class="acct-head"><span class="ico" data-icon="user"></span><strong>Apple</strong><span class="acct-state">not available yet</span><span class="spacer"></span><button id="apSignIn" class="btn small">Sign in with Apple</button></div>
+        <p id="apInfo" class="muted small" hidden>Sign in with Apple needs a paid Apple Developer account and a web address on your own domain for Apple to send you back to; Apple does not accept a local address. That cannot be set up inside this app alone, so the button only explains this. If you publish the app on the Mac App Store later, the native Apple sign-in can be added then.</p>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- ===== git ===== -->
+  <dialog id="gitDialog" class="dlg wide">
+    <div class="dlg-head"><h2>Git &amp; GitHub</h2><span class="spacer"></span><button id="gitRefresh" class="icon-btn" aria-label="Refresh" title="Refresh"></button><button id="gitClose" class="icon-btn" aria-label="Close"></button></div>
+    <div id="gitBody" class="git-body"></div>
+    <p id="gitStatus" class="form-status" hidden></p>
+  </dialog>
+
+  <!-- ===== history ===== -->
+  <dialog id="historyDialog" class="dlg wide">
+    <div class="dlg-head"><h2>Project history</h2><button id="historyClose" class="icon-btn" aria-label="Close"></button></div>
+    <p class="muted small dlg-sub">Every folder you have opened here, newest first. Chats keep running in the background when you switch projects.</p>
+    <input id="historySearch" type="text" class="search" placeholder="Search projects…" spellcheck="false" />
+    <div id="historyList" class="hist-list"></div>
+  </dialog>
+
+  <!-- ===== skills ===== -->
+  <dialog id="skillsDialog" class="dlg wide">
+    <div class="dlg-head"><h2>Skills</h2><button id="skillsClose" class="icon-btn" aria-label="Close"></button></div>
+    <p class="muted small dlg-sub">A skill is a folder with a <code>SKILL.md</code> file that teaches the agent how to do one kind of task. The agent sees the list and loads a skill when the task matches. Skills from <code>~/.claude/skills</code> and from <code>.agent/skills</code> or <code>.claude/skills</code> inside a project are picked up too.</p>
+    <div class="skills-actions">
+      <button id="skNew" class="btn primary"><span class="ico" data-icon="plus"></span>New skill</button>
+      <button id="skImport" class="btn">Import folder…</button>
+      <button id="skOpen" class="btn">Open skills folder</button>
+    </div>
+    <div id="skList" class="sk-list"></div>
+    <form id="skForm" class="sk-form" hidden autocomplete="off">
+      <label>Name <input id="skName" type="text" spellcheck="false" placeholder="api-style" /><small>Lowercase letters, digits, - and _</small></label>
+      <label>When should the agent use it? <input id="skDesc" type="text" placeholder="How we design and document REST endpoints" /></label>
+      <label>Instructions <textarea id="skBody" rows="7" placeholder="1. Use plural nouns for routes.&#10;2. Return errors as { error: string }."></textarea></label>
+      <p id="skStatus" class="form-status" hidden></p>
+      <div class="form-actions"><button type="button" id="skCancel" class="btn">Cancel</button><span class="spacer"></span><button type="submit" class="btn primary">Create skill</button></div>
+    </form>
+  </dialog>
+
+  <!-- ===== link + confirm ===== -->
+  <dialog id="linkDialog" class="dlg">
+    <form id="linkForm" method="dialog">
+      <div class="dlg-head"><h2>Add a link</h2></div>
+      <label>Web address <input id="linkInput" type="text" spellcheck="false" placeholder="https://example.com/docs" /></label>
+      <p id="linkStatus" class="form-status" hidden></p>
+      <div class="form-actions"><button type="button" id="linkCancel" class="btn">Cancel</button><span class="spacer"></span><button type="submit" class="btn primary">Add</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="confirmDialog" class="dlg narrow">
+    <div class="dlg-head"><h2 id="confirmTitle">Are you sure?</h2></div>
+    <p id="confirmText" class="muted"></p>
+    <div class="form-actions"><button id="confirmNo" class="btn">Cancel</button><span class="spacer"></span><button id="confirmYes" class="btn danger">OK</button></div>
+  </dialog>
+
+  <script src="md.js"></script>
+  <script src="diffview.js"></script>
+  <script src="renderer.js"></script>
+</body>
+</html>

@@ -1,0 +1,54 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Launch Folder Agent (Electron)",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}",
+      "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/electron",
+      "windows": {
+        "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/electron.cmd"
+      },
+      "args": [
+        "--remote-debugging-port=9222",
+        "."
+      ],
+      "outputCapture": "std",
+      "preLaunchTask": "npm: build",
+      "sourceMaps": true,
+      "smartStep": true
+    },
+    {
+      "name": "Attach to Renderer (Chrome DevTools)",
+      "type": "chrome",
+      "request": "attach",
+      "port": 9222,
+      "webRoot": "${workspaceFolder}/renderer",
+      "timeout": 30000
+    },
+    {
+      "name": "Debug Tests",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}",
+      "program": "${workspaceFolder}/node_modules/typescript/bin/tsc",
+      "args": [
+        "-p",
+        "tsconfig.json"
+      ],
+      "postDebugTask": "node: run tests",
+      "sourceMaps": true
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Launch Agent + Attach Renderer",
+      "configurations": [
+        "Launch Folder Agent (Electron)",
+        "Attach to Renderer (Chrome DevTools)"
+      ],
+      "stopAll": true
+    }
+  ]
+}

@@ -1,0 +1,2696 @@
+'use strict';
+
+(function () {
+  const api = window.api;
+  const $ = (id) => document.getElementById(id);
+
+  function h(tag, cls, text) {
+    const n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text !== undefined) n.textContent = text;
+    return n;
+  }
+
+  // ---------- icons ----------
+  const ICONS = {
+    plus: '<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
+    x: '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',
+    folder: '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
+    sliders: '<line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/>',
+    book: '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>',
+    terminal: '<polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/>',
+    sidebar: '<rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/>',
+    diff: '<circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M13 6h3a2 2 0 0 1 2 2v7"/><line x1="6" y1="9" x2="6" y2="21"/>',
+    arrowUp: '<line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/>',
+    stop: '<rect x="6" y="6" width="12" height="12" rx="2"/>',
+    paperclip: '<path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>',
+    chevron: '<polyline points="6 9 12 15 18 9"/>',
+    file: '<path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/>',
+    trash: '<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>',
+    check: '<polyline points="20 6 9 17 4 12"/>',
+    undo: '<polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>',
+    refresh: '<polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>',
+    link: '<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>',
+    image: '<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>',
+    shield: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>',
+    branch: '<line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/>',
+    clock: '<circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/>',
+    user: '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+    reveal: '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"/><circle cx="12" cy="12" r="3"/>',
+    arrowLeft: '<line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>',
+    arrowRight: '<line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>',
+    search: '<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>',
+    chevronDown: '<polyline points="6 9 12 15 18 9"/>',
+    chevronRight: '<polyline points="9 18 15 12 9 6"/>',
+    chevronUp: '<polyline points="18 15 12 9 6 15"/>',
+    more: '<circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/><circle cx="5" cy="12" r="1.5"/>',
+    moreVertical: '<circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/>',
+    copy: '<rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>',
+    edit: '<path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>',
+    pin: '<line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.89A4 4 0 0 1 14 9V4h1a1 1 0 0 0 0-2H9a1 1 0 0 0 0 2h1v5a4 4 0 0 1-2.11 3.56l-1.78.89A2 2 0 0 0 5 15.24z"/>',
+    mail: '<path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>',
+    split: '<rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="3" x2="12" y2="21"/>',
+    archive: '<polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/>',
+    filter: '<polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>',
+    newFolder: '<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/>',
+    gear: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
+  };
+
+  function icon(name) {
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('viewBox', '0 0 24 24');
+    svg.setAttribute('aria-hidden', 'true');
+    svg.innerHTML = ICONS[name] || '';
+    return svg;
+  }
+
+  function iconSpan(name, cls) {
+    const s = h('span', 'ico' + (cls ? ' ' + cls : ''));
+    s.appendChild(icon(name));
+    return s;
+  }
+
+  function setIcon(el, name) {
+    el.textContent = '';
+    el.appendChild(iconSpan(name)); // the .ico wrapper carries the size and stroke styling
+  }
+
+  const BUTTON_ICONS = {
+    sbToggle: 'sidebar', sbShow: 'sidebar', openFolderBtn: 'newFolder', attachBtn: 'paperclip', sendBtn: 'arrowUp', stopBtn: 'stop',
+    gitRefresh: 'refresh', gitClose: 'x', historyClose: 'x', termClear: 'trash', termStop: 'stop', termClose: 'x', chRefresh: 'refresh', chClose: 'x', settingsClose: 'x', skillsClose: 'x',
+    navBackBtn: 'arrowLeft', navForwardBtn: 'arrowRight', sbSearchClear: 'x', sbProjectToggle: 'chevronDown', recentProjectsToggle: 'chevronRight', chRevealFile: 'reveal',
+    sbSearchBtn: 'search', sbFilterProjectsBtn: 'filter', sbCurrentProjMenuBtn: 'moreVertical', sbCurrentProjNewChatBtn: 'plus', renameClose: 'x',
+  };
+
+  // ---------- state ----------
+  const S = {
+    app: null,
+    running: false,
+    current: null, // streaming assistant message {el, raw, raf}
+    tools: new Map(),
+    chats: [],
+    allChats: [],
+    changes: [],
+    selected: null,
+    diffMode: 'unified',
+    diffFull: false,
+    attachments: [],
+    termRunning: false,
+    termHistory: [],
+    termIdx: 0,
+    provSel: null,
+    refreshTimer: 0,
+    runningChats: new Set(),
+    ghWait: false,
+    expandSessions: false,
+    collapseProject: false,
+    collapseRecent: true,
+    expandedProjects: new Set(),
+    collapsedProjects: new Set(),
+    pinnedChats: new Set(JSON.parse(localStorage.getItem('cr3_pinned_chats') || '[]')),
+    unreadChats: new Set(JSON.parse(localStorage.getItem('cr3_unread_chats') || '[]')),
+    archivedChats: new Set(JSON.parse(localStorage.getItem('cr3_archived_chats') || '[]')),
+    chatFilter: '',
+    navHistory: [],
+    navIndex: -1,
+    isNavigating: false,
+  };
+
+  const els = {
+    app: $('app'), messages: $('messages'), empty: $('empty'), emptyTitle: $('emptyTitle'), emptyText: $('emptyText'), emptyActions: $('emptyActions'),
+    input: $('input'), sendBtn: $('sendBtn'), stopBtn: $('stopBtn'), status: $('status'), composer: $('composer'),
+    attachRow: $('attachRow'), fileInput: $('fileInput'),
+    projectList: $('projectList'), chatList: $('chatList'), projName: $('projName'), projPath: $('projPath'),
+    navBackBtn: $('navBackBtn'), navForwardBtn: $('navForwardBtn'),
+    sbSearchWrap: $('sbSearchWrap'), sbSearch: $('sbSearch'), sbSearchClear: $('sbSearchClear'), sbSearchBtn: $('sbSearchBtn'),
+    sbAutomationsBtn: $('sbAutomationsBtn'), sbCustomizationsBtn: $('sbCustomizationsBtn'),
+    sbFilterProjectsBtn: $('sbFilterProjectsBtn'), activeProjectSection: $('activeProjectSection'),
+    sbProjectToggle: $('sbProjectToggle'), sbActiveProjName: $('sbActiveProjName'),
+    sbCurrentProjMenuBtn: $('sbCurrentProjMenuBtn'), sbCurrentProjNewChatBtn: $('sbCurrentProjNewChatBtn'),
+    sbToggleAllSessions: $('sbToggleAllSessions'), sbToggleAllSessionsLabel: $('sbToggleAllSessionsLabel'),
+    recentProjectsToggle: $('recentProjectsToggle'), recentProjectsSection: $('recentProjectsSection'),
+    conversationsSection: $('conversationsSection'), conversationsList: $('conversationsList'),
+    submenu: $('submenu'), renameDialog: $('renameDialog'), renameInput: $('renameInput'), renameForm: $('renameForm'),
+    renameClose: $('renameClose'), renameCancel: $('renameCancel'),
+    chFileName: $('chFileName'), chFileStatus: $('chFileStatus'), chFileDiffStat: $('chFileDiffStat'),
+    chBreadcrumbs: $('chBreadcrumbs'), chFileTabs: $('chFileTabs'), chRevealFile: $('chRevealFile'),
+    chKeepFile: $('chKeepFile'), chRevertFile: $('chRevertFile'), chClose: $('chClose'),
+    approvalLabel: $('approvalLabel'), modelLabel: $('modelLabel'),
+    changesBtn: $('changesBtn'), changesBadge: $('changesBadge'), changesPane: $('changesPane'), splitter: $('splitter'),
+    terminalPane: $('terminalPane'), terminalBtn: $('terminalBtn'), termOut: $('termOut'), termInput: $('termInput'), termCwd: $('termCwd'), termStop: $('termStop'),
+    toast: $('toast'), menu: $('menu'), dropHint: $('dropHint'),
+  };
+  const emptyEl = els.empty;
+
+  // ---------- small utilities ----------
+  const lastSegments = (p, n) => String(p).split('/').filter(Boolean).slice(-n).join('/');
+  const baseName = (p) => lastSegments(p, 1) || p;
+
+  function relTime(ts) {
+    const s = Math.max(0, (Date.now() - ts) / 1000);
+    if (s < 60) return 'just now';
+    if (s < 3600) return Math.floor(s / 60) + ' min ago';
+    if (s < 86400) return Math.floor(s / 3600) + ' h ago';
+    if (s < 86400 * 7) return Math.floor(s / 86400) + ' d ago';
+    return new Date(ts).toLocaleDateString();
+  }
+
+  function fmtSize(n) {
+    if (n < 1024) return n + ' B';
+    if (n < 1024 * 1024) return Math.round(n / 1024) + ' KB';
+    return (n / 1024 / 1024).toFixed(1) + ' MB';
+  }
+
+  let toastTimer = 0;
+  /** A modal dialog sits above everything outside it, so popups opened from inside one must live inside it. */
+  function placeIn(node, anchor) {
+    const host = (anchor && anchor.closest && anchor.closest('dialog')) || document.querySelector('dialog[open]') || document.body;
+    if (node.parentNode !== host) host.appendChild(node);
+  }
+
+  function toast(msg, ms) {
+    placeIn(els.toast, null);
+    els.toast.textContent = msg;
+    els.toast.hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => (els.toast.hidden = true), ms || 3500);
+  }
+
+  function store(key, value) {
+    try {
+      if (value === undefined) return window.localStorage.getItem(key);
+      window.localStorage.setItem(key, value);
+    } catch (e) {
+      /* storage can be unavailable: the app works without it */
+    }
+    return null;
+  }
+
+  // ---------- popup menu ----------
+  function closeMenu() {
+    if (els.menu) {
+      els.menu.hidden = true;
+      els.menu.textContent = '';
+    }
+    closeSubMenu();
+  }
+
+  function closeSubMenu() {
+    if (els.submenu) {
+      els.submenu.hidden = true;
+      els.submenu.textContent = '';
+    }
+  }
+
+  function showSubMenu(anchorBtn, items) {
+    const sm = els.submenu;
+    if (!sm) return;
+    sm.textContent = '';
+    for (const it of items) {
+      if (it.type === 'sep') {
+        sm.appendChild(h('div', 'pm-sep'));
+        continue;
+      }
+      const b = h('button', 'pm-item' + (it.danger ? ' pm-danger' : ''));
+      b.type = 'button';
+      b.disabled = !!it.disabled;
+
+      if (it.icon) {
+        const ic = h('span', 'ico pm-ico');
+        ic.appendChild(icon(it.icon));
+        b.appendChild(ic);
+      }
+      const main = h('span', 'pm-main', it.label);
+      b.appendChild(main);
+
+      b.addEventListener('click', (e) => {
+        e.stopPropagation();
+        closeMenu();
+        if (it.onClick) it.onClick();
+      });
+      sm.appendChild(b);
+    }
+
+    sm.hidden = false;
+    const r = anchorBtn.getBoundingClientRect();
+    const sw = sm.offsetWidth || 180;
+    const sh = sm.offsetHeight || 100;
+
+    let left = r.right + 4;
+    if (left + sw > window.innerWidth - 8) {
+      left = Math.max(8, r.left - sw - 4);
+    }
+    sm.style.left = left + 'px';
+
+    let top = r.top - 4;
+    if (top + sh > window.innerHeight - 8) {
+      top = Math.max(8, window.innerHeight - sh - 8);
+    }
+    sm.style.top = top + 'px';
+  }
+
+  /** items: {type:'head',label} | {type:'sep'} | {label, sub, icon, shortcut, submenu, children, danger, checked, disabled, onClick} */
+  function showMenu(anchor, items) {
+    closeSubMenu();
+    const m = els.menu;
+    m.textContent = '';
+    for (const it of items) {
+      if (it.type === 'head') {
+        m.appendChild(h('div', 'pm-head', it.label));
+      } else if (it.type === 'sep') {
+        m.appendChild(h('div', 'pm-sep'));
+      } else {
+        const b = h('button', 'pm-item' + (it.danger ? ' pm-danger' : ''));
+        b.type = 'button';
+        b.disabled = !!it.disabled;
+
+        if (it.icon) {
+          const ic = h('span', 'ico pm-ico');
+          ic.appendChild(icon(it.icon));
+          b.appendChild(ic);
+        } else if (it.checked !== undefined) {
+          const check = h('span', 'ico pm-ico');
+          if (it.checked) check.appendChild(icon('check'));
+          b.appendChild(check);
+        }
+
+        const main = h('span', 'pm-main');
+        main.appendChild(document.createTextNode(it.label));
+        if (it.sub) main.appendChild(h('span', 'pm-sub', it.sub));
+        b.appendChild(main);
+
+        if (it.shortcut) {
+          b.appendChild(h('kbd', 'pm-kbd', it.shortcut));
+        } else if (it.submenu || (it.children && it.children.length)) {
+          const arr = h('span', 'ico tiny pm-arrow');
+          arr.appendChild(icon('chevronRight'));
+          b.appendChild(arr);
+        }
+
+        b.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (it.children && it.children.length) {
+            showSubMenu(b, it.children);
+            return;
+          }
+          closeMenu();
+          if (it.onClick) it.onClick();
+        });
+
+        if (it.children && it.children.length) {
+          b.addEventListener('mouseenter', () => {
+            showSubMenu(b, it.children);
+          });
+        } else {
+          b.addEventListener('mouseenter', () => {
+            closeSubMenu();
+          });
+        }
+
+        m.appendChild(b);
+      }
+    }
+
+    placeIn(m, anchor);
+    m.hidden = false;
+    const r = anchor.getBoundingClientRect();
+    const mw = m.offsetWidth || 210;
+    const mh = m.offsetHeight || 160;
+
+    let left = r.left;
+    if (left + mw > window.innerWidth - 8) {
+      left = Math.max(8, r.right - mw);
+    }
+    m.style.left = left + 'px';
+
+    let top = r.bottom + 4;
+    if (top + mh > window.innerHeight - 8) {
+      top = Math.max(8, r.top - mh - 4);
+    }
+    m.style.top = top + 'px';
+  }
+
+  document.addEventListener('mousedown', (e) => {
+    if (!els.menu.hidden && !els.menu.contains(e.target) && (!els.submenu || !els.submenu.contains(e.target))) {
+      closeMenu();
+    }
+  });
+  window.addEventListener('blur', closeMenu);
+  window.addEventListener('resize', closeMenu);
+
+  // ---------- session & project helpers ----------
+  function savePinnedChats() {
+    try { localStorage.setItem('cr3_pinned_chats', JSON.stringify([...S.pinnedChats])); } catch {}
+  }
+  function saveUnreadChats() {
+    try { localStorage.setItem('cr3_unread_chats', JSON.stringify([...S.unreadChats])); } catch {}
+  }
+  function saveArchivedChats() {
+    try { localStorage.setItem('cr3_archived_chats', JSON.stringify([...S.archivedChats])); } catch {}
+  }
+
+  function isChatPinned(id) { return S.pinnedChats.has(id); }
+  function isChatUnread(id) { return S.unreadChats.has(id); }
+  function isChatArchived(id) { return S.archivedChats.has(id); }
+
+  function togglePinChat(id) {
+    if (S.pinnedChats.has(id)) {
+      S.pinnedChats.delete(id);
+      toast('Conversation unpinned');
+    } else {
+      S.pinnedChats.add(id);
+      toast('Conversation pinned');
+    }
+    savePinnedChats();
+    renderSidebar();
+  }
+
+  function toggleUnreadChat(id) {
+    if (S.unreadChats.has(id)) {
+      S.unreadChats.delete(id);
+    } else {
+      S.unreadChats.add(id);
+      toast('Marked as unread');
+    }
+    saveUnreadChats();
+    renderSidebar();
+  }
+
+  function toggleArchiveChat(id) {
+    if (S.archivedChats.has(id)) {
+      S.archivedChats.delete(id);
+      toast('Conversation restored');
+    } else {
+      S.archivedChats.add(id);
+      toast('Conversation archived');
+    }
+    saveArchivedChats();
+    renderSidebar();
+  }
+
+  let renameTargetId = null;
+  function promptRenameChat(c) {
+    if (!els.renameDialog) {
+      const title = window.prompt('Rename conversation:', c.title);
+      if (title && title.trim() && title.trim() !== c.title) {
+        doRenameChat(c.id, title.trim());
+      }
+      return;
+    }
+    renameTargetId = c.id;
+    els.renameInput.value = c.title || '';
+    els.renameDialog.showModal();
+    setTimeout(() => {
+      els.renameInput.focus();
+      els.renameInput.select();
+    }, 50);
+  }
+
+  async function doRenameChat(id, title) {
+    if (!title) return;
+    const r = await api.renameChat(id, title);
+    if (r?.ok) {
+      toast('Conversation renamed');
+      const found = S.chats.find(x => x.id === id);
+      if (found) found.title = title;
+      const foundAll = S.allChats.find(x => x.id === id);
+      if (foundAll) foundAll.title = title;
+      renderSidebar();
+    } else {
+      toast(r?.error || 'Failed to rename conversation');
+    }
+  }
+
+  async function copyChatTranscript(id) {
+    try {
+      const res = await api.openChat(id);
+      if (res && res.messages) {
+        const text = res.messages.map(m => `[${(m.role || '').toUpperCase()}]: ${m.text || ''}`).join('\n\n');
+        await navigator.clipboard.writeText(text);
+        toast('Transcript copied to clipboard');
+      }
+    } catch {
+      toast('Failed to copy transcript');
+    }
+  }
+
+  function showProjectMenu(anchor, folder) {
+    const name = baseName(folder);
+    const items = [
+      {
+        label: 'Copy Project Name',
+        icon: 'copy',
+        onClick: () => {
+          navigator.clipboard.writeText(name);
+          toast('Project name copied');
+        }
+      },
+      {
+        label: 'Project Settings',
+        icon: 'sliders',
+        onClick: () => {
+          openSettings('agent');
+        }
+      },
+      {
+        label: 'Reveal in Finder',
+        icon: 'folder',
+        onClick: () => {
+          api.revealFolder(folder);
+        }
+      },
+      {
+        label: 'Delete Project',
+        icon: 'trash',
+        danger: true,
+        onClick: async () => {
+          if (!(await confirmDialog('Delete Project from List?', `Remove "${name}" from Cr3agent? Files on your Mac will not be deleted.`, 'Delete Project'))) return;
+          const wasActive = folder === S.app?.folder;
+          const r = await api.forgetFolder(folder);
+          if (r.ok) applyState(r);
+          if (wasActive) {
+            resetChatView();
+          }
+          await loadChats();
+        }
+      }
+    ];
+    showMenu(anchor, items);
+  }
+
+  function showSessionMenu(anchor, c) {
+    const isPinned = isChatPinned(c.id);
+    const isUnread = isChatUnread(c.id);
+
+    const items = [
+      {
+        label: 'Rename',
+        icon: 'edit',
+        onClick: () => {
+          promptRenameChat(c);
+        }
+      },
+      {
+        label: isPinned ? 'Unpin' : 'Pin',
+        icon: 'pin',
+        shortcut: '⌥⌘P',
+        onClick: () => {
+          togglePinChat(c.id);
+        }
+      },
+      {
+        label: isUnread ? 'Mark Read' : 'Mark Unread',
+        icon: 'mail',
+        onClick: () => {
+          toggleUnreadChat(c.id);
+        }
+      },
+      { type: 'sep' },
+      {
+        label: 'Copy',
+        icon: 'copy',
+        submenu: true,
+        children: [
+          {
+            label: 'Copy Title',
+            icon: 'copy',
+            onClick: () => {
+              navigator.clipboard.writeText(c.title);
+              toast('Title copied');
+            }
+          },
+          {
+            label: 'Copy ID',
+            icon: 'copy',
+            onClick: () => {
+              navigator.clipboard.writeText(c.id);
+              toast('Chat ID copied');
+            }
+          },
+          {
+            label: 'Copy All Messages',
+            icon: 'copy',
+            onClick: () => {
+              copyChatTranscript(c.id);
+            }
+          }
+        ]
+      },
+      {
+        label: 'Split',
+        icon: 'split',
+        submenu: true,
+        children: [
+          {
+            label: 'Split Right',
+            icon: 'split',
+            onClick: () => {
+              if (els.changesPane && els.changesPane.hidden) {
+                toggleChanges();
+              }
+            }
+          },
+          {
+            label: 'Split Down',
+            icon: 'terminal',
+            onClick: () => {
+              if (els.terminalPane && els.terminalPane.hidden) {
+                toggleTerminal();
+              }
+            }
+          }
+        ]
+      },
+      { type: 'sep' },
+      {
+        label: 'Archive',
+        icon: 'archive',
+        shortcut: '⌥⌘A',
+        onClick: () => {
+          toggleArchiveChat(c.id);
+        }
+      },
+      {
+        label: 'Delete',
+        icon: 'trash',
+        danger: true,
+        onClick: async () => {
+          if (!(await confirmDialog('Delete this conversation?', 'The conversation is removed from this Mac. Your project files are not touched.', 'Delete'))) return;
+          const wasCurrent = c.id === S.app?.chatId;
+          const r = await api.deleteChat(c.id);
+          if (r.ok) applyState(r);
+          if (wasCurrent) resetChatView();
+          await loadChats();
+        }
+      }
+    ];
+    showMenu(anchor, items);
+  }
+
+  function createSessionItem(c, isCur) {
+    const item = h('div', 'sb-item sb-session-item' + (isCur ? ' on' : ''));
+    item.title = c.title;
+
+    if (isChatUnread(c.id)) {
+      item.appendChild(h('span', 'sb-unread-dot'));
+    }
+
+    if (S.runningChats.has(c.id)) {
+      item.appendChild(h('span', 'run-dot')).title = 'Working…';
+    }
+
+    if (isChatPinned(c.id)) {
+      const pinIcon = h('span', 'ico tiny sb-pin-icon');
+      pinIcon.appendChild(icon('pin'));
+      item.appendChild(pinIcon);
+    }
+
+    const label = h('span', 'label ellipsis');
+    label.textContent = c.title;
+    item.appendChild(label);
+
+    // Hover action buttons (Archive, Pin, 3-dots)
+    const actions = h('div', 'sb-session-actions no-drag');
+
+    const archBtn = h('button', 'icon-btn tiny sb-hover-act');
+    archBtn.type = 'button';
+    archBtn.title = isChatArchived(c.id) ? 'Restore (⌥⌘A)' : 'Archive (⌥⌘A)';
+    archBtn.setAttribute('aria-label', 'Archive');
+    setIcon(archBtn, 'archive');
+    archBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleArchiveChat(c.id);
+    });
+    actions.appendChild(archBtn);
+
+    const pinBtn = h('button', 'icon-btn tiny sb-hover-act' + (isChatPinned(c.id) ? ' on' : ''));
+    pinBtn.type = 'button';
+    pinBtn.title = isChatPinned(c.id) ? 'Unpin (⌥⌘P)' : 'Pin (⌥⌘P)';
+    pinBtn.setAttribute('aria-label', 'Pin');
+    setIcon(pinBtn, 'pin');
+    pinBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      togglePinChat(c.id);
+    });
+    actions.appendChild(pinBtn);
+
+    const moreBtn = h('button', 'icon-btn tiny sb-hover-act');
+    moreBtn.type = 'button';
+    moreBtn.title = 'More options';
+    moreBtn.setAttribute('aria-label', 'More options');
+    setIcon(moreBtn, 'moreVertical');
+    moreBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      showSessionMenu(moreBtn, c);
+    });
+    actions.appendChild(moreBtn);
+
+    item.appendChild(actions);
+
+    item.addEventListener('click', () => {
+      if (c.id !== S.app?.chatId) openChat(c.id);
+    });
+
+    return item;
+  }
+
+  // ---------- confirm dialog ----------
+  function confirmDialog(title, text, okLabel) {
+    return new Promise((resolve) => {
+      const d = $('confirmDialog');
+      $('confirmTitle').textContent = title;
+      $('confirmText').textContent = text;
+      $('confirmYes').textContent = okLabel || 'OK';
+      const done = (v) => {
+        $('confirmYes').onclick = null;
+        $('confirmNo').onclick = null;
+        d.onclose = null;
+        if (d.open) d.close();
+        resolve(v);
+      };
+      $('confirmYes').onclick = () => done(true);
+      $('confirmNo').onclick = () => done(false);
+      d.onclose = () => done(false);
+      d.showModal();
+    });
+  }
+
+  // ---------- app state -> UI ----------
+  function activeProvider() {
+    const s = S.app && S.app.settings;
+    if (!s) return null;
+    return s.providers.find((p) => p.id === s.activeProviderId) || s.providers[0] || null;
+  }
+
+  const APPROVAL = {
+    ask: { label: 'Ask first', sub: 'Approve every file change, command and web request' },
+    edits: { label: 'Auto-edit', sub: 'Edits go through; ask before commands and web requests' },
+    auto: { label: 'Auto-approve', sub: 'Never ask (only for throwaway folders)' },
+  };
+
+  function applyState(app) {
+    if (!app || !app.settings) return;
+    S.app = app;
+    S.runningChats = new Set(app.runningChats || []);
+    renderSidebar();
+    renderAccountLabel();
+    renderHeader();
+    renderComposerPills();
+    renderEmpty();
+    const has = !!app.folder;
+    els.input.disabled = !has;
+    els.sendBtn.disabled = !has;
+    els.input.placeholder = has ? 'Ask the agent to do something in this folder…' : 'Open a folder to start';
+    els.termCwd.textContent = app.folder || '';
+    if (S.provSel && !app.settings.providers.some((p) => p.id === S.provSel)) S.provSel = null;
+  }
+
+  function renderHeader() {
+    const f = S.app.folder;
+    $('projName').textContent = f ? baseName(f) : 'No folder open';
+    $('projPath').textContent = f ? '‎' + f : '';
+    $('projPath').title = f || '';
+  }
+
+  function renderComposerPills() {
+    const s = S.app.settings;
+    els.approvalLabel.textContent = (APPROVAL[s.approvalMode] || APPROVAL.ask).label;
+    const p = activeProvider();
+    els.modelLabel.textContent = p ? (p.model ? `${p.name} · ${p.model}` : `${p.name} · choose a model`) : 'No provider';
+  }
+
+  const SUGGESTIONS = [
+    'Give me a quick tour of this project',
+    'Find and fix a bug',
+    'Add tests for the main logic',
+    'Check this code for security problems',
+  ];
+
+  function renderEmpty() {
+    const f = S.app.folder;
+    els.emptyActions.textContent = '';
+    if (!f) {
+      els.emptyTitle.textContent = 'Pick a folder to start';
+      els.emptyText.textContent = 'The agent reads, edits and runs things only inside the folder you choose, and shows you every change.';
+      const b = h('button', 'chip', 'Open a folder…');
+      b.addEventListener('click', pickFolder);
+      els.emptyActions.appendChild(b);
+      return;
+    }
+    els.emptyTitle.textContent = `What should we do in ${baseName(f)}?`;
+    els.emptyText.textContent = 'Ask me to explore, change, test or explain this project. Every change is shown before and after, and you can undo it.';
+    for (const t of SUGGESTIONS) {
+      const b = h('button', 'chip', t);
+      b.addEventListener('click', () => {
+        els.input.value = t;
+        autoGrow();
+        els.input.focus();
+      });
+      els.emptyActions.appendChild(b);
+    }
+  }
+
+  // ---------- navigation history ----------
+  function pushNav(chatId) {
+    if (!chatId || S.isNavigating) return;
+    if (S.navIndex >= 0 && S.navHistory[S.navIndex] === chatId) return;
+    S.navHistory.splice(S.navIndex + 1);
+    S.navHistory.push(chatId);
+    S.navIndex = S.navHistory.length - 1;
+    updateNavButtons();
+  }
+
+  function updateNavButtons() {
+    if (els.navBackBtn) els.navBackBtn.disabled = S.navIndex <= 0;
+    if (els.navForwardBtn) els.navForwardBtn.disabled = S.navIndex < 0 || S.navIndex >= S.navHistory.length - 1;
+  }
+
+  async function navBack() {
+    if (S.navIndex > 0) {
+      S.navIndex--;
+      S.isNavigating = true;
+      try {
+        await openChat(S.navHistory[S.navIndex]);
+      } finally {
+        S.isNavigating = false;
+        updateNavButtons();
+      }
+    }
+  }
+
+  async function navForward() {
+    if (S.navIndex >= 0 && S.navIndex < S.navHistory.length - 1) {
+      S.navIndex++;
+      S.isNavigating = true;
+      try {
+        await openChat(S.navHistory[S.navIndex]);
+      } finally {
+        S.isNavigating = false;
+        updateNavButtons();
+      }
+    }
+  }
+
+  function renderSidebar() {
+    const curFolder = S.app?.folder;
+
+    // 1. Current Active Project Header
+    if (els.sbActiveProjName) {
+      els.sbActiveProjName.textContent = curFolder ? baseName(curFolder) : 'No folder open';
+      els.sbActiveProjName.title = curFolder || 'Open folder to start';
+    }
+    if (els.sbProjectToggle) {
+      setIcon(els.sbProjectToggle, S.collapseProject ? 'chevronRight' : 'chevronDown');
+      els.sbProjectToggle.classList.toggle('collapsed', S.collapseProject);
+    }
+    if (els.activeProjectSection) {
+      els.activeProjectSection.hidden = !curFolder;
+    }
+
+    if (els.sbCurrentProjMenuBtn && curFolder) {
+      setIcon(els.sbCurrentProjMenuBtn, 'moreVertical');
+      els.sbCurrentProjMenuBtn.onclick = (e) => {
+        e.stopPropagation();
+        showProjectMenu(els.sbCurrentProjMenuBtn, curFolder);
+      };
+    }
+    if (els.sbCurrentProjNewChatBtn && curFolder) {
+      setIcon(els.sbCurrentProjNewChatBtn, 'plus');
+      els.sbCurrentProjNewChatBtn.onclick = (e) => {
+        e.stopPropagation();
+        api.newChat();
+      };
+    }
+
+    // 2. Render Active Project Chats
+    renderChats();
+
+    // 3. Render Other / Recent Projects
+    renderOtherProjects();
+
+    // 4. Render Standalone Conversations
+    renderConversations();
+  }
+
+  function renderChats() {
+    const cl = els.chatList;
+    if (!cl) return;
+    cl.textContent = '';
+
+    if (S.collapseProject || !S.app?.folder) {
+      cl.hidden = true;
+      if (els.sbToggleAllSessions) els.sbToggleAllSessions.hidden = true;
+      return;
+    }
+    cl.hidden = false;
+
+    const curFolder = S.app.folder;
+    const filter = (S.chatFilter || '').trim().toLowerCase();
+
+    // Get chats belonging to this active folder
+    let folderChats = (S.chats || []).filter((c) => !c.folder || c.folder === curFolder);
+
+    if (filter) {
+      folderChats = folderChats.filter((c) => (c.title || '').toLowerCase().includes(filter));
+    } else {
+      folderChats = folderChats.filter((c) => !isChatArchived(c.id));
+    }
+
+    folderChats.sort((a, b) => {
+      const pinA = isChatPinned(a.id) ? 1 : 0;
+      const pinB = isChatPinned(b.id) ? 1 : 0;
+      if (pinA !== pinB) return pinB - pinA;
+      return (b.updatedAt || 0) - (a.updatedAt || 0);
+    });
+
+    const hasNewChat = !folderChats.some((c) => c.id === S.app.chatId);
+    const chatItems = [];
+
+    if (hasNewChat && !filter) {
+      const cur = h('div', 'sb-item sb-session-item on sb-new-session');
+      cur.appendChild(iconSpan('plus'));
+      cur.appendChild(h('span', 'label ellipsis', 'New conversation'));
+      if (S.runningChats.has(S.app.chatId)) cur.appendChild(h('span', 'run-dot'));
+      chatItems.push({ el: cur, isCurrent: true, id: S.app.chatId });
+    }
+
+    for (const c of folderChats) {
+      const isCur = c.id === S.app.chatId;
+      const el = createSessionItem(c, isCur);
+      chatItems.push({ el, isCurrent: isCur, id: c.id });
+    }
+
+    if (chatItems.length === 0) {
+      cl.appendChild(h('div', 'sb-empty', filter ? 'No conversations matching "' + filter + '"' : 'No conversations yet.'));
+      if (els.sbToggleAllSessions) els.sbToggleAllSessions.hidden = true;
+      return;
+    }
+
+    const totalCount = chatItems.length;
+    let visibleItems = chatItems;
+    const isExpanded = S.expandedProjects.has(curFolder);
+
+    if (!filter && totalCount > 1 && !isExpanded) {
+      const activeIdx = chatItems.findIndex((it) => it.isCurrent);
+      const primary = activeIdx >= 0 ? chatItems[activeIdx] : chatItems[0];
+      visibleItems = [primary];
+    }
+
+    for (const item of visibleItems) {
+      cl.appendChild(item.el);
+    }
+
+    // Toggle button under the chat
+    if (els.sbToggleAllSessions) {
+      if (!filter && totalCount > 1) {
+        els.sbToggleAllSessions.hidden = false;
+        if (isExpanded) {
+          if (els.sbToggleAllSessionsLabel) els.sbToggleAllSessionsLabel.textContent = 'Show fewer sessions';
+          setIcon(els.sbToggleAllSessions, 'chevronUp');
+        } else {
+          if (els.sbToggleAllSessionsLabel) els.sbToggleAllSessionsLabel.textContent = `Show all sessions (${totalCount})`;
+          setIcon(els.sbToggleAllSessions, 'chevronDown');
+        }
+      } else {
+        els.sbToggleAllSessions.hidden = true;
+      }
+    }
+  }
+
+  function renderOtherProjects() {
+    const pl = els.projectList;
+    if (!pl) return;
+    pl.textContent = '';
+
+    const curFolder = S.app?.folder;
+    const recent = (S.app?.settings?.recentFolders || []).filter((f) => f !== curFolder);
+    const filter = (S.chatFilter || '').trim().toLowerCase();
+
+    for (const f of recent) {
+      const card = h('div', 'sb-project-card other-project-card');
+
+      const head = h('div', 'sb-project-head');
+      const toggle = h('button', 'icon-btn tiny sb-fold-btn');
+      const isCardCollapsed = S.collapsedProjects.has(f);
+      setIcon(toggle, isCardCollapsed ? 'chevronRight' : 'chevronDown');
+      toggle.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (S.collapsedProjects.has(f)) S.collapsedProjects.delete(f);
+        else S.collapsedProjects.add(f);
+        renderOtherProjects();
+      });
+      head.appendChild(toggle);
+
+      const fIcon = h('span', 'ico proj-icon');
+      fIcon.appendChild(icon('folder'));
+      head.appendChild(fIcon);
+
+      const nameSpan = h('span', 'sb-proj-title ellipsis', baseName(f));
+      nameSpan.title = f;
+      head.appendChild(nameSpan);
+
+      const acts = h('div', 'proj-hover-actions no-drag');
+      const moreBtn = h('button', 'icon-btn tiny');
+      moreBtn.type = 'button';
+      moreBtn.title = 'Project options';
+      setIcon(moreBtn, 'moreVertical');
+      moreBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        showProjectMenu(moreBtn, f);
+      });
+      acts.appendChild(moreBtn);
+
+      const newBtn = h('button', 'icon-btn tiny');
+      newBtn.type = 'button';
+      newBtn.title = 'New conversation in project';
+      setIcon(newBtn, 'plus');
+      newBtn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        await openProject(f);
+        api.newChat();
+      });
+      acts.appendChild(newBtn);
+
+      head.appendChild(acts);
+
+      head.addEventListener('click', () => {
+        openProject(f);
+      });
+
+      card.appendChild(head);
+
+      if (!isCardCollapsed) {
+        let fChats = (S.allChats || []).filter((c) => c.folder === f);
+        if (filter) {
+          fChats = fChats.filter((c) => (c.title || '').toLowerCase().includes(filter));
+        } else {
+          fChats = fChats.filter((c) => !isChatArchived(c.id));
+        }
+
+        fChats.sort((a, b) => {
+          const pinA = isChatPinned(a.id) ? 1 : 0;
+          const pinB = isChatPinned(b.id) ? 1 : 0;
+          if (pinA !== pinB) return pinB - pinA;
+          return (b.updatedAt || 0) - (a.updatedAt || 0);
+        });
+
+        if (fChats.length > 0) {
+          const sessionList = h('div', 'sb-list sb-chat-list');
+          const isExp = S.expandedProjects.has(f);
+          const visible = (!filter && fChats.length > 1 && !isExp) ? [fChats[0]] : fChats;
+
+          for (const c of visible) {
+            sessionList.appendChild(createSessionItem(c, c.id === S.app?.chatId));
+          }
+          card.appendChild(sessionList);
+
+          if (!filter && fChats.length > 1) {
+            const moreBtnToggle = h('button', 'sb-show-more-btn');
+            const icoSpan = h('span', 'ico tiny');
+            icoSpan.appendChild(icon(isExp ? 'chevronUp' : 'chevronDown'));
+            moreBtnToggle.appendChild(icoSpan);
+            moreBtnToggle.appendChild(h('span', '', isExp ? 'Show fewer sessions' : `Show all sessions (${fChats.length})`));
+            moreBtnToggle.addEventListener('click', (e) => {
+              e.stopPropagation();
+              if (S.expandedProjects.has(f)) S.expandedProjects.delete(f);
+              else S.expandedProjects.add(f);
+              renderOtherProjects();
+            });
+            card.appendChild(moreBtnToggle);
+          }
+        }
+      }
+
+      pl.appendChild(card);
+    }
+  }
+
+  function renderConversations() {
+    const cv = els.conversationsList;
+    if (!cv) return;
+    cv.textContent = '';
+
+    const curFolder = S.app?.folder;
+    const recent = S.app?.settings?.recentFolders || [];
+    const knownFolders = new Set([curFolder, ...recent].filter(Boolean));
+    const filter = (S.chatFilter || '').trim().toLowerCase();
+
+    // Standalone chats or chats from unlisted folders
+    let convos = (S.allChats || []).filter((c) => !c.folder || !knownFolders.has(c.folder));
+
+    if (filter) {
+      convos = convos.filter((c) => (c.title || '').toLowerCase().includes(filter));
+    } else {
+      convos = convos.filter((c) => !isChatArchived(c.id));
+    }
+
+    convos.sort((a, b) => {
+      const pinA = isChatPinned(a.id) ? 1 : 0;
+      const pinB = isChatPinned(b.id) ? 1 : 0;
+      if (pinA !== pinB) return pinB - pinA;
+      return (b.updatedAt || 0) - (a.updatedAt || 0);
+    });
+
+    if (els.conversationsSection) {
+      els.conversationsSection.hidden = convos.length === 0;
+    }
+
+    for (const c of convos) {
+      cv.appendChild(createSessionItem(c, c.id === S.app?.chatId));
+    }
+  }
+
+  async function loadChats() {
+    const r = await api.listChats();
+    S.chats = r.ok ? (r.chats || []) : [];
+    S.allChats = r.ok ? (r.allChats || r.chats || []) : [];
+    if (r.ok && r.runningChats) S.runningChats = new Set(r.runningChats);
+    if (S.app) renderSidebar();
+  }
+
+  // ---------- messages ----------
+  function nearBottom() {
+    const m = els.messages;
+    return m.scrollHeight - m.scrollTop - m.clientHeight < 140;
+  }
+
+  function scrollDown() {
+    els.messages.scrollTop = els.messages.scrollHeight;
+  }
+
+  function showEmpty(on) {
+    if (on && !emptyEl.isConnected) els.messages.prepend(emptyEl);
+    if (!on && emptyEl.isConnected) emptyEl.remove();
+  }
+
+  function append(node) {
+    const stick = nearBottom();
+    showEmpty(false);
+    els.messages.appendChild(node);
+    if (stick) scrollDown();
+  }
+
+  function resetChatView() {
+    flushAssistant();
+    els.messages.textContent = '';
+    S.current = null;
+    S.tools.clear();
+    showEmpty(true);
+  }
+
+  function chipFor(att) {
+    if (att.kind === 'image') {
+      const c = h('div', 'att image');
+      if (att.dataUrl) {
+        const img = h('img');
+        img.src = att.dataUrl;
+        img.alt = att.name || 'image';
+        c.appendChild(img);
+      } else {
+        c.appendChild(iconSpan('image'));
+      }
+      return c;
+    }
+    const c = h('div', 'att');
+    c.appendChild(iconSpan(att.kind === 'link' ? 'link' : 'file'));
+    const name = att.kind === 'link' ? att.url : att.name;
+    const n = h('span', 'name', name);
+    n.title = name;
+    c.appendChild(n);
+    if (att.kind === 'file' && att.size !== undefined) c.appendChild(h('span', 'sizelbl', fmtSize(att.size)));
+    return c;
+  }
+
+  function addUser(text, atts) {
+    const box = h('div', 'msg-user');
+    if (text) box.appendChild(document.createTextNode(text));
+    if (atts && atts.length > 0) {
+      const row = h('div', 'msg-atts');
+      for (const a of atts) row.appendChild(chipFor(a));
+      box.appendChild(row);
+    }
+    append(box);
+  }
+
+  function startAssistant() {
+    const el = h('div', 'msg-assistant');
+    append(el);
+    S.current = { el, raw: '', raf: 0 };
+  }
+
+  function drawAssistant() {
+    const c = S.current;
+    if (!c) return;
+    c.raf = 0;
+    const stick = nearBottom();
+    Md.render(c.el, c.raw);
+    if (stick) scrollDown();
+  }
+
+  function onText(delta) {
+    if (!S.current) startAssistant();
+    S.current.raw += delta;
+    if (!S.current.raf) S.current.raf = requestAnimationFrame(drawAssistant);
+  }
+
+  function flushAssistant() {
+    const c = S.current;
+    if (!c) return;
+    if (c.raf) cancelAnimationFrame(c.raf);
+    drawAssistant();
+    S.current = null;
+  }
+
+  function addStaticAssistant(text) {
+    const el = h('div', 'msg-assistant');
+    Md.render(el, text);
+    append(el);
+  }
+
+  // ---------- tool cards ----------
+  function summarizeCall(name, a) {
+    const s = (v) => (typeof v === 'string' ? v : '?');
+    switch (name) {
+      case 'write_file': return `Write ${s(a.path)}`;
+      case 'edit_file': return `Edit ${s(a.path)}`;
+      case 'read_file': return `Read ${s(a.path)}`;
+      case 'list_dir': return `List ${a.path || '.'}`;
+      case 'search': return `Search for /${s(a.pattern)}/`;
+      case 'run_command': return `Run: ${s(a.command).slice(0, 200)}`;
+      case 'fetch_url': return `Fetch ${s(a.url).slice(0, 160)}`;
+      case 'use_skill': return `Use skill ${s(a.name)}`;
+      default: return name;
+    }
+  }
+
+  function lbl(parent, text) {
+    parent.appendChild(h('div', 'lbl', text));
+  }
+
+  function pre(parent, text, cls) {
+    const p = h('pre', cls || '', text);
+    parent.appendChild(p);
+    return p;
+  }
+
+  function fillToolBody(body, name, args, preview) {
+    if ((name === 'edit_file' || name === 'write_file') && preview) {
+      const head = h('div', 'tool-diffhead');
+      head.appendChild(h('span', 'mono', preview.path));
+      head.appendChild(h('span', 'muted', preview.status === 'added' ? 'new file' : 'modified'));
+      head.appendChild(h('span', 'stat-add', '+' + preview.added));
+      head.appendChild(h('span', 'stat-del', '−' + preview.removed));
+      body.appendChild(head);
+      const d = h('div', 'tool-diff');
+      DiffView.render(d, preview.rows, { mode: 'unified', full: true });
+      body.appendChild(d);
+      if (preview.truncated) body.appendChild(h('div', 'muted small', 'Preview shortened. The Changes panel shows everything after it is applied.'));
+    } else if (name === 'write_file') {
+      lbl(body, args.path || '');
+      pre(body, String(args.content || '').slice(0, 4000));
+    } else if (name === 'edit_file') {
+      lbl(body, (args.path || '') + ' — replace');
+      pre(body, String(args.old_string || '').slice(0, 2000));
+      lbl(body, 'with');
+      pre(body, String(args.new_string || '').slice(0, 2000));
+    } else if (name === 'run_command') {
+      lbl(body, 'Command');
+      pre(body, String(args.command || ''));
+    } else if (name === 'fetch_url') {
+      lbl(body, 'Address');
+      pre(body, String(args.url || ''));
+    }
+  }
+
+  function makeToolCard(id, name, summary, args, awaiting, preview) {
+    const card = h('div', 'tool ' + (awaiting ? 'waiting' : 'running'));
+    const head = h('button', 'tool-head');
+    head.type = 'button';
+    head.appendChild(h('span', 'tool-dot'));
+    const title = h('span', 'tool-title', summary);
+    title.title = summary;
+    head.appendChild(title);
+    const state = h('span', 'tool-state', awaiting ? 'needs approval' : 'running…');
+    head.appendChild(state);
+    head.appendChild(iconSpan('chevron', 'tool-chev'));
+    card.appendChild(head);
+    const body = h('div', 'tool-body');
+    fillToolBody(body, name, args || {}, preview);
+    card.appendChild(body);
+    head.addEventListener('click', () => card.classList.toggle('open'));
+    const rec = { card, state, body, out: null, row: null, name };
+    if (awaiting || name === 'run_command') card.classList.add('open');
+    S.tools.set(id, rec);
+    return rec;
+  }
+
+  function onToolCall(ev) {
+    flushAssistant();
+    const rec = makeToolCard(ev.id, ev.name, ev.summary, ev.args, ev.awaitingApproval, ev.preview);
+    if (ev.awaitingApproval) {
+      const row = h('div', 'approve-row');
+      const once = h('button', 'btn primary small', 'Approve once');
+      const always = ev.always ? h('button', 'btn small', 'Approve always') : null;
+      const no = h('button', 'btn small', 'Deny');
+      const buttons = [once, always, no].filter(Boolean);
+      buttons.forEach((b) => (b.type = 'button'));
+      if (always) always.title = ev.always.label;
+      const decide = async (decision) => {
+        buttons.forEach((b) => (b.disabled = true));
+        row.remove();
+        rec.row = null;
+        const allow = decision !== 'deny';
+        rec.state.textContent = allow ? 'running…' : 'denied';
+        rec.card.className = 'tool ' + (allow ? 'running' : 'fail') + (allow && ev.name === 'run_command' ? ' open' : '');
+        const r = await api.approve(ev.id, decision);
+        if (decision === 'always' && r && r.ok && r.settings) {
+          S.app.settings = r.settings;
+          toast(ev.always.label + '. Change this in Settings → Agent.', 4500);
+        }
+      };
+      once.addEventListener('click', () => decide('once'));
+      if (always) always.addEventListener('click', () => decide('always'));
+      no.addEventListener('click', () => decide('deny'));
+      row.append(...buttons);
+      row.appendChild(h('span', 'hint', always ? ev.always.label + ' if you choose “Approve always”.' : 'Nothing changes until you approve.'));
+      rec.card.appendChild(row);
+      rec.row = row;
+    }
+    append(rec.card);
+  }
+
+  function ensureOut(rec) {
+    if (!rec.out) {
+      lbl(rec.body, 'Output');
+      rec.out = pre(rec.body, '', 'tool-out');
+    }
+    return rec.out;
+  }
+
+  function onToolOutput(ev) {
+    const rec = S.tools.get(ev.id);
+    if (!rec) return;
+    const out = ensureOut(rec);
+    out.textContent += Md.stripAnsi(ev.chunk);
+    if (out.textContent.length > 80000) out.textContent = '…\n' + out.textContent.slice(-50000);
+    out.scrollTop = out.scrollHeight;
+  }
+
+  const CHANGING = new Set(['write_file', 'edit_file', 'run_command']);
+
+  function onToolResult(ev) {
+    const rec = S.tools.get(ev.id);
+    if (!rec) return;
+    if (rec.row) rec.row.remove();
+    rec.row = null;
+    rec.card.classList.remove('waiting', 'running', 'ok', 'fail');
+    rec.card.classList.add(ev.ok ? 'ok' : 'fail');
+    rec.state.textContent = ev.ok ? 'done' : 'failed';
+    const text = Md.stripAnsi(ev.output || '');
+    if (rec.name === 'run_command') {
+      if (text) ensureOut(rec).textContent = text;
+    } else if (text) {
+      lbl(rec.body, ev.ok ? 'Result' : 'Error');
+      pre(rec.body, text.slice(0, 20000));
+    }
+    if (ev.ok) rec.card.classList.remove('open');
+    else rec.card.classList.add('open');
+    if (CHANGING.has(rec.name)) scheduleChangesRefresh();
+  }
+
+  // ---------- restore a saved chat ----------
+  function textOfContent(c) {
+    if (typeof c === 'string') return c;
+    if (!Array.isArray(c)) return '';
+    return c.map((p) => (p && p.type === 'text' ? p.text : '')).join('\n');
+  }
+
+  const AUTO_CONTINUE = 'Continue exactly where you stopped.';
+
+  function renderHistory(messages, live) {
+    const pendingIds = new Set(((live && live.pending) || []).map((p) => p.id));
+    const unfinished = new Set((live && live.unfinished) || []);
+    const results = new Map();
+    for (const m of messages) if (m.role === 'tool') results.set(m.tool_call_id, String(textOfContent(m.content)));
+    for (const m of messages) {
+      if (m.role === 'user') {
+        let text = textOfContent(m.content);
+        if (text === AUTO_CONTINUE) continue;
+        const atts = [];
+        text = text.replace(/\n*<attached_file name="((?:[^"\\]|\\.)*)">[\s\S]*?<\/attached_file>/g, (_all, n) => {
+          atts.push({ kind: 'file', name: n.replace(/\\"/g, '"') });
+          return '';
+        });
+        text = text.replace(/\n*Links the user attached[^\n]*\n((?:- [^\n]+\n?)+)/, (_all, list) => {
+          list.split('\n').forEach((l) => l.startsWith('- ') && atts.push({ kind: 'link', url: l.slice(2).trim() }));
+          return '';
+        });
+        if (Array.isArray(m.content)) m.content.forEach((p) => p && p.type === 'image_url' && atts.push({ kind: 'image', name: 'image' }));
+        text = text.replace(/\[image attached earlier, not kept\]/g, '').replace(/\(see attached image\)/g, '').trim();
+        addUser(text, atts);
+      } else if (m.role === 'assistant') {
+        const text = textOfContent(m.content).trim();
+        if (text) addStaticAssistant(text);
+        for (const tc of m.tool_calls || []) {
+          if (pendingIds.has(tc.id)) continue; // shown below with its Approve buttons
+          let args = {};
+          try { args = JSON.parse(tc.function.arguments || '{}'); } catch (e) { args = {}; }
+          const rec = makeToolCard(tc.id, tc.function.name, summarizeCall(tc.function.name, args), args, false, null);
+          const res = results.get(tc.id);
+          rec.card.classList.remove('running', 'open');
+          if (res === undefined && unfinished.has(tc.id)) {
+            rec.card.classList.add('running');
+            rec.state.textContent = 'running…';
+          } else if (res === undefined) {
+            rec.card.classList.add('fail');
+            rec.state.textContent = 'no result';
+          } else {
+            const failed = res.startsWith('Error:');
+            rec.card.classList.add(failed ? 'fail' : 'ok');
+            rec.state.textContent = failed ? 'failed' : 'done';
+            if (res) {
+              if (rec.name === 'run_command') ensureOut(rec).textContent = Md.stripAnsi(res);
+              else { lbl(rec.body, failed ? 'Error' : 'Result'); pre(rec.body, res.slice(0, 20000)); }
+            }
+          }
+          append(rec.card);
+        }
+      }
+    }
+    scrollDown();
+  }
+
+  // ---------- running ----------
+  function setStatus(text) {
+    els.status.textContent = text;
+    els.status.hidden = text === '';
+  }
+
+  function setRunning(on) {
+    S.running = on;
+    els.sendBtn.hidden = on;
+    els.stopBtn.hidden = !on;
+    setStatus(on ? 'Working… (Esc to stop)' : '');
+    if (!on && S.app && S.app.folder) els.input.focus();
+  }
+
+  function onAgentEvent(ev) {
+    // another chat is working in the background: its events are not drawn here (the sidebar dot shows it)
+    if (ev.chat && S.app && ev.chat !== S.app.chatId) return;
+    switch (ev.type) {
+      case 'text': onText(ev.delta); break;
+      case 'tool_call': onToolCall(ev); break;
+      case 'tool_output': onToolOutput(ev); break;
+      case 'tool_result': onToolResult(ev); break;
+      case 'notice': flushAssistant(); append(h('div', 'notice', ev.message)); break;
+      case 'error': flushAssistant(); append(h('div', 'error-msg', ev.message)); setRunning(false); break;
+      case 'stopped': flushAssistant(); append(h('div', 'stopped', 'Stopped.')); setRunning(false); break;
+      case 'done': flushAssistant(); setRunning(false); break;
+    }
+  }
+
+  async function send() {
+    if (S.running || !S.app || !S.app.folder) return;
+    const text = els.input.value.trim();
+    if (!text && S.attachments.length === 0) return;
+    const atts = S.attachments.slice();
+    els.input.value = '';
+    autoGrow();
+    S.attachments = [];
+    renderAttachments();
+    addUser(text, atts);
+    S.current = null;
+    setRunning(true);
+    const payload = atts.map((a) => (a.kind === 'image' ? { kind: 'image', name: a.name, dataUrl: a.dataUrl } : a.kind === 'file' ? { kind: 'file', name: a.name, text: a.text } : { kind: 'link', url: a.url }));
+    const r = await api.send(text, payload);
+    if (!r.ok) {
+      append(h('div', 'error-msg', r.error || 'Could not send the message.'));
+      setRunning(false);
+    }
+  }
+
+  // ---------- folders & chats ----------
+  async function afterFolderChange(r) {
+    if (!r.ok) {
+      toast(r.error || 'Could not open that folder.');
+      return;
+    }
+    if (r.canceled) return;
+    applyState(r);
+    resetChatView();
+    setRunning(false);
+    S.selected = null;
+    closeMenu();
+    await Promise.all([loadChats(), refreshChanges()]);
+    els.input.focus();
+  }
+
+  async function pickFolder() {
+    await afterFolderChange(await api.pickFolder());
+  }
+
+  async function openProject(folder) {
+    await afterFolderChange(await api.openFolder(folder));
+  }
+
+  async function newChat() {
+    const r = await api.newChat();
+    if (!r.ok) return toast(r.error);
+    applyState(r);
+    resetChatView();
+    setRunning(false);
+    await loadChats();
+    pushNav(S.app.chatId);
+    els.input.focus();
+  }
+
+  async function openChat(id) {
+    const r = await api.openChat(id);
+    if (!r.ok) return toast(r.error || 'Could not open that chat.');
+    applyState(r);
+    resetChatView();
+    setRunning(false);
+    renderHistory(r.messages || [], r.live);
+    if (r.live && r.live.running) {
+      setRunning(true);
+      for (const ev of r.live.pending || []) onToolCall(ev);
+    }
+    pushNav(id);
+    renderChats();
+  }
+
+  // ---------- composer: input, menus ----------
+  function autoGrow() {
+    els.input.style.height = 'auto';
+    els.input.style.height = Math.min(els.input.scrollHeight, 220) + 'px';
+  }
+
+  function openApprovalMenu() {
+    const cur = S.app.settings.approvalMode;
+    showMenu($('approvalBtn'), [
+      { type: 'head', label: 'When should the agent ask you first?' },
+      ...Object.keys(APPROVAL).map((k) => ({
+        label: APPROVAL[k].label, sub: APPROVAL[k].sub, checked: k === cur,
+        onClick: async () => { const r = await api.setGeneral({ approvalMode: k }); if (r.ok) applyState(r); else toast(r.error); },
+      })),
+    ]);
+  }
+
+  function openModelMenu() {
+    const s = S.app.settings;
+    const items = [];
+    if (s.autoFallback && s.providers.filter((p) => p.model).length > 1) {
+      items.push({ type: 'head', label: 'Switch any time, even mid-chat. Auto-switch is on: if this model fails, the next one takes over.' });
+    }
+    for (const p of s.providers) {
+      items.push({ type: 'head', label: p.name + (p.hasApiKey ? ' · key saved' : '') });
+      const list = p.models.length > 0 ? p.models.slice(0, 40) : p.model ? [p.model] : [];
+      if (list.length === 0) items.push({ label: 'No model chosen yet', disabled: true });
+      for (const m of list) {
+        items.push({
+          label: m, checked: p.id === s.activeProviderId && m === p.model,
+          onClick: async () => { const r = await api.activateProvider(p.id, m); if (r.ok) applyState(r); else toast(r.error); },
+        });
+      }
+    }
+    items.push({ type: 'sep' });
+    items.push({ label: 'Add more models or free providers…', onClick: () => { openSettings('providers'); $('provAdd').click(); } });
+    items.push({ label: 'Manage providers & API keys…', onClick: () => openSettings('providers') });
+    showMenu($('modelBtn'), items);
+  }
+
+  function openAttachMenu() {
+    showMenu($('attachBtn'), [
+      { label: 'Add pictures or files…', sub: 'Screenshots, code, notes, logs', onClick: () => els.fileInput.click() },
+      { label: 'Add a link…', sub: 'The agent reads the page when it needs it', onClick: openLinkDialog },
+    ]);
+  }
+
+  // ---------- attachments ----------
+  function readAsDataUrl(file) {
+    return new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => resolve(String(r.result));
+      r.onerror = () => reject(r.error);
+      r.readAsDataURL(file);
+    });
+  }
+
+  async function prepareImage(file) {
+    const MAX_EDGE = 1568;
+    try {
+      const bmp = await createImageBitmap(file);
+      const edge = Math.max(bmp.width, bmp.height);
+      if (edge <= MAX_EDGE && file.size <= 1500000 && /^image\/(png|jpeg|webp)$/.test(file.type)) {
+        if (bmp.close) bmp.close();
+        return await readAsDataUrl(file);
+      }
+      const scale = Math.min(1, MAX_EDGE / edge);
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.max(1, Math.round(bmp.width * scale));
+      canvas.height = Math.max(1, Math.round(bmp.height * scale));
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(bmp, 0, 0, canvas.width, canvas.height);
+      if (bmp.close) bmp.close();
+      return canvas.toDataURL('image/jpeg', 0.85);
+    } catch (e) {
+      if (file.size <= 5000000 && /^image\/(png|jpeg|webp|gif)$/.test(file.type)) return readAsDataUrl(file);
+      throw new Error('could not read this picture');
+    }
+  }
+
+  async function addFiles(fileList) {
+    const files = Array.from(fileList || []);
+    for (const f of files) {
+      if (S.attachments.length >= 12) { toast('You can attach up to 12 items per message.'); break; }
+      try {
+        if (f.type.startsWith('image/')) {
+          if (!/^image\/(png|jpeg|webp|gif)$/.test(f.type)) { toast(`${f.name}: only PNG, JPEG, WebP and GIF pictures are supported.`); continue; }
+          S.attachments.push({ kind: 'image', name: f.name || 'image', dataUrl: await prepareImage(f), size: f.size });
+        } else {
+          if (f.size > 400000) { toast(`${f.name} is larger than 400 KB. Attach a smaller piece, or put it in the project folder and ask the agent to read it.`, 6000); continue; }
+          const text = await f.text();
+          if (text.indexOf('\u0000') !== -1) { toast(`${f.name} is not a text file. PDFs and Office files can't be read yet; put it in the project folder or paste the text.`, 6500); continue; }
+          S.attachments.push({ kind: 'file', name: f.name, text, size: f.size });
+        }
+      } catch (e) {
+        toast(`${f.name || 'File'}: ${e.message || 'could not be read'}`);
+      }
+    }
+    renderAttachments();
+  }
+
+  function addLink(raw) {
+    let u;
+    try { u = new URL(raw.trim()); } catch (e) { return 'That is not a valid address.'; }
+    if (u.protocol !== 'http:' && u.protocol !== 'https:') return 'Only http:// and https:// links are supported.';
+    if (S.attachments.some((a) => a.kind === 'link' && a.url === u.href)) return '';
+    if (S.attachments.length >= 12) return 'You can attach up to 12 items per message.';
+    S.attachments.push({ kind: 'link', url: u.href });
+    renderAttachments();
+    return '';
+  }
+
+  function renderAttachments() {
+    const row = els.attachRow;
+    row.textContent = '';
+    row.hidden = S.attachments.length === 0;
+    S.attachments.forEach((a, i) => {
+      const chip = chipFor(a);
+      const rm = h('button', 'rm');
+      rm.type = 'button';
+      rm.title = 'Remove';
+      rm.setAttribute('aria-label', 'Remove attachment');
+      setIcon(rm, 'x');
+      rm.addEventListener('click', () => {
+        S.attachments.splice(i, 1);
+        renderAttachments();
+      });
+      chip.appendChild(rm);
+      row.appendChild(chip);
+    });
+  }
+
+  function openLinkDialog() {
+    const d = $('linkDialog');
+    $('linkInput').value = '';
+    $('linkStatus').hidden = true;
+    d.showModal();
+    $('linkInput').focus();
+  }
+
+  // ---------- changes panel ----------
+  function scheduleChangesRefresh() {
+    clearTimeout(S.refreshTimer);
+    S.refreshTimer = setTimeout(refreshChanges, 350);
+  }
+
+  async function refreshChanges() {
+    if (!S.app || !S.app.folder) {
+      S.changes = [];
+      renderChangesList();
+      return;
+    }
+    const r = await api.listChanges();
+    S.changes = r.ok ? r.changes : [];
+    renderChangesList();
+    if (S.selected && !S.changes.some((c) => c.path === S.selected)) {
+      S.selected = null;
+      $('chFile').textContent = '';
+      $('chDiff').textContent = '';
+      $('chDiff').appendChild(h('div', 'ch-empty', 'Select a file to compare the before and after versions.'));
+    } else if (S.selected && !els.changesPane.hidden) {
+      showDiff(S.selected);
+    }
+  }
+
+  function renderChangesList() {
+    const tabs = els.chFileTabs;
+    if (tabs) tabs.textContent = '';
+    const n = S.changes.length;
+    const badge = els.changesBadge;
+    badge.hidden = n === 0;
+    badge.textContent = String(n);
+    let add = 0;
+    let del = 0;
+    S.changes.forEach((c) => { add += c.added; del += c.removed; });
+    $('chSummary').textContent = n === 0 ? 'No changes yet' : `${n} file${n === 1 ? '' : 's'} · +${add} −${del}`;
+    $('chKeepAll').disabled = $('chRevertAll').disabled = n === 0;
+
+    if (n === 0) {
+      if (els.chFileName) els.chFileName.textContent = 'Modified Files';
+      if (els.chBreadcrumbs) els.chBreadcrumbs.innerHTML = '<span class="muted small">Files modified by the agent will appear here</span>';
+      if (els.chFileStatus) els.chFileStatus.hidden = true;
+      if (els.chFileDiffStat) els.chFileDiffStat.hidden = true;
+      if (els.chKeepFile) els.chKeepFile.hidden = true;
+      if (els.chRevertFile) els.chRevertFile.hidden = true;
+      if (els.chRevealFile) els.chRevealFile.hidden = true;
+      const box = $('chDiff');
+      box.textContent = '';
+      box.appendChild(h('div', 'ch-empty', 'Nothing has changed yet. When the agent (or you) edits files, they show up here with the exact lines that changed.'));
+      return;
+    }
+
+    if (!S.selected || !S.changes.some((c) => c.path === S.selected)) {
+      S.selected = S.changes[0].path;
+    }
+
+    if (tabs) {
+      for (const c of S.changes) {
+        const isSel = c.path === S.selected;
+        const tab = h('button', 'ch-tab' + (isSel ? ' on' : ''));
+        tab.type = 'button';
+        tab.title = c.path;
+
+        const dot = h('span', 'tab-dot ' + c.status);
+        tab.appendChild(dot);
+
+        const nameSpan = h('span', 'tab-name', baseName(c.path));
+        tab.appendChild(nameSpan);
+
+        if (!c.binary) {
+          const statSpan = h('span', 'tab-stat');
+          if (c.added > 0) statSpan.appendChild(h('span', 'stat-add', '+' + c.added));
+          if (c.added > 0 && c.removed > 0) statSpan.appendChild(document.createTextNode(' '));
+          if (c.removed > 0) statSpan.appendChild(h('span', 'stat-del', '−' + c.removed));
+          tab.appendChild(statSpan);
+        }
+
+        tab.addEventListener('click', () => {
+          S.selected = c.path;
+          renderChangesList();
+          showDiff(c.path);
+        });
+        tabs.appendChild(tab);
+      }
+    }
+  }
+
+  async function showDiff(path) {
+    const box = $('chDiff');
+    if (!path) {
+      if (els.chFileName) els.chFileName.textContent = 'Modified Files';
+      if (els.chBreadcrumbs) els.chBreadcrumbs.innerHTML = '<span class="muted small">Select a file to compare changes</span>';
+      return;
+    }
+    $('chFile').textContent = path;
+    $('chFile').title = path;
+
+    const change = S.changes.find((c) => c.path === path);
+    const parts = path.split('/').filter(Boolean);
+    const filename = parts.pop() || path;
+
+    if (els.chFileName) {
+      els.chFileName.textContent = filename;
+      els.chFileName.title = path;
+    }
+
+    if (els.chFileStatus && change) {
+      els.chFileStatus.hidden = false;
+      els.chFileStatus.className = 'ch-status-pill ' + change.status;
+      els.chFileStatus.textContent = change.status === 'added' ? 'ADDED' : change.status === 'deleted' ? 'DELETED' : 'MODIFIED';
+    }
+
+    if (els.chFileDiffStat && change) {
+      els.chFileDiffStat.hidden = false;
+      els.chFileDiffStat.textContent = change.binary ? 'Binary' : `+${change.added} −${change.removed}`;
+    }
+
+    if (els.chKeepFile) {
+      els.chKeepFile.hidden = false;
+      els.chKeepFile.onclick = () => keepFile(path);
+    }
+    if (els.chRevertFile && change) {
+      els.chRevertFile.hidden = false;
+      els.chRevertFile.onclick = () => revertFile(change);
+    }
+    if (els.chRevealFile) {
+      els.chRevealFile.hidden = change?.status === 'deleted';
+      els.chRevealFile.onclick = () => api.reveal(path);
+    }
+
+    // 1-line breadcrumb: project > subfolder > ... > file
+    if (els.chBreadcrumbs) {
+      els.chBreadcrumbs.textContent = '';
+      const rootSpan = h('span', 'crumb crumb-root');
+      rootSpan.appendChild(iconSpan('folder', 'crumb-icon'));
+      rootSpan.appendChild(document.createTextNode(' ' + (baseName(S.app?.folder) || 'project')));
+      els.chBreadcrumbs.appendChild(rootSpan);
+
+      for (const seg of parts) {
+        els.chBreadcrumbs.appendChild(h('span', 'crumb-sep', '›'));
+        els.chBreadcrumbs.appendChild(h('span', 'crumb crumb-dir', seg));
+      }
+
+      els.chBreadcrumbs.appendChild(h('span', 'crumb-sep', '›'));
+      const fileSpan = h('span', 'crumb crumb-file', filename);
+      els.chBreadcrumbs.appendChild(fileSpan);
+    }
+
+    const r = await api.diff(path);
+    if (S.selected !== path) return;
+
+    // Background refreshes must not redraw an unchanged diff:
+    let sig = null;
+    if (r.ok && !r.diff.binary && r.diff.status !== 'unchanged') {
+      const changed = r.diff.lines.filter((l) => l.t !== 'eq').map((l) => l.t + l.x).join('\n');
+      sig = [path, S.diffMode, S.diffFull, r.diff.status, r.diff.lines.length, changed].join('|');
+    }
+    if (sig !== null && sig === S.diffSig && box.firstChild) return;
+    S.diffSig = sig;
+
+    box.textContent = '';
+    if (!r.ok) { box.appendChild(h('div', 'ch-empty', r.error || 'Could not compare this file.')); return; }
+    const d = r.diff;
+    if (d.binary) { box.appendChild(h('div', 'ch-empty', 'This file is binary or too large, so there is no line-by-line comparison.')); return; }
+    if (d.status === 'unchanged') { box.appendChild(h('div', 'ch-empty', 'No differences.')); return; }
+    if (d.eolOnly) box.appendChild(h('div', 'ch-empty', 'Only line endings or the final newline changed.'));
+    const holder = h('div');
+    box.appendChild(holder);
+    DiffView.render(holder, d.lines, { mode: S.diffMode, full: S.diffFull });
+  }
+
+  async function keepFile(path) {
+    const r = await api.accept(path);
+    if (!r.ok) return toast(r.error);
+    if (S.selected === path) S.selected = null;
+    await refreshChanges();
+  }
+
+  async function revertFile(c) {
+    const msg = c.status === 'added' ? `${c.path} is a new file. Undoing will delete it.` : `${c.path} goes back to how it was before the changes.`;
+    if (!(await confirmDialog('Undo this change?', msg, 'Undo'))) return;
+    const r = await api.revert(c.path);
+    if (!r.ok) return toast(r.error);
+    if (S.selected === c.path) S.selected = null;
+    await refreshChanges();
+  }
+
+  function toggleChanges(force) {
+    const show = force === undefined ? els.changesPane.hidden : force;
+    els.changesPane.hidden = !show;
+    els.splitter.hidden = !show;
+    els.changesBtn.classList.toggle('on', show);
+    if (show) refreshChanges();
+  }
+
+  function setChangesWidth(px) {
+    // always leave the chat at least ~460px, whatever the sidebar is doing
+    const sb = els.app.classList.contains('sb-hidden') ? 0 : $('sidebar').offsetWidth;
+    const max = Math.max(340, window.innerWidth - sb - 460);
+    const w = Math.max(320, Math.min(px, max));
+    document.documentElement.style.setProperty('--changes-w', w + 'px');
+    return w;
+  }
+
+  function initSplitter() {
+    const saved = parseInt(store('fa.changesW') || '', 10);
+    if (saved) setChangesWidth(saved);
+    let dragging = false;
+    els.splitter.addEventListener('mousedown', (e) => { dragging = true; els.splitter.classList.add('drag-on'); e.preventDefault(); });
+    window.addEventListener('mousemove', (e) => { if (dragging) setChangesWidth(window.innerWidth - e.clientX); });
+    window.addEventListener('mouseup', () => {
+      if (!dragging) return;
+      dragging = false;
+      els.splitter.classList.remove('drag-on');
+      store('fa.changesW', String(Math.round(els.changesPane.getBoundingClientRect().width)));
+    });
+    els.splitter.addEventListener('dblclick', () => {
+      const wide = els.changesPane.getBoundingClientRect().width > window.innerWidth * 0.55;
+      store('fa.changesW', String(setChangesWidth(wide ? 560 : window.innerWidth * 0.7)));
+    });
+  }
+
+  function setDiffMode(mode) {
+    S.diffMode = mode;
+    $('modeUnified').classList.toggle('on', mode === 'unified');
+    $('modeSplit').classList.toggle('on', mode === 'split');
+    if (mode === 'split' && els.changesPane.getBoundingClientRect().width < 700) setChangesWidth(760);
+    if (S.selected) showDiff(S.selected);
+  }
+
+  // ---------- terminal ----------
+  function toggleTerminal(force) {
+    const show = force === undefined ? els.terminalPane.hidden : force;
+    els.terminalPane.hidden = !show;
+    els.terminalBtn.classList.toggle('on', show);
+    if (show) els.termInput.focus();
+  }
+
+  function termAppend(text) {
+    const out = els.termOut;
+    out.textContent += text;
+    if (out.textContent.length > 200000) out.textContent = '…\n' + out.textContent.slice(-120000);
+    out.scrollTop = out.scrollHeight;
+  }
+
+  function setTermRunning(on) {
+    S.termRunning = on;
+    els.termStop.hidden = !on;
+    els.termInput.disabled = on;
+    if (!on) els.termInput.focus();
+  }
+
+  async function termRun() {
+    const cmd = els.termInput.value.trim();
+    if (!cmd || S.termRunning) return;
+    if (!S.app || !S.app.folder) return toast('Open a folder first.');
+    if (S.termHistory[S.termHistory.length - 1] !== cmd) S.termHistory.push(cmd);
+    S.termIdx = S.termHistory.length;
+    els.termInput.value = '';
+    termAppend(`$ ${cmd}\n`);
+    setTermRunning(true);
+    const r = await api.runTerminal(cmd);
+    if (!r.ok) {
+      termAppend(`${r.error}\n`);
+      setTermRunning(false);
+    }
+  }
+
+  function onTerminalEvent(ev) {
+    if (ev.type === 'data') termAppend(Md.stripAnsi(ev.chunk));
+    else if (ev.type === 'exit') {
+      termAppend(ev.cancelled ? '\n[stopped]\n\n' : `\n[exit code ${ev.code === null ? 'unknown' : ev.code}]\n\n`);
+      setTermRunning(false);
+      scheduleChangesRefresh();
+    }
+  }
+
+  // ---------- settings ----------
+  function openSettings(tab) {
+    if (tab) switchTab(tab);
+    const s = S.app.settings;
+    $('afApproval').value = s.approvalMode;
+    $('afSteps').value = s.maxSteps;
+    $('afContext').value = s.maxContextChars;
+    $('afFallback').checked = !!s.autoFallback;
+    $('afStatus').hidden = true;
+    renderRules();
+    renderAccounts();
+    if (!S.provSel) S.provSel = s.activeProviderId;
+    renderProviders();
+    closeMenu();
+    const d = $('settingsDialog');
+    if (!d.open) d.showModal();
+  }
+
+  function switchTab(name) {
+    document.querySelectorAll('.tab').forEach((t) => t.classList.toggle('on', t.dataset.tab === name));
+    $('tab-providers').hidden = name !== 'providers';
+    $('tab-agent').hidden = name !== 'agent';
+    $('tab-accounts').hidden = name !== 'accounts';
+  }
+
+  function formStatus(el, msg, ok) {
+    el.hidden = !msg;
+    el.textContent = msg || '';
+    el.className = 'form-status ' + (ok ? 'ok' : 'err');
+  }
+
+  function selectedProvider() {
+    return S.app.settings.providers.find((p) => p.id === S.provSel) || null;
+  }
+
+  function renderProviders() {
+    const s = S.app.settings;
+    const list = $('provList');
+    list.textContent = '';
+    for (const p of s.providers) {
+      const b = h('button', 'prov-item' + (p.id === S.provSel ? ' on' : ''));
+      b.type = 'button';
+      b.appendChild(h('span', 'pn', p.name));
+      if (p.id === s.activeProviderId) b.appendChild(h('span', 'tag', 'Active'));
+      b.addEventListener('click', () => { S.provSel = p.id; renderProviders(); });
+      list.appendChild(b);
+    }
+    const p = selectedProvider();
+    $('pfName').value = p ? p.name : '';
+    $('pfUrl').value = p ? p.baseUrl : '';
+    $('pfModel').value = p ? p.model : '';
+    $('pfKey').value = '';
+    $('pfKey').placeholder = p && p.hasApiKey ? '••••••••  (saved)' : 'Paste your API key';
+    $('pfKeyHint').textContent = p && p.hasApiKey
+      ? 'A key is saved in your Mac Keychain. Leave this empty to keep it, or paste a new one to replace it.'
+      : 'No key saved. Local servers such as Ollama do not need one. Online providers show the key on their website under “API keys”.';
+    $('pfClearRow').hidden = !(p && p.hasApiKey);
+    $('pfClear').checked = false;
+    const dl = $('pfModels');
+    dl.textContent = '';
+    (p ? p.models : []).forEach((m) => { const o = document.createElement('option'); o.value = m; dl.appendChild(o); });
+    $('pfModelHint').textContent = p && p.models.length > 0 ? `${p.models.length} models available. Start typing to filter.` : 'Must support tool calling. Use “Save & fetch models” to see what this provider offers.';
+    const preset = p ? (S.app.presets || []).find((x) => x.baseUrl === p.baseUrl) : null;
+    $('pfPresetNote').hidden = !(preset && (preset.note || preset.keyUrl));
+    $('pfPresetText').textContent = preset ? (preset.free ? 'Free plan available. ' : '') + (preset.note || '') + (preset.free && preset.keyUrl ? ' Limits change, so check the provider’s page.' : '') : '';
+    $('pfKeyLink').hidden = !(preset && preset.keyUrl);
+    $('pfKeyLink').onclick = () => preset && api.openWeb(preset.keyUrl);
+    $('pfDelete').disabled = s.providers.length <= 1;
+    $('pfActivate').disabled = !p || p.id === s.activeProviderId;
+    $('pfActivate').textContent = p && p.id === s.activeProviderId ? 'Active' : 'Use this provider';
+    formStatus($('pfStatus'), '', true);
+  }
+
+  function readProviderForm() {
+    const key = $('pfKey').value.trim();
+    const input = { id: S.provSel, name: $('pfName').value, baseUrl: $('pfUrl').value, model: $('pfModel').value };
+    if (key !== '') input.apiKey = key;
+    else if ($('pfClear').checked) input.apiKey = '';
+    return input;
+  }
+
+  async function saveProvider() {
+    const r = await api.saveProvider(readProviderForm());
+    if (!r.ok) { formStatus($('pfStatus'), r.error, false); return null; }
+    applyState(r);
+    S.provSel = r.id;
+    return r;
+  }
+
+  function initSettings() {
+    document.querySelectorAll('.tab').forEach((t) => t.addEventListener('click', () => switchTab(t.dataset.tab)));
+    $('settingsClose').addEventListener('click', () => $('settingsDialog').close());
+
+    $('provAdd').addEventListener('click', () => {
+      showMenu($('provAdd'), (S.app.presets || []).map((pr) => ({
+        label: (pr.free ? 'Free · ' : '') + pr.name, sub: pr.note || pr.baseUrl,
+        onClick: async () => {
+          const r = await api.saveProvider({ name: pr.name, baseUrl: pr.baseUrl, model: pr.exampleModel || '' });
+          if (!r.ok) return formStatus($('pfStatus'), r.error, false);
+          applyState(r);
+          S.provSel = r.id;
+          renderProviders();
+          formStatus($('pfStatus'), pr.needsKey ? 'Paste your API key below, then press “Save & fetch models”.' : 'Press “Save & fetch models” to check the connection.', true);
+          $('pfKey').focus();
+        },
+      })));
+    });
+
+    $('provForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (await saveProvider()) { renderProviders(); formStatus($('pfStatus'), 'Saved.', true); }
+    });
+
+    $('pfFetch').addEventListener('click', async () => {
+      const saved = await saveProvider();
+      if (!saved) return;
+      formStatus($('pfStatus'), 'Contacting the server…', true);
+      const r = await api.fetchModels(S.provSel);
+      if (!r.ok) { renderProviders(); return formStatus($('pfStatus'), r.error, false); }
+      applyState(r);
+      renderProviders();
+      const p = selectedProvider();
+      formStatus($('pfStatus'), `Connected. ${p ? p.models.length : 0} models found.`, true);
+    });
+
+    $('pfActivate').addEventListener('click', async () => {
+      const saved = await saveProvider();
+      if (!saved) return;
+      const p = selectedProvider();
+      if (!p || !p.model) return formStatus($('pfStatus'), 'Choose a model first.', false);
+      const r = await api.activateProvider(p.id, p.model);
+      if (!r.ok) return formStatus($('pfStatus'), r.error, false);
+      applyState(r);
+      renderProviders();
+      formStatus($('pfStatus'), `Now using ${p.name} · ${p.model}.`, true);
+    });
+
+    $('pfDelete').addEventListener('click', async () => {
+      const p = selectedProvider();
+      if (!p) return;
+      if (!(await confirmDialog(`Delete “${p.name}”?`, 'Its saved API key is removed from this Mac.', 'Delete'))) return;
+      const r = await api.deleteProvider(p.id);
+      if (!r.ok) return formStatus($('pfStatus'), r.error, false);
+      S.provSel = null;
+      applyState(r);
+      S.provSel = r.settings.activeProviderId;
+      renderProviders();
+    });
+
+    $('agentForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const r = await api.setGeneral({ approvalMode: $('afApproval').value, maxSteps: $('afSteps').value, maxContextChars: $('afContext').value, autoFallback: $('afFallback').checked });
+      if (!r.ok) return formStatus($('afStatus'), r.error, false);
+      applyState(r);
+      renderRules();
+      formStatus($('afStatus'), 'Saved.', true);
+    });
+  }
+
+  // ---------- "Approve always" rules ----------
+  function describeRule(rule) {
+    if (rule === 'edit:*') return 'Change files in this project';
+    if (rule.startsWith('cmd:')) return 'Run “' + rule.slice(4) + ' …”';
+    if (rule.startsWith('host:')) return 'Fetch web pages from ' + rule.slice(5);
+    return rule;
+  }
+
+  function renderRules() {
+    const box = $('afRules');
+    box.textContent = '';
+    const folder = S.app && S.app.folder;
+    const rules = (folder && S.app.settings.allowRules && S.app.settings.allowRules[folder]) || [];
+    if (!folder) return void box.appendChild(h('div', 'muted small', 'Open a project to see its rules.'));
+    if (rules.length === 0) return void box.appendChild(h('div', 'muted small', 'None yet. When the agent asks, choose “Approve always” to add one.'));
+    for (const rule of rules) {
+      const row = h('div', 'rule-row');
+      row.appendChild(h('span', 'rule-text', describeRule(rule)));
+      const x = h('button', 'btn small', 'Remove');
+      x.type = 'button';
+      x.addEventListener('click', async () => {
+        const r = await api.removeRule(rule);
+        if (!r.ok) return toast(r.error);
+        applyState(r);
+        renderRules();
+      });
+      row.appendChild(x);
+      box.appendChild(row);
+    }
+  }
+
+  // ---------- accounts ----------
+  function renderAccountLabel() {
+    const a = S.app && S.app.settings.accounts;
+    const who = a && ((a.github && '@' + a.github.login) || (a.google && (a.google.name || a.google.email)));
+    $('accountLabel').textContent = who || 'Sign in';
+  }
+
+  function renderAccounts() {
+    if (!S.app) return;
+    const s = S.app.settings;
+    const gh = s.accounts.github;
+    const gg = s.accounts.google;
+    $('ghState').textContent = gh ? 'signed in as @' + gh.login : 'not signed in';
+    $('ghSignIn').hidden = !!gh;
+    $('ghOut').hidden = !gh;
+    $('ghTokenRow').hidden = !!gh;
+    $('ghClient').value = s.oauth.githubClientId || '';
+    $('ggState').textContent = gg ? 'signed in as ' + (gg.email || gg.name) : 'not signed in';
+    $('ggSignIn').hidden = !!gg;
+    $('ggOut').hidden = !gg;
+    $('ggClient').value = s.oauth.googleClientId || '';
+    $('ggSecret').value = '';
+    $('ggSecret').placeholder = s.oauth.hasGoogleSecret ? '•••• (saved)' : 'Client secret';
+    renderAccountLabel();
+  }
+
+  function onAccountEvent(ev) {
+    if (!ev) return;
+    const box = ev.kind === 'github' ? 'ghStatus' : 'ggStatus';
+    if (ev.kind === 'github') { S.ghWait = false; $('ghDevice').hidden = true; }
+    if (ev.status === 'connected') {
+      applyState(ev.state);
+      renderAccounts();
+      formStatus($(box), 'Signed in.', true);
+      toast('Signed in.');
+    } else {
+      formStatus($(box), ev.message || 'Sign-in failed.', false);
+    }
+  }
+
+  function initAccounts() {
+    $('ghClientBtn').addEventListener('click', async () => {
+      const r = await api.accountConfig({ githubClientId: $('ghClient').value });
+      if (!r.ok) return formStatus($('ghStatus'), r.error, false);
+      applyState(r);
+      formStatus($('ghStatus'), 'Saved.', true);
+    });
+    $('ggClientBtn').addEventListener('click', async () => {
+      const input = { googleClientId: $('ggClient').value };
+      if ($('ggSecret').value.trim() !== '') input.googleClientSecret = $('ggSecret').value;
+      const r = await api.accountConfig(input);
+      if (!r.ok) return formStatus($('ggStatus'), r.error, false);
+      applyState(r);
+      renderAccounts();
+      formStatus($('ggStatus'), 'Saved.', true);
+    });
+    $('ghSignIn').addEventListener('click', async () => {
+      formStatus($('ghStatus'), '', true);
+      if (!$('ghClient').value.trim()) { $('ghClient').closest('details').open = true; return formStatus($('ghStatus'), 'Add your GitHub OAuth Client ID first (GitHub setup below), or paste a personal access token.', false); }
+      const saved = await api.accountConfig({ githubClientId: $('ghClient').value });
+      if (!saved.ok) return formStatus($('ghStatus'), saved.error, false);
+      const r = await api.githubStart();
+      if (!r.ok) return formStatus($('ghStatus'), r.error, false);
+      S.ghWait = true;
+      const box = $('ghDevice');
+      box.textContent = '';
+      box.hidden = false;
+      box.appendChild(h('div', '', 'GitHub opened in your browser. Enter this code there:'));
+      box.appendChild(h('div', 'device-code', r.userCode));
+      const cancel = h('button', 'btn small', 'Cancel');
+      cancel.type = 'button';
+      cancel.addEventListener('click', async () => { await api.accountCancel(); S.ghWait = false; box.hidden = true; });
+      box.appendChild(h('div', 'muted small', 'Waiting for you to approve…'));
+      box.appendChild(cancel);
+    });
+    $('ghTokenBtn').addEventListener('click', async () => {
+      const r = await api.githubToken($('ghToken').value);
+      if (!r.ok) return formStatus($('ghStatus'), r.error, false);
+      $('ghToken').value = '';
+      applyState(r);
+      renderAccounts();
+      formStatus($('ghStatus'), 'Signed in.', true);
+    });
+    $('ggSignIn').addEventListener('click', async () => {
+      formStatus($('ggStatus'), '', true);
+      if (!$('ggClient').value.trim()) { $('ggClient').closest('details').open = true; return formStatus($('ggStatus'), 'Add your Google OAuth Client ID first (Google setup below).', false); }
+      const input = { googleClientId: $('ggClient').value };
+      if ($('ggSecret').value.trim() !== '') input.googleClientSecret = $('ggSecret').value;
+      const saved = await api.accountConfig(input);
+      if (!saved.ok) return formStatus($('ggStatus'), saved.error, false);
+      const r = await api.googleStart();
+      if (!r.ok) return formStatus($('ggStatus'), r.error, false);
+      formStatus($('ggStatus'), 'Your browser opened. Choose your Google account there…', true);
+    });
+    const out = (kind) => async () => {
+      const r = await api.accountDisconnect(kind);
+      if (!r.ok) return toast(r.error);
+      applyState(r);
+      renderAccounts();
+    };
+    $('ghOut').addEventListener('click', out('github'));
+    $('ggOut').addEventListener('click', out('google'));
+    $('apSignIn').addEventListener('click', () => ($('apInfo').hidden = !$('apInfo').hidden));
+  }
+
+  // ---------- history of projects ----------
+  async function openHistory() {
+    closeMenu();
+    const r = await api.history();
+    if (!r.ok) return toast(r.error);
+    S.history = r.projects;
+    renderHistory2();
+    const d = $('historyDialog');
+    if (!d.open) { d.showModal(); $('historySearch').focus(); }
+  }
+
+  function renderHistory2() {
+    const list = $('historyList');
+    list.textContent = '';
+    const q = $('historySearch').value.trim().toLowerCase();
+    const rows = (S.history || []).filter((p) => !q || p.folder.toLowerCase().includes(q) || p.lastChat.toLowerCase().includes(q));
+    if (rows.length === 0) list.appendChild(h('div', 'muted', (S.history || []).length === 0 ? 'No projects yet. Open a folder to begin.' : 'No project matches.'));
+    for (const p of rows) {
+      const row = h('div', 'hist-row' + (p.exists ? '' : ' gone') + (p.folder === (S.app && S.app.folder) ? ' on' : ''));
+      const main = h('div', 'hist-main');
+      const name = h('div', 'hist-name', p.name);
+      if (p.running > 0) name.appendChild(h('span', 'run-badge', p.running + ' working'));
+      if (!p.exists) name.appendChild(h('span', 'sk-tag', 'folder missing'));
+      main.appendChild(name);
+      main.appendChild(h('div', 'mono small muted ellipsis', p.folder));
+      const meta = [p.lastOpened ? 'opened ' + relTime(p.lastOpened) : '', p.opens ? p.opens + (p.opens === 1 ? ' time' : ' times') : '', p.chatCount + (p.chatCount === 1 ? ' chat' : ' chats')].filter(Boolean).join(' · ');
+      main.appendChild(h('div', 'small muted', meta + (p.lastChat ? ' · last: ' + p.lastChat : '')));
+      row.appendChild(main);
+      const open = h('button', 'btn small' + (p.exists ? ' primary' : ''), 'Open');
+      open.type = 'button';
+      open.disabled = !p.exists;
+      open.addEventListener('click', async () => { $('historyDialog').close(); if (p.folder !== S.app.folder) await openProject(p.folder); });
+      const rm = h('button', 'icon-btn small');
+      rm.type = 'button';
+      rm.title = 'Remove from history (the folder and its chats are not deleted)';
+      rm.setAttribute('aria-label', 'Remove from history');
+      setIcon(rm, 'x');
+      rm.addEventListener('click', async () => {
+        const r = await api.forgetFolder(p.folder);
+        if (r.ok) applyState(r);
+        S.history = S.history.filter((x) => x.folder !== p.folder);
+        renderHistory2();
+      });
+      row.append(open, rm);
+      list.appendChild(row);
+    }
+  }
+
+  function initHistory() {
+    $('historyClose').addEventListener('click', () => $('historyDialog').close());
+    $('historySearch').addEventListener('input', renderHistory2);
+  }
+
+  // ---------- git & GitHub ----------
+  function gitBusy(on, msg) {
+    document.querySelectorAll('#gitBody button, #gitBody input, #gitBody textarea, #gitBody select').forEach((n) => (n.disabled = on));
+    if (msg !== undefined) formStatus($('gitStatus'), msg, true);
+  }
+
+  async function openGit() {
+    if (!S.app || !S.app.folder) return toast('Open a folder first.');
+    closeMenu();
+    const d = $('gitDialog');
+    if (!d.open) d.showModal();
+    await loadGit();
+  }
+
+  async function loadGit(keepStatus) {
+    if (!keepStatus) formStatus($('gitStatus'), '', true);
+    const r = await api.gitStatus();
+    const body = $('gitBody');
+    if (!r.ok) {
+      body.textContent = '';
+      body.appendChild(h('p', 'muted', 'Could not read Git: ' + r.error));
+      return;
+    }
+    renderGit(r);
+  }
+
+  async function gitDo(fn, doing) {
+    gitBusy(true, doing);
+    const r = await fn();
+    if (r.ok) {
+      await loadGit(true);
+      formStatus($('gitStatus'), r.message || 'Done.', true);
+    } else {
+      await loadGit(true);
+      formStatus($('gitStatus'), r.error, false);
+    }
+    return r;
+  }
+
+  function renderGit(r) {
+    const g = r.git;
+    const body = $('gitBody');
+    body.textContent = '';
+    const btn = (label, cls, fn) => { const b = h('button', 'btn small ' + (cls || ''), label); b.type = 'button'; b.addEventListener('click', fn); return b; };
+
+    if (!g.isRepo) {
+      body.appendChild(h('p', '', 'This folder is not a Git repository yet.'));
+      body.appendChild(h('p', 'muted small', 'Git keeps a history of your project so you can go back and share it on GitHub.'));
+      body.appendChild(btn('Create a repository here', 'primary', () => gitDo(() => api.gitInit(), 'Creating…')));
+      return;
+    }
+
+    const top = h('div', 'git-top');
+    top.appendChild(h('span', 'git-branch', g.branch || '(no commits yet)'));
+    const sync = [];
+    if (g.ahead) sync.push(g.ahead + ' to push');
+    if (g.behind) sync.push(g.behind + ' to pull');
+    top.appendChild(h('span', 'muted small', g.remote ? g.remote + (sync.length ? ' · ' + sync.join(', ') : g.upstream ? ' · up to date' : ' · not pushed yet') : 'no remote'));
+    top.appendChild(h('span', 'spacer'));
+    top.appendChild(btn('Pull', '', () => gitDo(() => api.gitPull(), 'Pulling…')));
+    top.appendChild(btn('Push', '', () => gitDo(() => api.gitPush(), 'Pushing…')));
+    body.appendChild(top);
+
+    // branches
+    const br = h('div', 'git-row');
+    const sel = h('select');
+    for (const b of g.branches) { const o = h('option', '', b); o.value = b; if (b === g.branch) o.selected = true; sel.appendChild(o); }
+    sel.addEventListener('change', () => gitDo(() => api.gitSwitch(sel.value, false), 'Switching…'));
+    const nb = h('input');
+    nb.type = 'text'; nb.placeholder = 'new-branch-name'; nb.spellcheck = false;
+    br.append(h('span', 'muted small', 'Branch'), g.branches.length ? sel : h('span', 'muted small', '—'), nb, btn('Create branch', '', () => nb.value.trim() ? gitDo(() => api.gitSwitch(nb.value.trim(), true), 'Creating branch…') : nb.focus()));
+    body.appendChild(br);
+
+    // changes + commit
+    body.appendChild(h('h3', 'sub-h', g.files.length ? `Changes to commit (${g.files.length})` : 'Nothing to commit'));
+    if (g.files.length) {
+      const list = h('div', 'git-files');
+      for (const f of g.files.slice(0, 200)) {
+        const row = h('div', 'git-file');
+        row.appendChild(h('span', 'gf-tag ' + f.label, f.label));
+        row.appendChild(h('span', 'mono ellipsis', f.path));
+        list.appendChild(row);
+      }
+      if (g.files.length > 200) list.appendChild(h('div', 'muted small', '…and ' + (g.files.length - 200) + ' more'));
+      body.appendChild(list);
+      const msg = h('textarea');
+      msg.rows = 2; msg.placeholder = 'Commit message, e.g. “Fix login bug”'; msg.id = 'gitMsg';
+      body.appendChild(msg);
+      body.appendChild(h('div', 'git-actions')).append(
+        btn('Commit all changes', 'primary', () => gitDo(() => api.gitCommit(msg.value), 'Committing…')),
+        btn('Commit & push', '', async () => { const c = await gitDo(() => api.gitCommit(msg.value), 'Committing…'); if (c.ok) await gitDo(() => api.gitPush(), 'Pushing…'); }),
+      );
+    }
+
+    // GitHub
+    body.appendChild(h('h3', 'sub-h', 'GitHub'));
+    if (!r.signedIn) {
+      const p = h('p', 'muted small', 'Sign in to GitHub to create repositories and pull requests, and to push without typing a password. ');
+      p.appendChild(btn('Sign in…', '', () => { $('gitDialog').close(); openSettings('accounts'); }));
+      body.appendChild(p);
+    } else {
+      body.appendChild(h('p', 'muted small', 'Signed in as @' + r.github + '.'));
+    }
+    if (!g.remote) {
+      const row = h('div', 'git-row');
+      const name = h('input'); name.type = 'text'; name.value = baseName(S.app.folder).replace(/[^\w.-]/g, '-'); name.spellcheck = false;
+      const priv = h('label', 'check small'); const cb = h('input'); cb.type = 'checkbox'; cb.checked = true; priv.append(cb, document.createTextNode(' Private'));
+      row.append(h('span', 'muted small', 'New repository'), name, priv, btn('Create on GitHub', '', () => gitDo(() => api.gitCreateRepo({ name: name.value, private: cb.checked }), 'Creating on GitHub…')));
+      row.lastChild.disabled = !r.signedIn;
+      body.appendChild(row);
+      body.appendChild(h('p', 'muted small', 'Then commit, and press Push to upload your code.'));
+    } else if (/github\.com/.test(g.remote)) {
+      const form = h('div', 'git-pr');
+      const title = h('input'); title.type = 'text'; title.placeholder = 'Pull request title'; title.spellcheck = false;
+      const desc = h('textarea'); desc.rows = 2; desc.placeholder = 'Description (optional)';
+      const base = h('input'); base.type = 'text'; base.placeholder = 'base branch (default: the repository’s main branch)'; base.spellcheck = false;
+      const go = btn('Push & open pull request', '', () => title.value.trim() ? gitDo(() => api.gitPullRequest({ title: title.value, body: desc.value, base: base.value }), 'Opening pull request…') : title.focus());
+      go.disabled = !r.signedIn;
+      form.append(title, desc, base, go);
+      body.appendChild(form);
+    }
+
+    if (g.commits.length) {
+      body.appendChild(h('h3', 'sub-h', 'Recent commits'));
+      const list = h('div', 'git-commits');
+      for (const c of g.commits) {
+        const row = h('div', 'git-commit');
+        row.append(h('span', 'mono muted', c.hash), h('span', 'ellipsis', c.subject), h('span', 'muted small', c.when));
+        list.appendChild(row);
+      }
+      body.appendChild(list);
+    }
+  }
+
+  function initGit() {
+    $('gitClose').addEventListener('click', () => $('gitDialog').close());
+    $('gitRefresh').addEventListener('click', () => loadGit());
+  }
+
+  // ---------- skills ----------
+  async function openSkills() {
+    const r = await api.listSkills();
+    renderSkills(r.ok ? r.skills : []);
+    $('skForm').hidden = true;
+    closeMenu();
+    const d = $('skillsDialog');
+    if (!d.open) d.showModal();
+  }
+
+  function renderSkills(skills) {
+    const list = $('skList');
+    list.textContent = '';
+    if (skills.length === 0) list.appendChild(h('div', 'muted', 'No skills yet. Create one, or import a folder that contains SKILL.md.'));
+    for (const s of skills) {
+      const item = h('div', 'sk-item');
+      const main = h('div', 'sk-main');
+      const name = h('div', 'sk-name', s.name);
+      name.appendChild(h('span', 'sk-tag', s.source === 'project' ? 'this project' : 'global'));
+      main.appendChild(name);
+      main.appendChild(h('div', 'sk-desc', s.description));
+      main.appendChild(h('div', 'sk-src mono', s.dir));
+      item.appendChild(main);
+      if (s.deletable) {
+        const del = h('button', 'icon-btn small');
+        del.type = 'button';
+        del.title = 'Delete this skill';
+        del.setAttribute('aria-label', 'Delete skill');
+        setIcon(del, 'trash');
+        del.addEventListener('click', async () => {
+          if (!(await confirmDialog(`Delete skill “${s.name}”?`, 'Its folder is removed from this Mac.', 'Delete'))) return;
+          const r = await api.deleteSkill(s.dir);
+          if (r.ok) renderSkills(r.skills); else toast(r.error);
+        });
+        item.appendChild(del);
+      }
+      list.appendChild(item);
+    }
+  }
+
+  function initSkills() {
+    $('skillsClose').addEventListener('click', () => $('skillsDialog').close());
+    $('skNew').addEventListener('click', () => { $('skForm').hidden = false; formStatus($('skStatus'), '', true); $('skName').focus(); });
+    $('skCancel').addEventListener('click', () => ($('skForm').hidden = true));
+    $('skOpen').addEventListener('click', async () => { const r = await api.openSkillsFolder(); if (!r.ok) toast(r.error); });
+    $('skImport').addEventListener('click', async () => {
+      const r = await api.importSkill();
+      if (!r.ok) return toast(r.error);
+      if (!r.canceled) { renderSkills(r.skills); toast('Skill imported.'); }
+    });
+    $('skForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const r = await api.createSkill({ name: $('skName').value, description: $('skDesc').value, instructions: $('skBody').value });
+      if (!r.ok) return formStatus($('skStatus'), r.error, false);
+      renderSkills(r.skills);
+      $('skForm').hidden = true;
+      $('skName').value = $('skDesc').value = $('skBody').value = '';
+      toast('Skill created. The agent will see it on your next message.');
+    });
+  }
+
+  // ---------- wiring ----------
+  function setSidebar(show) {
+    els.app.classList.toggle('sb-hidden', !show);
+    $('sbShow').hidden = show;
+    store('fa.sidebar', show ? '1' : '0');
+  }
+
+  function runCommand(name) {
+    switch (name) {
+      case 'open-folder': pickFolder(); break;
+      case 'new-chat': newChat(); break;
+      case 'settings': openSettings('providers'); break;
+      case 'git': openGit(); break;
+      case 'history': openHistory(); break;
+      case 'toggle-sidebar': setSidebar(els.app.classList.contains('sb-hidden')); break;
+      case 'toggle-changes': toggleChanges(); break;
+      case 'toggle-terminal': toggleTerminal(); break;
+      case 'focus-input': els.input.focus(); break;
+    }
+  }
+
+  function initEvents() {
+    $('sbToggle').addEventListener('click', () => setSidebar(false));
+    $('sbShow').addEventListener('click', () => setSidebar(true));
+    $('newChatBtn').addEventListener('click', newChat);
+    $('openFolderBtn').addEventListener('click', pickFolder);
+
+    // Sidebar navigation & search
+    if (els.navBackBtn) els.navBackBtn.addEventListener('click', navBack);
+    if (els.navForwardBtn) els.navForwardBtn.addEventListener('click', navForward);
+    if (els.sbSearch) {
+      els.sbSearch.addEventListener('input', () => {
+        S.chatFilter = els.sbSearch.value;
+        if (els.sbSearchClear) els.sbSearchClear.hidden = !els.sbSearch.value;
+        renderChats();
+      });
+    }
+    if (els.sbSearchClear) {
+      els.sbSearchClear.addEventListener('click', () => {
+        if (els.sbSearch) els.sbSearch.value = '';
+        S.chatFilter = '';
+        els.sbSearchClear.hidden = true;
+        renderChats();
+        els.sbSearch?.focus();
+      });
+    }
+    if (els.sbProjectToggle) {
+      els.sbProjectToggle.addEventListener('click', () => {
+        S.collapseProject = !S.collapseProject;
+        renderSidebar();
+      });
+    }
+    if (els.recentProjectsToggle) {
+      els.recentProjectsToggle.addEventListener('click', () => {
+        S.collapseRecent = !S.collapseRecent;
+        renderSidebar();
+      });
+    }
+    if (els.sbToggleAllSessions) {
+      els.sbToggleAllSessions.addEventListener('click', () => {
+        const curFolder = S.app?.folder;
+        if (curFolder) {
+          if (S.expandedProjects.has(curFolder)) S.expandedProjects.delete(curFolder);
+          else S.expandedProjects.add(curFolder);
+        }
+        renderChats();
+      });
+    }
+
+    if (els.sbSearchBtn) {
+      els.sbSearchBtn.addEventListener('click', () => {
+        if (els.sbSearchWrap) {
+          els.sbSearchWrap.hidden = !els.sbSearchWrap.hidden;
+          if (!els.sbSearchWrap.hidden) els.sbSearch?.focus();
+        }
+      });
+    }
+    if (els.sbAutomationsBtn) {
+      els.sbAutomationsBtn.addEventListener('click', () => {
+        toast('Automations: Manage background tasks & workflows');
+      });
+    }
+    if (els.sbCustomizationsBtn) {
+      els.sbCustomizationsBtn.addEventListener('click', () => {
+        openSkills();
+      });
+    }
+    if (els.sbFilterProjectsBtn) {
+      els.sbFilterProjectsBtn.addEventListener('click', () => {
+        if (els.sbSearchWrap) {
+          els.sbSearchWrap.hidden = false;
+          els.sbSearch?.focus();
+        }
+      });
+    }
+    if (els.renameClose) els.renameClose.addEventListener('click', () => els.renameDialog?.close());
+    if (els.renameCancel) els.renameCancel.addEventListener('click', () => els.renameDialog?.close());
+    if (els.renameForm) {
+      els.renameForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const title = els.renameInput.value.trim();
+        if (renameTargetId && title) {
+          await doRenameChat(renameTargetId, title);
+        }
+        els.renameDialog.close();
+      });
+    }
+
+    $('settingsBtn')?.addEventListener('click', () => openSettings('providers'));
+    $('skillsBtn')?.addEventListener('click', openSkills);
+    $('historyBtn')?.addEventListener('click', openHistory);
+    $('accountBtn')?.addEventListener('click', () => openSettings('accounts'));
+    $('gitBtn').addEventListener('click', openGit);
+    els.changesBtn.addEventListener('click', () => toggleChanges());
+    $('chClose').addEventListener('click', () => toggleChanges(false));
+    $('chRefresh').addEventListener('click', refreshChanges);
+    $('chKeepAll').addEventListener('click', async () => {
+      const r = await api.acceptAll();
+      if (!r.ok) return toast(r.error);
+      S.selected = null;
+      await refreshChanges();
+      toast('Kept all changes. New changes are compared from here.');
+    });
+    $('chRevertAll').addEventListener('click', async () => {
+      if (!(await confirmDialog('Undo all changes?', `This restores ${S.changes.length} file${S.changes.length === 1 ? '' : 's'} to how they were before, and deletes files the agent created. Binary files are left alone.`, 'Undo all'))) return;
+      const r = await api.revertAll();
+      if (!r.ok) return toast(r.error);
+      S.selected = null;
+      await refreshChanges();
+    });
+    $('modeUnified').addEventListener('click', () => setDiffMode('unified'));
+    $('modeSplit').addEventListener('click', () => setDiffMode('split'));
+    $('chFull').addEventListener('change', (e) => { S.diffFull = e.target.checked; if (S.selected) showDiff(S.selected); });
+
+    els.terminalBtn.addEventListener('click', () => toggleTerminal());
+    $('termClose').addEventListener('click', () => toggleTerminal(false));
+    $('termClear').addEventListener('click', () => (els.termOut.textContent = ''));
+    els.termStop.addEventListener('click', () => api.stopTerminal());
+    els.termInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); termRun(); }
+      else if (e.key === 'ArrowUp' && S.termHistory.length) { e.preventDefault(); S.termIdx = Math.max(0, S.termIdx - 1); els.termInput.value = S.termHistory[S.termIdx] || ''; }
+      else if (e.key === 'ArrowDown' && S.termHistory.length) { e.preventDefault(); S.termIdx = Math.min(S.termHistory.length, S.termIdx + 1); els.termInput.value = S.termHistory[S.termIdx] || ''; }
+    });
+
+    $('approvalBtn').addEventListener('click', openApprovalMenu);
+    $('modelBtn').addEventListener('click', openModelMenu);
+    $('attachBtn').addEventListener('click', openAttachMenu);
+    els.sendBtn.addEventListener('click', send);
+    els.stopBtn.addEventListener('click', () => api.stop());
+    els.input.addEventListener('input', autoGrow);
+    els.input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); send(); }
+    });
+    els.input.addEventListener('paste', (e) => {
+      const cd = e.clipboardData;
+      if (!cd) return;
+      if (cd.files && cd.files.length > 0) { e.preventDefault(); addFiles(cd.files); return; }
+      const t = (cd.getData('text') || '').trim();
+      if (/^https?:\/\/\S+$/.test(t) && els.input.value.trim() === '') {
+        e.preventDefault();
+        const err = addLink(t);
+        if (err) toast(err);
+      }
+    });
+    els.fileInput.addEventListener('change', () => { addFiles(els.fileInput.files); els.fileInput.value = ''; });
+
+    $('linkForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const err = addLink($('linkInput').value);
+      if (err) return formStatus($('linkStatus'), err, false);
+      $('linkDialog').close();
+    });
+    $('linkCancel').addEventListener('click', () => $('linkDialog').close());
+
+    let dragDepth = 0;
+    const hasFiles = (e) => e.dataTransfer && Array.from(e.dataTransfer.types || []).includes('Files');
+    window.addEventListener('dragenter', (e) => { if (hasFiles(e)) { dragDepth++; els.dropHint.hidden = false; els.composer.classList.add('dragover'); } });
+    window.addEventListener('dragover', (e) => { if (hasFiles(e)) e.preventDefault(); });
+    window.addEventListener('dragleave', () => { dragDepth = Math.max(0, dragDepth - 1); if (dragDepth === 0) { els.dropHint.hidden = true; els.composer.classList.remove('dragover'); } });
+    window.addEventListener('drop', (e) => {
+      dragDepth = 0;
+      els.dropHint.hidden = true;
+      els.composer.classList.remove('dragover');
+      if (!hasFiles(e)) return;
+      e.preventDefault();
+      if (S.app && S.app.folder) addFiles(e.dataTransfer.files);
+      else toast('Open a folder first.');
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !els.menu.hidden) { closeMenu(); return; }
+      if (e.key === 'Escape' && S.running && !document.querySelector('dialog[open]')) api.stop();
+      if ((e.metaKey || e.ctrlKey) && e.key === '[') { e.preventDefault(); navBack(); }
+      if ((e.metaKey || e.ctrlKey) && e.key === ']') { e.preventDefault(); navForward(); }
+      if ((e.metaKey || e.ctrlKey) && e.altKey && (e.key === 'p' || e.key === 'P')) {
+        e.preventDefault();
+        if (S.app?.chatId) togglePinChat(S.app.chatId);
+      }
+      if ((e.metaKey || e.ctrlKey) && e.altKey && (e.key === 'a' || e.key === 'A')) {
+        e.preventDefault();
+        if (S.app?.chatId) toggleArchiveChat(S.app.chatId);
+      }
+      if ((e.metaKey || e.ctrlKey) && (e.key === 'f' || e.key === 'F')) {
+        if (els.sbSearchWrap) {
+          e.preventDefault();
+          els.sbSearchWrap.hidden = false;
+          els.sbSearch?.focus();
+          els.sbSearch?.select();
+        }
+      }
+    });
+
+    api.onEvent(onAgentEvent);
+    api.onTerminal(onTerminalEvent);
+    api.onCommand(runCommand);
+    api.onChanged((ev) => {
+      if (!ev) return;
+      if (ev.what === 'chats') loadChats();
+      else if (ev.what === 'files') scheduleChangesRefresh();
+      else if (ev.what === 'running') {
+        S.runningChats = new Set(ev.chats || []);
+        if (S.app) renderChats();
+        if ($('historyDialog').open) openHistory();
+      }
+    });
+    api.onAccount(onAccountEvent);
+  }
+
+  async function init() {
+    document.querySelectorAll('[data-icon]').forEach((n) => { n.textContent = ''; n.appendChild(icon(n.dataset.icon)); });
+    Object.keys(BUTTON_ICONS).forEach((id) => { const b = $(id); if (b) setIcon(b, BUTTON_ICONS[id]); });
+    initSettings();
+    initSkills();
+    initSplitter();
+    initAccounts();
+    initGit();
+    initHistory();
+    initEvents();
+    if (store('fa.sidebar') === '0') setSidebar(false);
+    const r = await api.state();
+    if (!r.ok) { toast(r.error || 'Could not start.'); return; }
+    applyState(r);
+    if (r.chatId) pushNav(r.chatId);
+    if (r.folder) await Promise.all([loadChats(), refreshChanges()]);
+  }
+
+  init();
+})();

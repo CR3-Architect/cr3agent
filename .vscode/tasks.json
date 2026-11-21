@@ -1,0 +1,50 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "type": "npm",
+      "script": "build",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": ["$tsc"],
+      "label": "npm: build",
+      "detail": "Compile TypeScript to JavaScript in dist/"
+    },
+    {
+      "type": "npm",
+      "script": "watch",
+      "problemMatcher": ["$tsc-watch"],
+      "isBackground": true,
+      "group": "build",
+      "label": "npm: watch",
+      "detail": "Continuously compile TypeScript changes"
+    },
+    {
+      "type": "npm",
+      "script": "start",
+      "label": "npm: start",
+      "detail": "Build and launch Folder Agent Electron app",
+      "problemMatcher": []
+    },
+    {
+      "type": "npm",
+      "script": "test",
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "label": "npm: test",
+      "detail": "Build and execute Node test runner tests",
+      "problemMatcher": ["$tsc"]
+    },
+    {
+      "type": "npm",
+      "script": "dist",
+      "label": "npm: dist (Package for Mac)",
+      "detail": "Build macOS DMG installer and ZIP file to send to friends",
+      "problemMatcher": []
+    }
+  ]
+}
