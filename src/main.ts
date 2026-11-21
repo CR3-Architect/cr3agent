@@ -1,5 +1,6 @@
-import { app, BrowserWindow, dialog, ipcMain, Menu, nativeTheme, safeStorage, shell, IpcMainInvokeEvent } from 'electron';
+import { app, BrowserWindow, dialog, ipcMain, Menu, nativeImage, nativeTheme, safeStorage, shell, IpcMainInvokeEvent } from 'electron';
 import * as fs from 'node:fs/promises';
+import * as syncFs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
 import { Agent, AgentConfig, AgentEvent, Attachment, ChatMessage, ModelTarget, ToolCallInfo } from './agent/agent';
@@ -758,14 +759,21 @@ function buildMenu(): void {
 // ---------- window ----------
 
 function createWindow(): void {
-  const iconPath = path.join(__dirname, '..', 'build', 'icon.png');
+  const localIcon = path.join(__dirname, '..', 'build', 'icon.png');
+  const packagedIcon = path.join(process.resourcesPath || '', 'build', 'icon.png');
+  let finalIcon = localIcon;
+  try {
+    if (app.isPackaged && syncFs.existsSync(packagedIcon)) finalIcon = packagedIcon;
+    else if (syncFs.existsSync(localIcon)) finalIcon = localIcon;
+  } catch {}
+
   win = new BrowserWindow({
     width: 1320,
     height: 860,
     minWidth: 900,
     minHeight: 600,
     title: 'CR3-Agentic AI',
-    icon: iconPath,
+    icon: finalIcon,
     titleBarStyle: 'hiddenInset',
     trafficLightPosition: { x: 16, y: 16 },
     backgroundColor: nativeTheme.shouldUseDarkColors ? '#262624' : '#faf9f5',
@@ -779,7 +787,10 @@ function createWindow(): void {
 
   if (process.platform === 'darwin' && app.dock) {
     try {
-      app.dock.setIcon(iconPath);
+      const img = nativeImage.createFromPath(finalIcon);
+      if (!img.isEmpty()) {
+        app.dock.setIcon(img);
+      }
     } catch {}
   }
 
@@ -802,6 +813,25 @@ app.whenReady().then(async () => {
   settings = loadSettings(settingsFile);
   chatStore = new ChatStore(path.join(data, 'chats'));
   await seedDefaultSkills(globalSkillsDir).catch(() => undefined);
+
+  // Auto-restore project and conversation history from previous sessions
+  if (Array.isArray(settings.recentFolders) && settings.recentFolders.length > 0) {
+    for (const folder of settings.recentFolders) {
+      try {
+        const st = await fs.stat(folder);
+        if (st.isDirectory()) {
+          await openFolderPath(folder);
+          const all = await chatStore.list();
+          const folderChats = all.filter((c) => c.folder === folder);
+          if (folderChats.length > 0 && folderChats[0]) {
+            folderChats.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+            activeChat = folderChats[0].id;
+          }
+          break;
+        }
+      } catch {}
+    }
+  }
 
   // nothing in the window needs camera, location, notifications and the like
   const { session } = await import('electron');

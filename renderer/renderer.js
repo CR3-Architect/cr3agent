@@ -658,27 +658,29 @@
     label.textContent = c.title;
     item.appendChild(label);
 
-    // Right side indicator & hover 3-dots
+    // Right side indicator & hover 3-dots with strict fixed slot
     const rightWrap = h('div', 'sb-session-right no-drag');
+    const indWrap = h('div', 'sb-session-ind');
 
     if (isCur) {
       const grip = h('span', 'ico tiny sb-grip-ico');
       grip.appendChild(icon('grip'));
       grip.title = 'Active session';
-      rightWrap.appendChild(grip);
+      indWrap.appendChild(grip);
     } else if (isChatUnread(c.id)) {
       const dot = h('span', 'sb-unread-dot');
       dot.title = 'Unread messages';
-      rightWrap.appendChild(dot);
+      indWrap.appendChild(dot);
     } else if (S.runningChats.has(c.id)) {
       const rDot = h('span', 'run-dot');
       rDot.title = 'Working…';
-      rightWrap.appendChild(rDot);
+      indWrap.appendChild(rDot);
     } else if (c.updatedAt) {
       const timeLbl = h('span', 'sb-time-lbl');
       timeLbl.textContent = compactRelTime(c.updatedAt);
-      rightWrap.appendChild(timeLbl);
+      indWrap.appendChild(timeLbl);
     }
+    rightWrap.appendChild(indWrap);
 
     const moreBtn = h('button', 'icon-btn tiny sb-more-btn sb-hover-more');
     moreBtn.type = 'button';
@@ -791,34 +793,52 @@
     const f = S.app?.folder;
     els.emptyActions.textContent = '';
 
-    // Interactive Demo Chips (Queued messages, WhatsApp chat layout, Antigravity sidebar tree)
-    const d1 = h('button', 'chip', '🚀 Test Queued Follow-up Prompt');
-    d1.title = 'Send a prompt and queue a 2nd prompt while running';
-    d1.addEventListener('click', demoQueuedMessages);
-    els.emptyActions.appendChild(d1);
-
-    const d2 = h('button', 'chip', '💬 WhatsApp Bubble & Code Demo');
-    d2.title = 'Preview right-aligned user bubble with attachments and left-aligned assistant markdown';
-    d2.addEventListener('click', demoWhatsAppChat);
-    els.emptyActions.appendChild(d2);
-
-    const d3 = h('button', 'chip', '📁 Load Antigravity Sidebar Tree');
-    d3.title = 'Populate Cr3agent and sentrylock project tree with grip, blue dot, and timestamps';
-    d3.addEventListener('click', demoSidebarTree);
-    els.emptyActions.appendChild(d3);
-
     if (!f) {
-      els.emptyTitle.textContent = 'Pick a folder to start';
-      els.emptyText.textContent = 'The agent reads, edits and runs things only inside the folder you choose, and shows you every change.';
-      const b = h('button', 'chip', 'Open a folder…');
-      b.addEventListener('click', pickFolder);
-      els.emptyActions.appendChild(b);
+      els.emptyTitle.textContent = 'CR3-Agentic AI';
+      els.emptyText.textContent = 'Autonomous desktop AI agent workspace. Choose a project folder to begin or open a recent workspace:';
+
+      const openBtn = h('button', 'chip primary-chip');
+      openBtn.appendChild(iconSpan('folder'));
+      openBtn.appendChild(h('span', '', 'Open Project Folder…'));
+      openBtn.addEventListener('click', pickFolder);
+      els.emptyActions.appendChild(openBtn);
+
+      const recent = (S.app?.settings?.recentFolders || []).slice(0, 3);
+      for (const rf of recent) {
+        const rc = h('button', 'chip recent-proj-chip');
+        rc.appendChild(iconSpan('folder'));
+        rc.appendChild(h('span', '', baseName(rf)));
+        rc.title = rf;
+        rc.addEventListener('click', () => openProject(rf));
+        els.emptyActions.appendChild(rc);
+      }
       return;
     }
+
     els.emptyTitle.textContent = `What should we do in ${baseName(f)}?`;
-    els.emptyText.textContent = 'Ask me to explore, change, test or explain this project. Every change is shown before and after, and you can undo it.';
-    for (const t of SUGGESTIONS) {
-      const b = h('button', 'chip', t);
+    els.emptyText.textContent = 'Explore the codebase, implement features, run terminal commands, or review diffs:';
+
+    const WORKFLOW_CARDS = [
+      { ico: 'search', label: 'Explore Architecture', prompt: 'Explore and summarize the architecture, key entrypoints, and design patterns of this repository.' },
+      { ico: 'terminal', label: 'Run Tests & Fix', prompt: 'Run the test suite, report any failures, and implement fixes for broken tests.' },
+      { ico: 'diff', label: 'Review Changes', prompt: 'Review recent git changes and summarize modifications and potential edge cases.' },
+      { ico: 'sparkles', label: 'Implement Feature', prompt: 'Help me plan and implement the next feature in this project.' },
+    ];
+
+    for (const w of WORKFLOW_CARDS) {
+      const b = h('button', 'chip workflow-chip');
+      b.appendChild(iconSpan(w.ico));
+      b.appendChild(h('span', 'wf-label', w.label));
+      b.addEventListener('click', () => {
+        els.input.value = w.prompt;
+        autoGrow();
+        els.input.focus();
+      });
+      els.emptyActions.appendChild(b);
+    }
+
+    for (const t of SUGGESTIONS.slice(0, 3)) {
+      const b = h('button', 'chip subtle-chip', t);
       b.addEventListener('click', () => {
         els.input.value = t;
         autoGrow();
@@ -2335,18 +2355,18 @@ export class AgentService {
     }
   }
 
-  // ---------- Antigravity Settings Modal ----------
+  // ---------- CR3-Agentic AI Settings Modal ----------
   const SETTING_PAGES = {
-    general: { title: 'General', sub: 'Configure agent execution, queued message delivery, and permissions.' },
-    models: { title: 'Providers & Models', sub: 'Configure LLM provider endpoints, API keys, and models.' },
-    application: { title: 'Application', sub: 'Configure desktop application startup, updates, and diagnostics.' },
-    appearance: { title: 'Appearance', sub: 'Customize themes, diff view, and interface layout.' },
-    shortcuts: { title: 'Shortcuts', sub: 'Quick reference for keyboard shortcuts and productivity hotkeys.' },
+    general: { title: 'General Preferences', sub: 'Configure autonomous agent execution, permissions, and follow-up queuing.' },
+    models: { title: 'Providers & Models', sub: 'Configure Gemini, OpenAI, Claude, Ollama, API keys, and model parameters.' },
+    application: { title: 'About CR3-Agentic AI', sub: 'Desktop release information, system architecture, and local storage.' },
+    appearance: { title: 'Appearance & Diff View', sub: 'Customize visual theme, display density, and side-by-side diff preferences.' },
+    shortcuts: { title: 'Shortcuts Reference', sub: 'Quick reference for keyboard shortcuts and productivity hotkeys.' },
     notifications: { title: 'Notifications', sub: 'Manage alerts, sound chimes, and system notifications.' },
     browser: { title: 'Browser', sub: 'Configure sandboxed browser automation and headless testing.' },
-    agent: { title: 'Project Settings', sub: 'Rules, approval policies, and memory limits for this project.' },
+    agent: { title: 'Workspace Settings', sub: 'Rules, approval policies, and workspace limits for this folder.' },
     conversations: { title: 'Conversations', sub: 'Manage, export, and clean conversation history.' },
-    accounts: { title: 'Accounts', sub: 'Manage connected developer and cloud accounts.' },
+    accounts: { title: 'Accounts & Providers', sub: 'Manage connected cloud providers and developer credentials.' },
   };
 
   function switchTab(name) {
@@ -3366,8 +3386,14 @@ export class AgentService {
     const r = await api.state();
     if (!r.ok) { toast(r.error || 'Could not start.'); return; }
     applyState(r);
-    if (r.chatId) pushNav(r.chatId);
-    if (r.folder) await Promise.all([loadChats(), refreshChanges()]);
+    // Always load all projects and conversation history on startup
+    await loadChats();
+    if (r.folder) await refreshChanges();
+    if (r.chatId) {
+      pushNav(r.chatId);
+      const existing = (S.allChats || []).find((c) => c.id === r.chatId);
+      if (existing) await openChat(r.chatId);
+    }
   }
 
   init();
