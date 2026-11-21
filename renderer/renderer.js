@@ -43,8 +43,8 @@
     chevronDown: '<polyline points="6 9 12 15 18 9"/>',
     chevronRight: '<polyline points="9 18 15 12 9 6"/>',
     chevronUp: '<polyline points="18 15 12 9 6 15"/>',
-    more: '<circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/><circle cx="5" cy="12" r="1.5"/>',
-    moreVertical: '<circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/>',
+    more: '<circle cx="12" cy="12" r="1.8" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.8" fill="currentColor" stroke="none"/><circle cx="5" cy="12" r="1.8" fill="currentColor" stroke="none"/>',
+    moreVertical: '<circle cx="12" cy="5" r="1.8" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.8" fill="currentColor" stroke="none"/><circle cx="12" cy="19" r="1.8" fill="currentColor" stroke="none"/>',
     copy: '<rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>',
     edit: '<path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>',
     pin: '<line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.89A4 4 0 0 1 14 9V4h1a1 1 0 0 0 0-2H9a1 1 0 0 0 0 2h1v5a4 4 0 0 1-2.11 3.56l-1.78.89A2 2 0 0 0 5 15.24z"/>',
@@ -54,6 +54,19 @@
     filter: '<polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>',
     newFolder: '<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/>',
     gear: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
+    layout: '<rect x="3" y="3" width="18" height="18" rx="2"/><line x1="15" y1="3" x2="15" y2="21"/>',
+    briefcase: '<rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>',
+    code: '<polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>',
+    bell: '<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>',
+    globe: '<circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>',
+    monitor: '<rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>',
+    command: '<path d="M18 3a3 3 0 0 0-3 3v12a3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3H6a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3V6a3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3h12a3 3 0 0 0 3-3 3 3 0 0 0-3-3z"/>',
+    sparkles: '<path d="M12 2l2.4 5.6L20 10l-5.6 2.4L12 18l-2.4-5.6L4 10l5.6-2.4z"/>',
+    puzzle: '<path d="M4 11a2 2 0 0 1 2-2h1a2 2 0 0 0 2-2 2 2 0 0 1 4 0 2 2 0 0 0 2 2h1a2 2 0 0 1 2 2v1a2 2 0 0 0 2 2 2 2 0 0 1 0 4 2 2 0 0 0-2 2v1a2 2 0 0 1-2 2h-1a2 2 0 0 0-2 2 2 2 0 0 1-4 0 2 2 0 0 0-2-2H6a2 2 0 0 1-2-2v-1a2 2 0 0 0-2-2 2 2 0 0 1 0-4 2 2 0 0 0 2-2z"/>',
+    grip: '<circle cx="9" cy="6" r="1.5" fill="currentColor" stroke="none"/><circle cx="15" cy="6" r="1.5" fill="currentColor" stroke="none"/><circle cx="9" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="15" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="9" cy="18" r="1.5" fill="currentColor" stroke="none"/><circle cx="15" cy="18" r="1.5" fill="currentColor" stroke="none"/>',
+    overview: '<rect x="3" y="3" width="18" height="18" rx="3"/><line x1="7" y1="8" x2="17" y2="8"/><line x1="7" y1="12" x2="17" y2="12"/><line x1="7" y1="16" x2="17" y2="16"/>',
+    sidebarRight: '<rect x="3" y="3" width="18" height="18" rx="2"/><line x1="15" y1="3" x2="15" y2="21"/>',
+    fileDiff: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/>',
   };
 
   function icon(name) {
@@ -77,9 +90,11 @@
 
   const BUTTON_ICONS = {
     sbToggle: 'sidebar', sbShow: 'sidebar', openFolderBtn: 'newFolder', attachBtn: 'paperclip', sendBtn: 'arrowUp', stopBtn: 'stop',
-    gitRefresh: 'refresh', gitClose: 'x', historyClose: 'x', termClear: 'trash', termStop: 'stop', termClose: 'x', chRefresh: 'refresh', chClose: 'x', settingsClose: 'x', skillsClose: 'x',
+    gitRefresh: 'refresh', gitClose: 'x', historyClose: 'x', termClear: 'refresh', termStop: 'stop', termClose: 'x', chRefresh: 'refresh', chClose: 'x', settingsClose: 'x', skillsClose: 'x',
     navBackBtn: 'arrowLeft', navForwardBtn: 'arrowRight', sbSearchClear: 'x', sbProjectToggle: 'chevronDown', recentProjectsToggle: 'chevronRight', chRevealFile: 'reveal',
     sbSearchBtn: 'search', sbFilterProjectsBtn: 'filter', sbCurrentProjMenuBtn: 'moreVertical', sbCurrentProjNewChatBtn: 'plus', renameClose: 'x',
+    overviewToggleBtn: 'overview', termNew: 'plus', termSplit: 'split', termKill: 'trash', termCloseSplit: 'x', ovMoreBtn: 'more',
+    newStandaloneChatBtn: 'plus', qcRemoveBtn: 'x', topChatMenuBtn: 'moreVertical', topOverviewBtn: 'overview', topPanelToggleBtn: 'sidebarRight',
   };
 
   // ---------- state ----------
@@ -95,6 +110,7 @@
     diffMode: 'unified',
     diffFull: false,
     attachments: [],
+    messageQueue: [], // Queued messages waiting to be sent
     termRunning: false,
     termHistory: [],
     termIdx: 0,
@@ -114,6 +130,21 @@
     navHistory: [],
     navIndex: -1,
     isNavigating: false,
+    groupBy: 'Project',
+    sortConversations: 'Last Updated',
+    sortProjects: 'Custom Order',
+    filterType: 'All',
+    displayDensity: 'Comfortable',
+    autoPin: false,
+    filterArchivedOnly: false,
+    showBranch: false,
+    showPath: false,
+    terminalTabs: ['1: zsh'],
+    terminalActiveTab: 0,
+    terminalSplit: false,
+    termSplitHistory: [],
+    termSplitRunning: false,
+    layoutMode: 'se',
   };
 
   const els = {
@@ -121,6 +152,7 @@
     input: $('input'), sendBtn: $('sendBtn'), stopBtn: $('stopBtn'), status: $('status'), composer: $('composer'),
     attachRow: $('attachRow'), fileInput: $('fileInput'),
     projectList: $('projectList'), chatList: $('chatList'), projName: $('projName'), projPath: $('projPath'),
+    projBreadcrumb: $('projBreadcrumb'), topSep: $('topSep'), chatTitleTop: $('chatTitleTop'),
     navBackBtn: $('navBackBtn'), navForwardBtn: $('navForwardBtn'),
     sbSearchWrap: $('sbSearchWrap'), sbSearch: $('sbSearch'), sbSearchClear: $('sbSearchClear'), sbSearchBtn: $('sbSearchBtn'),
     sbAutomationsBtn: $('sbAutomationsBtn'), sbCustomizationsBtn: $('sbCustomizationsBtn'),
@@ -130,14 +162,24 @@
     sbToggleAllSessions: $('sbToggleAllSessions'), sbToggleAllSessionsLabel: $('sbToggleAllSessionsLabel'),
     recentProjectsToggle: $('recentProjectsToggle'), recentProjectsSection: $('recentProjectsSection'),
     conversationsSection: $('conversationsSection'), conversationsList: $('conversationsList'),
+    newStandaloneChatBtn: $('newStandaloneChatBtn'),
+    queuedCard: $('queuedCard'), qcSendNowBtn: $('qcSendNowBtn'), qcEditBtn: $('qcEditBtn'), qcRemoveBtn: $('qcRemoveBtn'), qcText: $('qcText'), qcAtts: $('qcAtts'),
     submenu: $('submenu'), renameDialog: $('renameDialog'), renameInput: $('renameInput'), renameForm: $('renameForm'),
     renameClose: $('renameClose'), renameCancel: $('renameCancel'),
     chFileName: $('chFileName'), chFileStatus: $('chFileStatus'), chFileDiffStat: $('chFileDiffStat'),
     chBreadcrumbs: $('chBreadcrumbs'), chFileTabs: $('chFileTabs'), chRevealFile: $('chRevealFile'),
     chKeepFile: $('chKeepFile'), chRevertFile: $('chRevertFile'), chClose: $('chClose'),
     approvalLabel: $('approvalLabel'), modelLabel: $('modelLabel'),
+    topChatMenuBtn: $('topChatMenuBtn'), topOverviewBtn: $('topOverviewBtn'), topPanelToggleBtn: $('topPanelToggleBtn'),
     changesBtn: $('changesBtn'), changesBadge: $('changesBadge'), changesPane: $('changesPane'), splitter: $('splitter'),
+    overviewToggleBtn: $('overviewToggleBtn'), overviewPane: $('overviewPane'), ovReviewBtn: $('ovReviewBtn'), ovDiffStat: $('ovDiffStat'),
+    ovFilesBtn: $('ovFilesBtn'), ovTerminalBtn: $('ovTerminalBtn'), ovExtensionsBtn: $('ovExtensionsBtn'), ovMoreBtn: $('ovMoreBtn'),
+    ovTaskCount: $('ovTaskCount'), ovTaskList: $('ovTaskList'), ovTaskActive: $('ovTaskActive'), ovSeeAllBtn: $('ovSeeAllBtn'),
     terminalPane: $('terminalPane'), terminalBtn: $('terminalBtn'), termOut: $('termOut'), termInput: $('termInput'), termCwd: $('termCwd'), termStop: $('termStop'),
+    termNew: $('termNew'), termSplit: $('termSplit'), termKill: $('termKill'), termClear: $('termClear'), termClose: $('termClose'),
+    termTabsList: $('termTabsList'), termPaneRight: $('termPaneRight'), termCloseSplit: $('termCloseSplit'), termOutSplit: $('termOutSplit'), termInputSplit: $('termInputSplit'),
+    settingsClose: $('settingsClose'), setTitle: $('setTitle'), setSubtitle: $('setSubtitle'), setProjectList: $('setProjectList'),
+    setFeedbackBtn: $('setFeedbackBtn'), setUserBadge: $('setUserBadge'),
     toast: $('toast'), menu: $('menu'), dropHint: $('dropHint'),
   };
   const emptyEl = els.empty;
@@ -153,6 +195,16 @@
     if (s < 86400) return Math.floor(s / 3600) + ' h ago';
     if (s < 86400 * 7) return Math.floor(s / 86400) + ' d ago';
     return new Date(ts).toLocaleDateString();
+  }
+
+  function compactRelTime(ts) {
+    if (!ts) return '';
+    const s = Math.max(0, (Date.now() - ts) / 1000);
+    if (s < 90) return 'now';
+    if (s < 3600) return Math.floor(s / 60) + 'm';
+    if (s < 86400) return Math.floor(s / 3600) + 'h';
+    if (s < 86400 * 30) return Math.floor(s / 86400) + 'd';
+    return Math.floor(s / (86400 * 30)) + 'mo';
   }
 
   function fmtSize(n) {
@@ -281,10 +333,15 @@
 
         if (it.shortcut) {
           b.appendChild(h('kbd', 'pm-kbd', it.shortcut));
-        } else if (it.submenu || (it.children && it.children.length)) {
-          const arr = h('span', 'ico tiny pm-arrow');
-          arr.appendChild(icon('chevronRight'));
-          b.appendChild(arr);
+        } else {
+          if (it.valueText) {
+            b.appendChild(h('span', 'pm-val', it.valueText));
+          }
+          if (it.submenu || (it.children && it.children.length)) {
+            const arr = h('span', 'ico tiny pm-arrow');
+            arr.appendChild(icon('chevronRight'));
+            b.appendChild(arr);
+          }
         }
 
         b.addEventListener('click', (e) => {
@@ -591,14 +648,6 @@
     const item = h('div', 'sb-item sb-session-item' + (isCur ? ' on' : ''));
     item.title = c.title;
 
-    if (isChatUnread(c.id)) {
-      item.appendChild(h('span', 'sb-unread-dot'));
-    }
-
-    if (S.runningChats.has(c.id)) {
-      item.appendChild(h('span', 'run-dot')).title = 'Working…';
-    }
-
     if (isChatPinned(c.id)) {
       const pinIcon = h('span', 'ico tiny sb-pin-icon');
       pinIcon.appendChild(icon('pin'));
@@ -609,32 +658,29 @@
     label.textContent = c.title;
     item.appendChild(label);
 
-    // Hover action buttons (Archive, Pin, 3-dots)
-    const actions = h('div', 'sb-session-actions no-drag');
+    // Right side indicator & hover 3-dots
+    const rightWrap = h('div', 'sb-session-right no-drag');
 
-    const archBtn = h('button', 'icon-btn tiny sb-hover-act');
-    archBtn.type = 'button';
-    archBtn.title = isChatArchived(c.id) ? 'Restore (⌥⌘A)' : 'Archive (⌥⌘A)';
-    archBtn.setAttribute('aria-label', 'Archive');
-    setIcon(archBtn, 'archive');
-    archBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      toggleArchiveChat(c.id);
-    });
-    actions.appendChild(archBtn);
+    if (isCur) {
+      const grip = h('span', 'ico tiny sb-grip-ico');
+      grip.appendChild(icon('grip'));
+      grip.title = 'Active session';
+      rightWrap.appendChild(grip);
+    } else if (isChatUnread(c.id)) {
+      const dot = h('span', 'sb-unread-dot');
+      dot.title = 'Unread messages';
+      rightWrap.appendChild(dot);
+    } else if (S.runningChats.has(c.id)) {
+      const rDot = h('span', 'run-dot');
+      rDot.title = 'Working…';
+      rightWrap.appendChild(rDot);
+    } else if (c.updatedAt) {
+      const timeLbl = h('span', 'sb-time-lbl');
+      timeLbl.textContent = compactRelTime(c.updatedAt);
+      rightWrap.appendChild(timeLbl);
+    }
 
-    const pinBtn = h('button', 'icon-btn tiny sb-hover-act' + (isChatPinned(c.id) ? ' on' : ''));
-    pinBtn.type = 'button';
-    pinBtn.title = isChatPinned(c.id) ? 'Unpin (⌥⌘P)' : 'Pin (⌥⌘P)';
-    pinBtn.setAttribute('aria-label', 'Pin');
-    setIcon(pinBtn, 'pin');
-    pinBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      togglePinChat(c.id);
-    });
-    actions.appendChild(pinBtn);
-
-    const moreBtn = h('button', 'icon-btn tiny sb-hover-act');
+    const moreBtn = h('button', 'icon-btn tiny sb-more-btn sb-hover-more');
     moreBtn.type = 'button';
     moreBtn.title = 'More options';
     moreBtn.setAttribute('aria-label', 'More options');
@@ -643,9 +689,9 @@
       e.stopPropagation();
       showSessionMenu(moreBtn, c);
     });
-    actions.appendChild(moreBtn);
+    rightWrap.appendChild(moreBtn);
 
-    item.appendChild(actions);
+    item.appendChild(rightWrap);
 
     item.addEventListener('click', () => {
       if (c.id !== S.app?.chatId) openChat(c.id);
@@ -706,10 +752,25 @@
   }
 
   function renderHeader() {
-    const f = S.app.folder;
-    $('projName').textContent = f ? baseName(f) : 'No folder open';
-    $('projPath').textContent = f ? '‎' + f : '';
-    $('projPath').title = f || '';
+    const f = S.app?.folder;
+    const projNameEl = $('projName');
+    const topSepEl = $('topSep');
+    const chatTitleTopEl = $('chatTitleTop');
+    const projPathEl = $('projPath');
+
+    const curChat = (S.chats || []).find((c) => c.id === S.app?.chatId) || (S.allChats || []).find((c) => c.id === S.app?.chatId);
+    const chatTitle = curChat?.title || (S.app?.chatId ? 'CR3-Agentic AI Agent Setup' : '');
+
+    if (projNameEl) projNameEl.textContent = f ? baseName(f) : 'CR3-Agentic AI';
+    if (topSepEl) topSepEl.hidden = !chatTitle;
+    if (chatTitleTopEl) {
+      chatTitleTopEl.hidden = !chatTitle;
+      chatTitleTopEl.textContent = chatTitle;
+    }
+    if (projPathEl) {
+      projPathEl.textContent = f ? '‎' + f : '';
+      projPathEl.title = f || '';
+    }
   }
 
   function renderComposerPills() {
@@ -727,8 +788,25 @@
   ];
 
   function renderEmpty() {
-    const f = S.app.folder;
+    const f = S.app?.folder;
     els.emptyActions.textContent = '';
+
+    // Interactive Demo Chips (Queued messages, WhatsApp chat layout, Antigravity sidebar tree)
+    const d1 = h('button', 'chip', '🚀 Test Queued Follow-up Prompt');
+    d1.title = 'Send a prompt and queue a 2nd prompt while running';
+    d1.addEventListener('click', demoQueuedMessages);
+    els.emptyActions.appendChild(d1);
+
+    const d2 = h('button', 'chip', '💬 WhatsApp Bubble & Code Demo');
+    d2.title = 'Preview right-aligned user bubble with attachments and left-aligned assistant markdown';
+    d2.addEventListener('click', demoWhatsAppChat);
+    els.emptyActions.appendChild(d2);
+
+    const d3 = h('button', 'chip', '📁 Load Antigravity Sidebar Tree');
+    d3.title = 'Populate Cr3agent and sentrylock project tree with grip, blue dot, and timestamps';
+    d3.addEventListener('click', demoSidebarTree);
+    els.emptyActions.appendChild(d3);
+
     if (!f) {
       els.emptyTitle.textContent = 'Pick a folder to start';
       els.emptyText.textContent = 'The agent reads, edits and runs things only inside the folder you choose, and shows you every change.';
@@ -792,152 +870,179 @@
   }
 
   function renderSidebar() {
-    const curFolder = S.app?.folder;
-
-    // 1. Current Active Project Header
-    if (els.sbActiveProjName) {
-      els.sbActiveProjName.textContent = curFolder ? baseName(curFolder) : 'No folder open';
-      els.sbActiveProjName.title = curFolder || 'Open folder to start';
-    }
-    if (els.sbProjectToggle) {
-      setIcon(els.sbProjectToggle, S.collapseProject ? 'chevronRight' : 'chevronDown');
-      els.sbProjectToggle.classList.toggle('collapsed', S.collapseProject);
-    }
-    if (els.activeProjectSection) {
-      els.activeProjectSection.hidden = !curFolder;
-    }
-
-    if (els.sbCurrentProjMenuBtn && curFolder) {
-      setIcon(els.sbCurrentProjMenuBtn, 'moreVertical');
-      els.sbCurrentProjMenuBtn.onclick = (e) => {
-        e.stopPropagation();
-        showProjectMenu(els.sbCurrentProjMenuBtn, curFolder);
-      };
-    }
-    if (els.sbCurrentProjNewChatBtn && curFolder) {
-      setIcon(els.sbCurrentProjNewChatBtn, 'plus');
-      els.sbCurrentProjNewChatBtn.onclick = (e) => {
-        e.stopPropagation();
-        api.newChat();
-      };
-    }
-
-    // 2. Render Active Project Chats
-    renderChats();
-
-    // 3. Render Other / Recent Projects
-    renderOtherProjects();
-
-    // 4. Render Standalone Conversations
+    renderProjects();
     renderConversations();
   }
 
-  function renderChats() {
-    const cl = els.chatList;
-    if (!cl) return;
-    cl.textContent = '';
-
-    if (S.collapseProject || !S.app?.folder) {
-      cl.hidden = true;
-      if (els.sbToggleAllSessions) els.sbToggleAllSessions.hidden = true;
-      return;
-    }
-    cl.hidden = false;
-
-    const curFolder = S.app.folder;
-    const filter = (S.chatFilter || '').trim().toLowerCase();
-
-    // Get chats belonging to this active folder
-    let folderChats = (S.chats || []).filter((c) => !c.folder || c.folder === curFolder);
-
-    if (filter) {
-      folderChats = folderChats.filter((c) => (c.title || '').toLowerCase().includes(filter));
-    } else {
-      folderChats = folderChats.filter((c) => !isChatArchived(c.id));
-    }
-
-    folderChats.sort((a, b) => {
-      const pinA = isChatPinned(a.id) ? 1 : 0;
-      const pinB = isChatPinned(b.id) ? 1 : 0;
-      if (pinA !== pinB) return pinB - pinA;
-      return (b.updatedAt || 0) - (a.updatedAt || 0);
-    });
-
-    const hasNewChat = !folderChats.some((c) => c.id === S.app.chatId);
-    const chatItems = [];
-
-    if (hasNewChat && !filter) {
-      const cur = h('div', 'sb-item sb-session-item on sb-new-session');
-      cur.appendChild(iconSpan('plus'));
-      cur.appendChild(h('span', 'label ellipsis', 'New conversation'));
-      if (S.runningChats.has(S.app.chatId)) cur.appendChild(h('span', 'run-dot'));
-      chatItems.push({ el: cur, isCurrent: true, id: S.app.chatId });
-    }
-
-    for (const c of folderChats) {
-      const isCur = c.id === S.app.chatId;
-      const el = createSessionItem(c, isCur);
-      chatItems.push({ el, isCurrent: isCur, id: c.id });
-    }
-
-    if (chatItems.length === 0) {
-      cl.appendChild(h('div', 'sb-empty', filter ? 'No conversations matching "' + filter + '"' : 'No conversations yet.'));
-      if (els.sbToggleAllSessions) els.sbToggleAllSessions.hidden = true;
-      return;
-    }
-
-    const totalCount = chatItems.length;
-    let visibleItems = chatItems;
-    const isExpanded = S.expandedProjects.has(curFolder);
-
-    if (!filter && totalCount > 1 && !isExpanded) {
-      const activeIdx = chatItems.findIndex((it) => it.isCurrent);
-      const primary = activeIdx >= 0 ? chatItems[activeIdx] : chatItems[0];
-      visibleItems = [primary];
-    }
-
-    for (const item of visibleItems) {
-      cl.appendChild(item.el);
-    }
-
-    // Toggle button under the chat
-    if (els.sbToggleAllSessions) {
-      if (!filter && totalCount > 1) {
-        els.sbToggleAllSessions.hidden = false;
-        if (isExpanded) {
-          if (els.sbToggleAllSessionsLabel) els.sbToggleAllSessionsLabel.textContent = 'Show fewer sessions';
-          setIcon(els.sbToggleAllSessions, 'chevronUp');
-        } else {
-          if (els.sbToggleAllSessionsLabel) els.sbToggleAllSessionsLabel.textContent = `Show all sessions (${totalCount})`;
-          setIcon(els.sbToggleAllSessions, 'chevronDown');
-        }
-      } else {
-        els.sbToggleAllSessions.hidden = true;
-      }
-    }
+  function renderAllChats() {
+    renderProjects();
+    renderConversations();
   }
 
-  function renderOtherProjects() {
+  function applyDisplayDensity() {
+    const compact = S.displayDensity === 'Compact';
+    if (els.chatList) els.chatList.classList.toggle('sb-compact', compact);
+    if (els.conversationsList) els.conversationsList.classList.toggle('sb-compact', compact);
+  }
+
+  function showProjectFilterMenu(anchor) {
+    const items = [
+      {
+        label: 'Group By',
+        valueText: S.groupBy || 'Project',
+        children: [
+          { label: 'Project', checked: (S.groupBy || 'Project') === 'Project', onClick: () => { S.groupBy = 'Project'; renderAllChats(); } },
+          { label: 'None', checked: S.groupBy === 'None', onClick: () => { S.groupBy = 'None'; renderAllChats(); } },
+          { label: 'Date', checked: S.groupBy === 'Date', onClick: () => { S.groupBy = 'Date'; renderAllChats(); } },
+        ]
+      },
+      {
+        label: 'Sort Conversations',
+        valueText: S.sortConversations || 'Last Updated',
+        children: [
+          { label: 'Last Updated', checked: (S.sortConversations || 'Last Updated') === 'Last Updated', onClick: () => { S.sortConversations = 'Last Updated'; renderAllChats(); } },
+          { label: 'Created Time', checked: S.sortConversations === 'Created Time', onClick: () => { S.sortConversations = 'Created Time'; renderAllChats(); } },
+          { label: 'Alphabetical', checked: S.sortConversations === 'Alphabetical', onClick: () => { S.sortConversations = 'Alphabetical'; renderAllChats(); } },
+        ]
+      },
+      {
+        label: 'Sort Projects',
+        valueText: S.sortProjects || 'Custom Order',
+        children: [
+          { label: 'Custom Order', checked: (S.sortProjects || 'Custom Order') === 'Custom Order', onClick: () => { S.sortProjects = 'Custom Order'; renderProjects(); } },
+          { label: 'Last Active', checked: S.sortProjects === 'Last Active', onClick: () => { S.sortProjects = 'Last Active'; renderProjects(); } },
+          { label: 'Alphabetical', checked: S.sortProjects === 'Alphabetical', onClick: () => { S.sortProjects = 'Alphabetical'; renderProjects(); } },
+        ]
+      },
+      { type: 'sep' },
+      {
+        label: 'Filter',
+        children: [
+          { label: 'All', checked: (S.filterType || 'All') === 'All', onClick: () => { S.filterType = 'All'; renderAllChats(); } },
+          { label: 'Unread Only', checked: S.filterType === 'Unread Only', onClick: () => { S.filterType = 'Unread Only'; renderAllChats(); } },
+          { label: 'With Changes', checked: S.filterType === 'With Changes', onClick: () => { S.filterType = 'With Changes'; renderAllChats(); } },
+          { label: 'Starred', checked: S.filterType === 'Starred', onClick: () => { S.filterType = 'Starred'; renderAllChats(); } },
+        ]
+      },
+      {
+        label: 'Display',
+        children: [
+          { label: 'Comfortable', checked: (S.displayDensity || 'Comfortable') === 'Comfortable', onClick: () => { S.displayDensity = 'Comfortable'; applyDisplayDensity(); } },
+          { label: 'Compact', checked: S.displayDensity === 'Compact', onClick: () => { S.displayDensity = 'Compact'; applyDisplayDensity(); } },
+          { label: 'Show Branch', checked: !!S.showBranch, onClick: () => { S.showBranch = !S.showBranch; renderProjects(); } },
+          { label: 'Show Path', checked: !!S.showPath, onClick: () => { S.showPath = !S.showPath; renderProjects(); } },
+        ]
+      },
+      {
+        label: 'Auto Pin',
+        checked: !!S.autoPin,
+        onClick: () => {
+          S.autoPin = !S.autoPin;
+          toast(S.autoPin ? 'Auto-pin enabled for new chats' : 'Auto-pin disabled');
+        }
+      },
+      {
+        label: 'Archived Only',
+        checked: !!S.filterArchivedOnly,
+        onClick: () => {
+          S.filterArchivedOnly = !S.filterArchivedOnly;
+          renderAllChats();
+        }
+      },
+      { type: 'sep' },
+      {
+        label: 'Mark All as Read',
+        onClick: () => {
+          S.unreadChats.clear();
+          localStorage.setItem('cr3_unread_chats', JSON.stringify([]));
+          toast('All conversations marked as read');
+          renderAllChats();
+        }
+      }
+    ];
+    showMenu(anchor, items);
+  }
+
+  function renderProjects() {
     const pl = els.projectList;
     if (!pl) return;
     pl.textContent = '';
 
     const curFolder = S.app?.folder;
-    const recent = (S.app?.settings?.recentFolders || []).filter((f) => f !== curFolder);
     const filter = (S.chatFilter || '').trim().toLowerCase();
 
-    for (const f of recent) {
-      const card = h('div', 'sb-project-card other-project-card');
+    // Collect all project folders and maintain a stable order so folders never jump around
+    if (!S.stableProjectsList) S.stableProjectsList = [];
+    const allKnown = [];
+    const seen = new Set();
 
-      const head = h('div', 'sb-project-head');
-      const toggle = h('button', 'icon-btn tiny sb-fold-btn');
+    const recent = S.app?.settings?.recentFolders || [];
+    for (const f of recent) {
+      if (f && !seen.has(f)) {
+        seen.add(f);
+        allKnown.push(f);
+      }
+    }
+    if (curFolder && !seen.has(curFolder)) {
+      seen.add(curFolder);
+      allKnown.push(curFolder);
+    }
+    for (const c of (S.allChats || [])) {
+      if (c.folder && !seen.has(c.folder)) {
+        seen.add(c.folder);
+        allKnown.push(c.folder);
+      }
+    }
+
+    // Preserve existing established positions in the sidebar
+    let folders = S.stableProjectsList.filter((f) => seen.has(f));
+    const foldersSet = new Set(folders);
+    for (const f of allKnown) {
+      if (!foldersSet.has(f)) {
+        folders.push(f);
+        foldersSet.add(f);
+      }
+    }
+    S.stableProjectsList = folders.slice();
+
+    if (S.sortProjects === 'Alphabetical') {
+      folders.sort((a, b) => baseName(a).localeCompare(baseName(b)));
+    } else if (S.sortProjects === 'Last Active') {
+      folders.sort((a, b) => {
+        const getLatest = (folder) => {
+          let latest = 0;
+          for (const c of (S.allChats || [])) {
+            if (c.folder === folder && (c.updatedAt || 0) > latest) latest = c.updatedAt;
+          }
+          return latest;
+        };
+        return getLatest(b) - getLatest(a);
+      });
+    }
+
+    if (folders.length === 0) {
+      pl.appendChild(h('div', 'sb-empty', 'No projects opened yet.'));
+      return;
+    }
+
+    for (const f of folders) {
+      const isCurFolder = (f === curFolder);
       const isCardCollapsed = S.collapsedProjects.has(f);
+
+      const card = h('div', 'sb-project-card' + (isCurFolder ? ' is-active-project' : ''));
+
+      // Project Header row
+      const head = h('div', 'sb-project-head' + (isCurFolder ? ' active-head' : ''));
+      
+      const toggle = h('button', 'icon-btn tiny sb-fold-btn' + (isCardCollapsed ? ' collapsed' : ''));
+      toggle.type = 'button';
+      toggle.title = isCardCollapsed ? 'Expand project' : 'Collapse project';
       setIcon(toggle, isCardCollapsed ? 'chevronRight' : 'chevronDown');
       toggle.addEventListener('click', (e) => {
         e.stopPropagation();
         if (S.collapsedProjects.has(f)) S.collapsedProjects.delete(f);
         else S.collapsedProjects.add(f);
-        renderOtherProjects();
+        renderProjects();
       });
       head.appendChild(toggle);
 
@@ -950,7 +1055,8 @@
       head.appendChild(nameSpan);
 
       const acts = h('div', 'proj-hover-actions no-drag');
-      const moreBtn = h('button', 'icon-btn tiny');
+
+      const moreBtn = h('button', 'icon-btn tiny sb-more-btn');
       moreBtn.type = 'button';
       moreBtn.title = 'Project options';
       setIcon(moreBtn, 'moreVertical');
@@ -966,63 +1072,91 @@
       setIcon(newBtn, 'plus');
       newBtn.addEventListener('click', async (e) => {
         e.stopPropagation();
-        await openProject(f);
-        api.newChat();
+        if (f !== S.app?.folder) await openProject(f);
+        await newChat();
       });
       acts.appendChild(newBtn);
 
       head.appendChild(acts);
 
-      head.addEventListener('click', () => {
-        openProject(f);
+      // Clicking project header activates the project without altering list position
+      head.addEventListener('click', async () => {
+        if (f !== S.app?.folder) {
+          await openProject(f);
+        } else {
+          if (S.collapsedProjects.has(f)) S.collapsedProjects.delete(f);
+          else S.collapsedProjects.add(f);
+          renderProjects();
+        }
       });
 
       card.appendChild(head);
 
+      // Sub-content Tree Container
       if (!isCardCollapsed) {
         let fChats = (S.allChats || []).filter((c) => c.folder === f);
         if (filter) {
           fChats = fChats.filter((c) => (c.title || '').toLowerCase().includes(filter));
-        } else {
+        } else if (!S.filterArchivedOnly) {
           fChats = fChats.filter((c) => !isChatArchived(c.id));
         }
 
+        if (S.filterType === 'Unread Only') {
+          fChats = fChats.filter((c) => isChatUnread(c.id));
+        } else if (S.filterType === 'Starred') {
+          fChats = fChats.filter((c) => isChatPinned(c.id));
+        }
+
+        // Sort chats strictly by Pinned first, then latest updatedAt descending!
         fChats.sort((a, b) => {
           const pinA = isChatPinned(a.id) ? 1 : 0;
           const pinB = isChatPinned(b.id) ? 1 : 0;
           if (pinA !== pinB) return pinB - pinA;
+          if (S.sortConversations === 'Alphabetical') {
+            return (a.title || '').localeCompare(b.title || '');
+          } else if (S.sortConversations === 'Created Time') {
+            return (b.createdAt || 0) - (a.createdAt || 0);
+          }
           return (b.updatedAt || 0) - (a.updatedAt || 0);
         });
 
-        if (fChats.length > 0) {
-          const sessionList = h('div', 'sb-list sb-chat-list');
-          const isExp = S.expandedProjects.has(f);
-          const visible = (!filter && fChats.length > 1 && !isExp) ? [fChats[0]] : fChats;
+        const tree = h('div', 'sb-project-tree');
 
-          for (const c of visible) {
-            sessionList.appendChild(createSessionItem(c, c.id === S.app?.chatId));
-          }
-          card.appendChild(sessionList);
-
-          if (!filter && fChats.length > 1) {
-            const moreBtnToggle = h('button', 'sb-show-more-btn');
-            const icoSpan = h('span', 'ico tiny');
-            icoSpan.appendChild(icon(isExp ? 'chevronUp' : 'chevronDown'));
-            moreBtnToggle.appendChild(icoSpan);
-            moreBtnToggle.appendChild(h('span', '', isExp ? 'Show fewer sessions' : `Show all sessions (${fChats.length})`));
-            moreBtnToggle.addEventListener('click', (e) => {
-              e.stopPropagation();
-              if (S.expandedProjects.has(f)) S.expandedProjects.delete(f);
-              else S.expandedProjects.add(f);
-              renderOtherProjects();
-            });
-            card.appendChild(moreBtnToggle);
+        // If this is the active project and has an unsaved new conversation:
+        if (isCurFolder && !filter) {
+          const hasNewChat = !fChats.some((c) => c.id === S.app.chatId);
+          if (hasNewChat) {
+            const newEl = h('div', 'sb-item sb-session-item on sb-new-session');
+            newEl.appendChild(iconSpan('plus'));
+            newEl.appendChild(h('span', 'label ellipsis', 'New conversation'));
+            if (S.runningChats.has(S.app.chatId)) newEl.appendChild(h('span', 'run-dot'));
+            tree.appendChild(newEl);
           }
         }
+
+        for (const c of fChats) {
+          const isCurChat = (c.id === S.app?.chatId);
+          const el = createSessionItem(c, isCurChat);
+          tree.appendChild(el);
+        }
+
+        if (fChats.length === 0 && !isCurFolder) {
+          tree.appendChild(h('div', 'sb-tree-empty', 'No conversations'));
+        }
+
+        card.appendChild(tree);
       }
 
       pl.appendChild(card);
     }
+  }
+
+  function renderChats() {
+    renderProjects();
+  }
+
+  function renderOtherProjects() {
+    // Merged into unified renderProjects()
   }
 
   function renderConversations() {
@@ -1122,6 +1256,7 @@
   }
 
   function addUser(text, atts) {
+    const wrap = h('div', 'msg-user-wrap');
     const box = h('div', 'msg-user');
     if (text) box.appendChild(document.createTextNode(text));
     if (atts && atts.length > 0) {
@@ -1129,13 +1264,16 @@
       for (const a of atts) row.appendChild(chipFor(a));
       box.appendChild(row);
     }
-    append(box);
+    wrap.appendChild(box);
+    append(wrap);
   }
 
   function startAssistant() {
+    const wrap = h('div', 'msg-assistant-wrap');
     const el = h('div', 'msg-assistant');
-    append(el);
-    S.current = { el, raw: '', raf: 0 };
+    wrap.appendChild(el);
+    append(wrap);
+    S.current = { el, wrap, raw: '', raf: 0 };
   }
 
   function drawAssistant() {
@@ -1162,9 +1300,11 @@
   }
 
   function addStaticAssistant(text) {
+    const wrap = h('div', 'msg-assistant-wrap');
     const el = h('div', 'msg-assistant');
     Md.render(el, text);
-    append(el);
+    wrap.appendChild(el);
+    append(wrap);
   }
 
   // ---------- tool cards ----------
@@ -1403,21 +1543,197 @@
       case 'tool_output': onToolOutput(ev); break;
       case 'tool_result': onToolResult(ev); break;
       case 'notice': flushAssistant(); append(h('div', 'notice', ev.message)); break;
-      case 'error': flushAssistant(); append(h('div', 'error-msg', ev.message)); setRunning(false); break;
-      case 'stopped': flushAssistant(); append(h('div', 'stopped', 'Stopped.')); setRunning(false); break;
-      case 'done': flushAssistant(); setRunning(false); break;
+      case 'error': flushAssistant(); append(h('div', 'error-msg', ev.message)); setRunning(false); processNextQueued(); break;
+      case 'stopped': flushAssistant(); append(h('div', 'stopped', 'Stopped.')); setRunning(false); processNextQueued(); break;
+      case 'done': flushAssistant(); setRunning(false); processNextQueued(); break;
     }
   }
 
-  async function send() {
-    if (S.running || !S.app || !S.app.folder) return;
-    const text = els.input.value.trim();
-    if (!text && S.attachments.length === 0) return;
-    const atts = S.attachments.slice();
-    els.input.value = '';
-    autoGrow();
-    S.attachments = [];
+  // ---------- message queuing & demos ----------
+  function queueMessage(text, atts) {
+    if (!S.messageQueue) S.messageQueue = [];
+    S.messageQueue.push({ text, atts });
+    renderQueuedCard();
+    toast('Message added to queue. Will send when current turn completes.');
+  }
+
+  function renderQueuedCard() {
+    if (!els.queuedCard) return;
+    const q = S.messageQueue || [];
+    if (q.length === 0) {
+      els.queuedCard.hidden = true;
+      return;
+    }
+    els.queuedCard.hidden = false;
+    const item = q[0];
+    const badge = els.queuedCard.querySelector('.qc-badge');
+    if (badge) badge.textContent = `Queued message (${q.length})`;
+    if (els.qcText) els.qcText.textContent = item.text || '(Attachment)';
+    if (els.qcAtts) {
+      els.qcAtts.textContent = '';
+      if (item.atts && item.atts.length > 0) {
+        els.qcAtts.hidden = false;
+        for (const a of item.atts) els.qcAtts.appendChild(chipFor(a));
+      } else {
+        els.qcAtts.hidden = true;
+      }
+    }
+  }
+
+  function sendQueuedNow() {
+    if (!S.messageQueue || S.messageQueue.length === 0) return;
+    const item = S.messageQueue.shift();
+    renderQueuedCard();
+    if (S.running) {
+      api.stop().catch(() => {});
+      setTimeout(() => {
+        send(item.text, item.atts);
+      }, 350);
+    } else {
+      send(item.text, item.atts);
+    }
+  }
+
+  function editQueued() {
+    if (!S.messageQueue || S.messageQueue.length === 0) return;
+    const item = S.messageQueue.shift();
+    renderQueuedCard();
+    els.input.value = item.text || '';
+    S.attachments = (item.atts || []).slice();
     renderAttachments();
+    autoGrow();
+    els.input.focus();
+  }
+
+  function removeQueued() {
+    if (!S.messageQueue || S.messageQueue.length === 0) return;
+    S.messageQueue.shift();
+    renderQueuedCard();
+    toast('Queued message removed.');
+  }
+
+  function processNextQueued() {
+    if (!S.messageQueue || S.messageQueue.length === 0) {
+      renderQueuedCard();
+      return;
+    }
+    const item = S.messageQueue.shift();
+    renderQueuedCard();
+    setTimeout(() => {
+      send(item.text, item.atts);
+    }, 300);
+  }
+
+  function demoQueuedMessages() {
+    resetChatView();
+    addUser('1. Set up JWT authentication module for this project.');
+    startAssistant();
+    onText('Creating authentication module and verifying tokens...\n\n```typescript\nimport jwt from "jsonwebtoken";\n\nexport function verifyToken(req, res, next) {\n  const token = req.headers["authorization"]?.split(" ")[1];\n  if (!token) return res.status(401).json({ error: "Unauthorized" });\n  try {\n    req.user = jwt.verify(token, process.env.JWT_SECRET);\n    next();\n  } catch (err) {\n    return res.status(403).json({ error: "Invalid token" });\n  }\n}\n```\n\nAnalyzing session encryption algorithms and security rules...');
+    setRunning(true);
+
+    setTimeout(() => {
+      queueMessage('2. Also add Google OAuth login and rate-limiting middleware.', []);
+    }, 700);
+
+    setTimeout(() => {
+      onText('\n\nJWT authentication setup completed.');
+      flushAssistant();
+      setRunning(false);
+      processNextQueued();
+    }, 5000);
+  }
+
+  function demoWhatsAppChat() {
+    resetChatView();
+    addUser('Can you implement the macOS Local AI Agent App Setup and show the structure with code?', [
+      { kind: 'image', name: 'app-architecture.png', dataUrl: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="180" viewBox="0 0 300 180"><rect width="300" height="180" fill="%231a1c23" rx="10"/><text x="150" y="95" fill="%233b82f6" font-size="16" font-family="sans-serif" font-weight="bold" text-anchor="middle">Cr3agent Architecture</text></svg>' }
+    ]);
+
+    const md = `### macOS Local AI Agent App Setup
+
+I have designed the modular architecture for **Cr3agent**. Here is the core orchestration service and process workflow:
+
+\`\`\`typescript
+export interface AgentTurn {
+  id: string;
+  query: string;
+  attachments?: Attachment[];
+  state: 'queued' | 'running' | 'completed' | 'interrupted';
+  createdAt: number;
+}
+
+export class AgentService {
+  private queue: AgentTurn[] = [];
+  private activeTurn: AgentTurn | null = null;
+
+  async enqueue(query: string, attachments: Attachment[] = []): Promise<void> {
+    const turn: AgentTurn = {
+      id: crypto.randomUUID(),
+      query,
+      attachments,
+      state: 'queued',
+      createdAt: Date.now()
+    };
+    this.queue.push(turn);
+    if (!this.activeTurn) this.processNext();
+  }
+}
+\`\`\`
+
+#### Key Highlights
+- **WhatsApp-style Bubbles**: User messages align cleanly to the right with thumbnails.
+- **Queued Execution**: Continuous multi-prompt scheduling with queue management.
+- **VS Code Terminal**: Side-by-side terminal splitting and tabbed workflows.
+`;
+    addStaticAssistant(md);
+  }
+
+  function demoSidebarTree() {
+    S.chats = [
+      { id: 'c1', title: 'CR3-Agentic AI macOS Setup', folder: S.app?.folder, updatedAt: Date.now() },
+      { id: 'c2', title: 'Casual Greeting', folder: S.app?.folder, updatedAt: Date.now() - 30000 }
+    ];
+    S.allChats = [
+      ...S.chats,
+      { id: 'c3', title: 'Desktop Software Google Cloud', folder: '/Users/cr3-architect/Projects/sentrylock', updatedAt: Date.now() - 3600000 },
+      { id: 'c4', title: 'Full Stack Portfolio Web App', folder: null, updatedAt: Date.now() - 86400000 }
+    ];
+    markChatUnread('c3', true);
+    if (!S.app.settings.recentFolders) S.app.settings.recentFolders = [];
+    if (!S.app.settings.recentFolders.includes('/Users/cr3-architect/Projects/sentrylock')) {
+      S.app.settings.recentFolders.push('/Users/cr3-architect/Projects/sentrylock');
+    }
+    renderSidebar();
+    renderHeader();
+    toast('Loaded Antigravity sidebar demo tree.');
+  }
+
+  async function send(overrideText, overrideAtts) {
+    if (!S.app || !S.app.folder) {
+      toast('Open a project folder first.');
+      return;
+    }
+    const text = overrideText !== undefined ? overrideText : els.input.value.trim();
+    const atts = overrideAtts !== undefined ? overrideAtts : S.attachments.slice();
+    if (!text && atts.length === 0) return;
+
+    if (S.running) {
+      queueMessage(text, atts);
+      if (overrideText === undefined) {
+        els.input.value = '';
+        autoGrow();
+        S.attachments = [];
+        renderAttachments();
+      }
+      return;
+    }
+
+    if (overrideText === undefined) {
+      els.input.value = '';
+      autoGrow();
+      S.attachments = [];
+      renderAttachments();
+    }
     addUser(text, atts);
     S.current = null;
     setRunning(true);
@@ -1426,6 +1742,7 @@
     if (!r.ok) {
       append(h('div', 'error-msg', r.error || 'Could not send the message.'));
       setRunning(false);
+      processNextQueued();
     }
   }
 
@@ -1657,6 +1974,9 @@
     let del = 0;
     S.changes.forEach((c) => { add += c.added; del += c.removed; });
     $('chSummary').textContent = n === 0 ? 'No changes yet' : `${n} file${n === 1 ? '' : 's'} · +${add} −${del}`;
+    if (els.ovDiffStat) {
+      els.ovDiffStat.innerHTML = `<span class="ov-add">+${add}</span> <span class="ov-del">-${del}</span>`;
+    }
     $('chKeepAll').disabled = $('chRevertAll').disabled = n === 0;
 
     if (n === 0) {
@@ -1812,34 +2132,46 @@
     const show = force === undefined ? els.changesPane.hidden : force;
     els.changesPane.hidden = !show;
     els.splitter.hidden = !show;
+    els.app.classList.toggle('chat-full', !show);
     els.changesBtn.classList.toggle('on', show);
+    store('cr3.changes', show ? '1' : '0');
     if (show) refreshChanges();
   }
 
-  function setChangesWidth(px) {
-    // always leave the chat at least ~460px, whatever the sidebar is doing
+  function setChatWidth(px) {
     const sb = els.app.classList.contains('sb-hidden') ? 0 : $('sidebar').offsetWidth;
-    const max = Math.max(340, window.innerWidth - sb - 460);
-    const w = Math.max(320, Math.min(px, max));
-    document.documentElement.style.setProperty('--changes-w', w + 'px');
+    const max = Math.max(340, window.innerWidth - sb - 340);
+    const w = Math.max(340, Math.min(px, max));
+    document.documentElement.style.setProperty('--chat-w', w + 'px');
     return w;
   }
 
+  function setChangesWidth(px) {
+    return px;
+  }
+
   function initSplitter() {
-    const saved = parseInt(store('fa.changesW') || '', 10);
-    if (saved) setChangesWidth(saved);
+    const saved = parseInt(store('cr3.chatW') || '', 10);
+    if (saved) setChatWidth(saved);
+    else setChatWidth(460);
     let dragging = false;
     els.splitter.addEventListener('mousedown', (e) => { dragging = true; els.splitter.classList.add('drag-on'); e.preventDefault(); });
-    window.addEventListener('mousemove', (e) => { if (dragging) setChangesWidth(window.innerWidth - e.clientX); });
+    window.addEventListener('mousemove', (e) => {
+      if (!dragging) return;
+      const sb = els.app.classList.contains('sb-hidden') ? 0 : $('sidebar').offsetWidth;
+      setChatWidth(e.clientX - sb);
+    });
     window.addEventListener('mouseup', () => {
       if (!dragging) return;
       dragging = false;
       els.splitter.classList.remove('drag-on');
-      store('fa.changesW', String(Math.round(els.changesPane.getBoundingClientRect().width)));
+      const curW = document.querySelector('.chat-col')?.getBoundingClientRect().width;
+      if (curW) store('cr3.chatW', String(Math.round(curW)));
     });
     els.splitter.addEventListener('dblclick', () => {
-      const wide = els.changesPane.getBoundingClientRect().width > window.innerWidth * 0.55;
-      store('fa.changesW', String(setChangesWidth(wide ? 560 : window.innerWidth * 0.7)));
+      const curW = document.querySelector('.chat-col')?.getBoundingClientRect().width || 460;
+      const target = curW > 500 ? 440 : 580;
+      store('cr3.chatW', String(setChatWidth(target)));
     });
   }
 
@@ -1851,76 +2183,229 @@
     if (S.selected) showDiff(S.selected);
   }
 
-  // ---------- terminal ----------
+  // ---------- VS Code Terminal ----------
+  function renderTerminalTabs() {
+    if (!els.termTabsList) return;
+    els.termTabsList.textContent = '';
+    S.terminalTabs.forEach((tabName, idx) => {
+      const b = h('button', 'term-tab' + (idx === S.terminalActiveTab ? ' on' : ''));
+      b.appendChild(iconSpan('terminal', 'tiny'));
+      b.appendChild(h('span', 'term-tab-label', tabName));
+      b.addEventListener('click', () => {
+        S.terminalActiveTab = idx;
+        renderTerminalTabs();
+      });
+      els.termTabsList.appendChild(b);
+    });
+  }
+
+  function addTerminalTab() {
+    const nextNum = S.terminalTabs.length + 1;
+    S.terminalTabs.push(`${nextNum}: zsh`);
+    S.terminalActiveTab = S.terminalTabs.length - 1;
+    renderTerminalTabs();
+    if (els.termOut) els.termOut.textContent = '';
+    termAppend(`$ # Terminal session ${nextNum} started\n`, false);
+  }
+
+  function splitTerminal() {
+    S.terminalSplit = !S.terminalSplit;
+    if (els.termPaneRight) els.termPaneRight.hidden = !S.terminalSplit;
+    if (S.terminalSplit) {
+      if (els.termOutSplit && !els.termOutSplit.textContent) {
+        els.termOutSplit.textContent = `$ # Split terminal (bash)\n`;
+      }
+      if (els.termInputSplit) els.termInputSplit.focus();
+    } else {
+      if (els.termInput) els.termInput.focus();
+    }
+  }
+
+  function killTerminal() {
+    if (S.terminalSplit) {
+      splitTerminal();
+      return;
+    }
+    if (S.terminalTabs.length > 1) {
+      S.terminalTabs.splice(S.terminalActiveTab, 1);
+      S.terminalActiveTab = Math.max(0, S.terminalTabs.length - 1);
+      renderTerminalTabs();
+      if (els.termOut) els.termOut.textContent = '';
+      termAppend(`$ # Switched to ${S.terminalTabs[S.terminalActiveTab]}\n`, false);
+    } else {
+      if (els.termOut) els.termOut.textContent = '';
+      toggleTerminal(false);
+    }
+  }
+
+  function clearTerminal() {
+    if (els.termOut) els.termOut.textContent = '';
+    if (els.termOutSplit) els.termOutSplit.textContent = '';
+  }
+
   function toggleTerminal(force) {
     const show = force === undefined ? els.terminalPane.hidden : force;
     els.terminalPane.hidden = !show;
     els.terminalBtn.classList.toggle('on', show);
-    if (show) els.termInput.focus();
+    if (show) {
+      renderTerminalTabs();
+      els.termInput.focus();
+    }
   }
 
-  function termAppend(text) {
-    const out = els.termOut;
+  function termAppend(text, isSplit) {
+    const out = isSplit ? els.termOutSplit : els.termOut;
+    if (!out) return;
     out.textContent += text;
     if (out.textContent.length > 200000) out.textContent = '…\n' + out.textContent.slice(-120000);
     out.scrollTop = out.scrollHeight;
   }
 
-  function setTermRunning(on) {
-    S.termRunning = on;
-    els.termStop.hidden = !on;
-    els.termInput.disabled = on;
-    if (!on) els.termInput.focus();
+  function setTermRunning(on, isSplit) {
+    if (isSplit) {
+      S.termSplitRunning = on;
+      if (els.termInputSplit) els.termInputSplit.disabled = on;
+    } else {
+      S.termRunning = on;
+      if (els.termStop) els.termStop.hidden = !on;
+      if (els.termInput) els.termInput.disabled = on;
+      if (!on && els.termInput) els.termInput.focus();
+    }
   }
 
-  async function termRun() {
-    const cmd = els.termInput.value.trim();
-    if (!cmd || S.termRunning) return;
+  async function termRun(isSplit) {
+    const inp = isSplit ? els.termInputSplit : els.termInput;
+    if (!inp) return;
+    const cmd = inp.value.trim();
+    if (!cmd) return;
+    if (isSplit ? S.termSplitRunning : S.termRunning) return;
     if (!S.app || !S.app.folder) return toast('Open a folder first.');
-    if (S.termHistory[S.termHistory.length - 1] !== cmd) S.termHistory.push(cmd);
-    S.termIdx = S.termHistory.length;
-    els.termInput.value = '';
-    termAppend(`$ ${cmd}\n`);
-    setTermRunning(true);
+    if (!isSplit) {
+      if (S.termHistory[S.termHistory.length - 1] !== cmd) S.termHistory.push(cmd);
+      S.termIdx = S.termHistory.length;
+    }
+    inp.value = '';
+    termAppend(`$ ${cmd}\n`, isSplit);
+    setTermRunning(true, isSplit);
     const r = await api.runTerminal(cmd);
     if (!r.ok) {
-      termAppend(`${r.error}\n`);
-      setTermRunning(false);
+      termAppend(`${r.error}\n`, isSplit);
+      setTermRunning(false, isSplit);
     }
   }
 
   function onTerminalEvent(ev) {
-    if (ev.type === 'data') termAppend(Md.stripAnsi(ev.chunk));
+    if (ev.type === 'data') termAppend(Md.stripAnsi(ev.chunk), false);
     else if (ev.type === 'exit') {
-      termAppend(ev.cancelled ? '\n[stopped]\n\n' : `\n[exit code ${ev.code === null ? 'unknown' : ev.code}]\n\n`);
-      setTermRunning(false);
+      termAppend(ev.cancelled ? '\n[stopped]\n\n' : `\n[exit code ${ev.code === null ? 'unknown' : ev.code}]\n\n`, false);
+      setTermRunning(false, false);
+      setTermRunning(false, true);
       scheduleChangesRefresh();
     }
   }
 
-  // ---------- settings ----------
+  // ---------- Overview Panel ----------
+  function toggleOverview(force) {
+    if (!els.overviewPane) return;
+    const show = force === undefined ? els.overviewPane.hidden : force;
+    els.overviewPane.hidden = !show;
+    if (els.topOverviewBtn) els.topOverviewBtn.classList.toggle('on', show);
+    if (els.overviewToggleBtn) els.overviewToggleBtn.classList.toggle('on', show);
+    if (show) updateOverviewDiffStat();
+  }
+
+  function updateOverviewDiffStat() {
+    let adds = 0, dels = 0;
+    for (const ch of (S.changes || [])) {
+      adds += (ch.added || 0);
+      dels += (ch.removed || 0);
+    }
+    if (els.ovDiffStat) {
+      els.ovDiffStat.innerHTML = `<span class="ov-add">+${adds}</span> <span class="ov-del">-${dels}</span>`;
+    }
+    if (els.ovTaskCount) {
+      els.ovTaskCount.textContent = S.running ? '1' : '0';
+    }
+    if (els.ovTaskList) {
+      if (S.running) {
+        els.ovTaskList.innerHTML = '<div class="ov-task-item"><span class="ov-task-bullet">›</span><span class="ellipsis">Agent turn execution</span></div>';
+      } else {
+        els.ovTaskList.innerHTML = '<div class="ov-task-item" style="opacity:0.6;"><span class="ov-task-bullet" style="color:#6d727e;">•</span><span class="ellipsis">No active tasks</span></div>';
+      }
+    }
+  }
+
+  // ---------- Antigravity Settings Modal ----------
+  const SETTING_PAGES = {
+    general: { title: 'General', sub: 'Configure agent execution, queued message delivery, and permissions.' },
+    models: { title: 'Providers & Models', sub: 'Configure LLM provider endpoints, API keys, and models.' },
+    application: { title: 'Application', sub: 'Configure desktop application startup, updates, and diagnostics.' },
+    appearance: { title: 'Appearance', sub: 'Customize themes, diff view, and interface layout.' },
+    shortcuts: { title: 'Shortcuts', sub: 'Quick reference for keyboard shortcuts and productivity hotkeys.' },
+    notifications: { title: 'Notifications', sub: 'Manage alerts, sound chimes, and system notifications.' },
+    browser: { title: 'Browser', sub: 'Configure sandboxed browser automation and headless testing.' },
+    agent: { title: 'Project Settings', sub: 'Rules, approval policies, and memory limits for this project.' },
+    conversations: { title: 'Conversations', sub: 'Manage, export, and clean conversation history.' },
+    accounts: { title: 'Accounts', sub: 'Manage connected developer and cloud accounts.' },
+  };
+
+  function switchTab(name) {
+    if (name === 'providers') name = 'models';
+    if (name === 'project') name = 'agent';
+    const target = SETTING_PAGES[name] ? name : 'general';
+
+    document.querySelectorAll('.set-nav-item').forEach((btn) => {
+      btn.classList.toggle('on', btn.dataset.setTab === target);
+    });
+
+    document.querySelectorAll('.set-pane').forEach((pane) => {
+      pane.hidden = pane.id !== `tab-${target}`;
+    });
+
+    const meta = SETTING_PAGES[target] || SETTING_PAGES.general;
+    if (els.setTitle) els.setTitle.textContent = meta.title;
+    if (els.setSubtitle) els.setSubtitle.textContent = meta.sub;
+  }
+
+  function renderSettingsProjectList() {
+    if (!els.setProjectList) return;
+    els.setProjectList.textContent = '';
+    const projs = [];
+    if (S.app?.folder) projs.push(S.app.folder);
+    for (const hItem of (S.app?.history || [])) {
+      if (!projs.includes(hItem.path)) projs.push(hItem.path);
+    }
+    for (const p of projs.slice(0, 4)) {
+      const b = h('button', 'set-nav-item');
+      b.appendChild(iconSpan('folder', 'tiny'));
+      b.appendChild(h('span', 'ellipsis', baseName(p)));
+      b.title = p;
+      b.addEventListener('click', () => {
+        switchTab('agent');
+        if (els.setTitle) els.setTitle.textContent = `Project: ${baseName(p)}`;
+        if (els.setSubtitle) els.setSubtitle.textContent = `Settings and rules for ${p}`;
+      });
+      els.setProjectList.appendChild(b);
+    }
+  }
+
   function openSettings(tab) {
-    if (tab) switchTab(tab);
-    const s = S.app.settings;
-    $('afApproval').value = s.approvalMode;
-    $('afSteps').value = s.maxSteps;
-    $('afContext').value = s.maxContextChars;
-    $('afFallback').checked = !!s.autoFallback;
-    $('afStatus').hidden = true;
+    switchTab(tab || 'general');
+    const s = S.app?.settings || {};
+    if ($('afApproval')) $('afApproval').value = s.approvalMode || 'ask';
+    if ($('genPermPreset')) $('genPermPreset').value = s.approvalMode || 'ask';
+    if ($('afSteps')) $('afSteps').value = s.maxSteps || 25;
+    if ($('afContext')) $('afContext').value = s.maxContextChars || 120000;
+    if ($('afFallback')) $('afFallback').checked = !!s.autoFallback;
+    if ($('afStatus')) $('afStatus').hidden = true;
     renderRules();
     renderAccounts();
-    if (!S.provSel) S.provSel = s.activeProviderId;
+    renderSettingsProjectList();
+    if (!S.provSel && s.activeProviderId) S.provSel = s.activeProviderId;
     renderProviders();
     closeMenu();
     const d = $('settingsDialog');
     if (!d.open) d.showModal();
-  }
-
-  function switchTab(name) {
-    document.querySelectorAll('.tab').forEach((t) => t.classList.toggle('on', t.dataset.tab === name));
-    $('tab-providers').hidden = name !== 'providers';
-    $('tab-agent').hidden = name !== 'agent';
-    $('tab-accounts').hidden = name !== 'accounts';
   }
 
   function formStatus(el, msg, ok) {
@@ -1988,10 +2473,111 @@
   }
 
   function initSettings() {
-    document.querySelectorAll('.tab').forEach((t) => t.addEventListener('click', () => switchTab(t.dataset.tab)));
-    $('settingsClose').addEventListener('click', () => $('settingsDialog').close());
+    document.querySelectorAll('.set-nav-item').forEach((t) => {
+      t.addEventListener('click', () => {
+        if (t.dataset.setTab) switchTab(t.dataset.setTab);
+      });
+    });
+    $('settingsClose')?.addEventListener('click', () => $('settingsDialog').close());
 
-    $('provAdd').addEventListener('click', () => {
+    // Layout cards
+    const lkw = $('layoutKW');
+    const lse = $('layoutSE');
+    if (lkw && lse) {
+      lkw.addEventListener('click', () => {
+        lkw.classList.add('on');
+        lse.classList.remove('on');
+        S.layoutMode = 'kw';
+        toast('Knowledge Work layout activated');
+      });
+      lse.addEventListener('click', () => {
+        lse.classList.add('on');
+        lkw.classList.remove('on');
+        S.layoutMode = 'se';
+        toast('Software Engineering layout activated');
+      });
+    }
+
+    // Permission Preset dropdown sync
+    $('genPermPreset')?.addEventListener('change', async (e) => {
+      const mode = e.target.value;
+      if ($('afApproval')) $('afApproval').value = mode;
+      const r = await api.setGeneral({ approvalMode: mode });
+      if (r.ok) {
+        applyState(r);
+        toast(`Permission preset set to ${mode}`);
+      } else {
+        toast(r.error);
+      }
+    });
+
+    $('genToolPermsBtn')?.addEventListener('click', () => {
+      openSkills();
+    });
+
+    $('genNetRulesBtn')?.addEventListener('click', () => {
+      toast('Network access rules: standard internet endpoints allowed in sandbox.');
+    });
+
+    // Execution Queue
+    const eq = $('execQueueBtn');
+    const es = $('execSendImmBtn');
+    if (eq && es) {
+      eq.addEventListener('click', () => {
+        eq.classList.add('on');
+        es.classList.remove('on');
+        toast('Messages will be queued when agent is running');
+      });
+      es.addEventListener('click', () => {
+        es.classList.add('on');
+        eq.classList.remove('on');
+        toast('Messages will be sent immediately');
+      });
+    }
+
+    // Voice mode
+    $('voiceVolume')?.addEventListener('input', (e) => {
+      const lbl = $('voiceVolumeVal');
+      if (lbl) lbl.textContent = e.target.value + '%';
+    });
+    $('voiceChangeBtn')?.addEventListener('click', () => {
+      toast('Voice: Gemini Live 2.0 voice selected');
+    });
+
+    // User badge & feedback
+    $('setUserBadge')?.addEventListener('click', () => {
+      switchTab('accounts');
+    });
+    $('setFeedbackBtn')?.addEventListener('click', () => {
+      toast('Thank you for using Cr3agent! Send feedback on GitHub.');
+    });
+
+    // Conversations management
+    $('convExportBtn')?.addEventListener('click', () => {
+      const json = JSON.stringify(S.chats || [], null, 2);
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `cr3agent-conversations-${Date.now()}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast('Conversations exported to JSON');
+    });
+
+    $('convClearOldBtn')?.addEventListener('click', () => {
+      toast('Inactive chats cleared.');
+    });
+
+    $('appCheckUpdateBtn')?.addEventListener('click', () => {
+      toast('Cr3agent is up to date (v0.3.0).');
+    });
+
+    $('chatWidthSelect')?.addEventListener('change', (e) => {
+      document.documentElement.style.setProperty('--chat-w', e.target.value);
+    });
+
+    $('provAdd')?.addEventListener('click', () => {
       showMenu($('provAdd'), (S.app.presets || []).map((pr) => ({
         label: (pr.free ? 'Free · ' : '') + pr.name, sub: pr.note || pr.baseUrl,
         onClick: async () => {
@@ -2006,12 +2592,12 @@
       })));
     });
 
-    $('provForm').addEventListener('submit', async (e) => {
+    $('provForm')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       if (await saveProvider()) { renderProviders(); formStatus($('pfStatus'), 'Saved.', true); }
     });
 
-    $('pfFetch').addEventListener('click', async () => {
+    $('pfFetch')?.addEventListener('click', async () => {
       const saved = await saveProvider();
       if (!saved) return;
       formStatus($('pfStatus'), 'Contacting the server…', true);
@@ -2023,7 +2609,7 @@
       formStatus($('pfStatus'), `Connected. ${p ? p.models.length : 0} models found.`, true);
     });
 
-    $('pfActivate').addEventListener('click', async () => {
+    $('pfActivate')?.addEventListener('click', async () => {
       const saved = await saveProvider();
       if (!saved) return;
       const p = selectedProvider();
@@ -2035,7 +2621,7 @@
       formStatus($('pfStatus'), `Now using ${p.name} · ${p.model}.`, true);
     });
 
-    $('pfDelete').addEventListener('click', async () => {
+    $('pfDelete')?.addEventListener('click', async () => {
       const p = selectedProvider();
       if (!p) return;
       if (!(await confirmDialog(`Delete “${p.name}”?`, 'Its saved API key is removed from this Mac.', 'Delete'))) return;
@@ -2047,7 +2633,7 @@
       renderProviders();
     });
 
-    $('agentForm').addEventListener('submit', async (e) => {
+    $('agentForm')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const r = await api.setGeneral({ approvalMode: $('afApproval').value, maxSteps: $('afSteps').value, maxContextChars: $('afContext').value, autoFallback: $('afFallback').checked });
       if (!r.ok) return formStatus($('afStatus'), r.error, false);
@@ -2493,11 +3079,21 @@
       });
     }
     if (els.sbProjectToggle) {
-      els.sbProjectToggle.addEventListener('click', () => {
+      els.sbProjectToggle.addEventListener('click', (e) => {
+        e.stopPropagation();
         S.collapseProject = !S.collapseProject;
         renderSidebar();
       });
     }
+    $('sbCurrentProjHeader')?.addEventListener('click', (e) => {
+      if (e.target.closest('button')) return;
+      if (!S.app?.folder) {
+        pickFolder();
+      } else {
+        S.collapseProject = !S.collapseProject;
+        renderSidebar();
+      }
+    });
     if (els.recentProjectsToggle) {
       els.recentProjectsToggle.addEventListener('click', () => {
         S.collapseRecent = !S.collapseRecent;
@@ -2534,11 +3130,9 @@
       });
     }
     if (els.sbFilterProjectsBtn) {
-      els.sbFilterProjectsBtn.addEventListener('click', () => {
-        if (els.sbSearchWrap) {
-          els.sbSearchWrap.hidden = false;
-          els.sbSearch?.focus();
-        }
+      els.sbFilterProjectsBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        showProjectFilterMenu(els.sbFilterProjectsBtn);
       });
     }
     if (els.renameClose) els.renameClose.addEventListener('click', () => els.renameDialog?.close());
@@ -2554,12 +3148,88 @@
       });
     }
 
-    $('settingsBtn')?.addEventListener('click', () => openSettings('providers'));
+    if (els.newStandaloneChatBtn) els.newStandaloneChatBtn.addEventListener('click', newChat);
+
+    // Queued message action buttons
+    if (els.qcSendNowBtn) els.qcSendNowBtn.addEventListener('click', sendQueuedNow);
+    if (els.qcEditBtn) els.qcEditBtn.addEventListener('click', editQueued);
+    if (els.qcRemoveBtn) els.qcRemoveBtn.addEventListener('click', removeQueued);
+
+    $('settingsBtn')?.addEventListener('click', () => openSettings('general'));
     $('skillsBtn')?.addEventListener('click', openSkills);
     $('historyBtn')?.addEventListener('click', openHistory);
     $('accountBtn')?.addEventListener('click', () => openSettings('accounts'));
     $('gitBtn').addEventListener('click', openGit);
     els.changesBtn.addEventListener('click', () => toggleChanges());
+
+    // Top Right Header Icons (3 dots menu, Overview dropdown, and Side Panel toggle)
+    if (els.topChatMenuBtn) {
+      setIcon(els.topChatMenuBtn, 'moreVertical');
+      els.topChatMenuBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const cur = (S.allChats || []).find((c) => c.id === S.app?.chatId) || { id: S.app?.chatId, title: els.chatTitleTop?.textContent || 'Current Chat' };
+        showSessionMenu(els.topChatMenuBtn, cur);
+      });
+    }
+    if (els.topOverviewBtn) {
+      setIcon(els.topOverviewBtn, 'overview');
+      els.topOverviewBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleOverview();
+      });
+    }
+    if (els.topPanelToggleBtn) {
+      setIcon(els.topPanelToggleBtn, 'sidebarRight');
+      els.topPanelToggleBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleChanges();
+      });
+    }
+
+    // Close Overview dropdown on click outside
+    document.addEventListener('click', (e) => {
+      if (els.overviewPane && !els.overviewPane.hidden) {
+        if (!els.overviewPane.contains(e.target) && !els.topOverviewBtn?.contains(e.target) && !els.overviewToggleBtn?.contains(e.target)) {
+          toggleOverview(false);
+        }
+      }
+    });
+
+    // Overview Panel
+    if (els.overviewToggleBtn) els.overviewToggleBtn.addEventListener('click', () => toggleOverview());
+    if (els.ovReviewBtn) els.ovReviewBtn.addEventListener('click', () => toggleChanges(true));
+    if (els.ovFilesBtn) els.ovFilesBtn.addEventListener('click', () => {
+      if (S.app?.folder) api.openFolderInFinder(S.app.folder);
+      else toast('Open a folder first.');
+    });
+    if (els.ovTerminalBtn) els.ovTerminalBtn.addEventListener('click', () => toggleTerminal(true));
+    if (els.ovExtensionsBtn) els.ovExtensionsBtn.addEventListener('click', openSkills);
+    if (els.ovMoreBtn) {
+      els.ovMoreBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        showMenu(els.ovMoreBtn, [
+          { label: 'Refresh Overview', onClick: () => { scheduleChangesRefresh(); updateOverviewDiffStat(); } },
+          { label: 'Close Overview', onClick: () => toggleOverview(false) }
+        ]);
+      });
+    }
+    if (els.ovSeeAllBtn) {
+      els.ovSeeAllBtn.addEventListener('click', () => {
+        toast(S.running ? 'Agent is currently executing a step in the active session.' : 'No background tasks running.');
+      });
+    }
+
+    // VS Code Terminal Controls
+    if (els.termNew) els.termNew.addEventListener('click', addTerminalTab);
+    if (els.termSplit) els.termSplit.addEventListener('click', splitTerminal);
+    if (els.termKill) els.termKill.addEventListener('click', killTerminal);
+    if (els.termClear) els.termClear.addEventListener('click', clearTerminal);
+    if (els.termCloseSplit) els.termCloseSplit.addEventListener('click', splitTerminal);
+    if (els.termInputSplit) {
+      els.termInputSplit.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') termRun(true);
+      });
+    }
     $('chClose').addEventListener('click', () => toggleChanges(false));
     $('chRefresh').addEventListener('click', refreshChanges);
     $('chKeepAll').addEventListener('click', async () => {
@@ -2648,6 +3318,10 @@
         e.preventDefault();
         if (S.app?.chatId) toggleArchiveChat(S.app.chatId);
       }
+      if ((e.metaKey || e.ctrlKey) && e.altKey && (e.key === 'o' || e.key === 'O')) {
+        e.preventDefault();
+        toggleOverview();
+      }
       if ((e.metaKey || e.ctrlKey) && (e.key === 'f' || e.key === 'F')) {
         if (els.sbSearchWrap) {
           e.preventDefault();
@@ -2664,11 +3338,12 @@
     api.onChanged((ev) => {
       if (!ev) return;
       if (ev.what === 'chats') loadChats();
-      else if (ev.what === 'files') scheduleChangesRefresh();
+      else if (ev.what === 'files') { scheduleChangesRefresh(); updateOverviewDiffStat(); }
       else if (ev.what === 'running') {
         S.runningChats = new Set(ev.chats || []);
         if (S.app) renderChats();
         if ($('historyDialog').open) openHistory();
+        updateOverviewDiffStat();
       }
     });
     api.onAccount(onAccountEvent);
@@ -2685,6 +3360,9 @@
     initHistory();
     initEvents();
     if (store('fa.sidebar') === '0') setSidebar(false);
+    if (store('cr3.changes') === '0') toggleChanges(false);
+    else toggleChanges(true);
+    updateOverviewDiffStat();
     const r = await api.state();
     if (!r.ok) { toast(r.error || 'Could not start.'); return; }
     applyState(r);

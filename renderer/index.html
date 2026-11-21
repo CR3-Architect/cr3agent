@@ -4,7 +4,8 @@
   <meta charset="utf-8" />
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self'; script-src 'self'; img-src 'self' data: blob:" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Cr3agent</title>
+  <title>CR3-Agentic AI</title>
+  <link rel="icon" type="image/png" href="icon.png" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -54,35 +55,27 @@
             </div>
           </div>
 
-          <!-- Active Project Card & Sessions -->
-          <div id="activeProjectSection" class="sb-project-card">
-            <div class="sb-project-head" id="sbCurrentProjHeader">
-              <button id="sbProjectToggle" class="icon-btn tiny sb-fold-btn" title="Toggle project sessions" aria-label="Toggle sessions"></button>
-              <span class="ico proj-icon" data-icon="folder"></span>
-              <span id="sbActiveProjName" class="sb-proj-title ellipsis">No folder open</span>
-              <span class="spacer"></span>
-              <div class="proj-hover-actions">
-                <button id="sbCurrentProjMenuBtn" class="icon-btn tiny" title="Project options" aria-label="Project options"></button>
-                <button id="sbCurrentProjNewChatBtn" class="icon-btn tiny" title="New conversation in project" aria-label="New conversation"></button>
-              </div>
-            </div>
-            
-            <div id="chatList" class="sb-list sb-chat-list"></div>
-            
-            <button id="sbToggleAllSessions" class="sb-show-more-btn" hidden>
-              <span class="ico tiny" data-icon="chevronDown"></span>
-              <span id="sbToggleAllSessionsLabel">Show all sessions</span>
-            </button>
-          </div>
+          <!-- Unified Stable Projects Tree List -->
+          <div id="projectList" class="sb-projects-tree-list"></div>
 
-          <!-- Other Projects / Recent Folders -->
-          <div id="projectList" class="sb-other-projects"></div>
+          <!-- Legacy compatibility placeholders (hidden) -->
+          <div id="activeProjectSection" hidden>
+            <div id="sbCurrentProjHeader">
+              <button id="sbProjectToggle" class="icon-btn tiny sb-fold-btn"></button>
+              <span id="sbActiveProjName"></span>
+              <button id="sbCurrentProjMenuBtn" class="icon-btn tiny"></button>
+              <button id="sbCurrentProjNewChatBtn" class="icon-btn tiny"></button>
+            </div>
+            <div id="chatList"></div>
+            <button id="sbToggleAllSessions" hidden><span id="sbToggleAllSessionsLabel"></span></button>
+          </div>
         </div>
 
         <!-- Conversations Section Group -->
         <div id="conversationsSection" class="sb-section-group">
           <div class="sb-section-head">
             <span class="sb-section-label">Conversations</span>
+            <button id="newStandaloneChatBtn" class="icon-btn tiny" title="New conversation" aria-label="New conversation"></button>
           </div>
           <div id="conversationsList" class="sb-list sb-conversations-list"></div>
         </div>
@@ -99,6 +92,10 @@
         <button id="accountBtn"><span id="accountLabel"></span></button>
         <button id="recentProjectsToggle"></button>
         <div id="recentProjectsSection"></div>
+        <button id="changesBtn"></button><span id="changesBadge"></span>
+        <button id="gitBtn"></button>
+        <button id="terminalBtn"></button>
+        <button id="overviewToggleBtn"></button>
       </div>
     </aside>
 
@@ -106,21 +103,26 @@
     <section class="main">
       <header class="main-top drag">
         <button id="sbShow" class="icon-btn no-drag" title="Show sidebar (⌘B)" aria-label="Show sidebar" hidden></button>
-        <div class="proj-title">
-          <span id="projName" class="proj-name">No folder open</span>
-          <span id="projPath" class="proj-path"></span>
+        <div class="proj-title" id="projBreadcrumb">
+          <span id="projName" class="top-proj-name">No folder open</span>
+          <span id="topSep" class="top-sep" hidden>/</span>
+          <span id="chatTitleTop" class="top-chat-title" hidden></span>
+          <span id="projPath" class="proj-path" hidden></span>
         </div>
         <span class="spacer"></span>
-        <button id="changesBtn" class="top-btn no-drag" title="See which files and lines changed (⌥⌘B)"><span class="ico" data-icon="diff"></span>Changes<span id="changesBadge" class="badge" hidden></span></button>
-        <button id="gitBtn" class="top-btn no-drag" title="Commit, push, pull and open pull requests"><span class="ico" data-icon="branch"></span>Git</button>
-        <button id="terminalBtn" class="top-btn no-drag" title="Run commands in this folder (⌃`)"><span class="ico" data-icon="terminal"></span>Terminal</button>
+        <!-- 3 Header Action Icons at Top Right: 3-dots, Overview, and Side Panel Toggle -->
+        <div class="top-header-icons no-drag">
+          <button id="topChatMenuBtn" class="icon-btn" title="Conversation options (Rename, Pin, Archive, Delete)" aria-label="Conversation options"></button>
+          <button id="topOverviewBtn" class="icon-btn" title="Overview" aria-label="Overview"></button>
+          <button id="topPanelToggleBtn" class="icon-btn" title="Toggle side panel" aria-label="Toggle side panel"></button>
+        </div>
       </header>
 
       <div class="main-body">
         <div class="chat-col">
           <div id="messages" class="messages">
             <div id="empty" class="empty">
-              <div class="empty-mark"><span class="ico big" data-icon="folder"></span></div>
+              <div class="empty-mark app-logo-mark"><img src="icon.png" class="empty-avatar-img" alt="CR3-Agentic AI" /></div>
               <h1 id="emptyTitle">Pick a folder to start</h1>
               <p id="emptyText">The agent reads, edits and runs things only inside the folder you choose, and shows you every change.</p>
               <div id="emptyActions" class="chips"></div>
@@ -128,6 +130,21 @@
           </div>
 
           <div class="composer-wrap">
+            <div id="queuedCard" class="queued-card" hidden>
+              <div class="qc-head">
+                <span class="qc-badge">Queued message (1)</span>
+                <span class="qc-info muted small">Will send automatically after current answer</span>
+                <span class="spacer"></span>
+                <button type="button" id="qcSendNowBtn" class="btn tiny primary" title="Send now immediately">Send Now</button>
+                <button type="button" id="qcEditBtn" class="btn tiny" title="Edit message in composer">Edit</button>
+                <button type="button" id="qcRemoveBtn" class="icon-btn tiny" title="Remove from queue" aria-label="Cancel queued message"></button>
+              </div>
+              <div class="qc-body">
+                <div id="qcText" class="qc-text ellipsis"></div>
+                <div id="qcAtts" class="qc-atts" hidden></div>
+              </div>
+            </div>
+
             <div id="composer" class="composer">
               <div id="attachRow" class="attach-row" hidden></div>
               <textarea id="input" rows="1" placeholder="Open a folder to start" disabled></textarea>
@@ -143,24 +160,53 @@
             <div id="status" class="status" hidden></div>
           </div>
 
-          <section id="terminalPane" class="terminal" hidden>
+          <section id="terminalPane" class="terminal vs-terminal" hidden>
             <div class="term-head">
-              <span class="ico" data-icon="terminal"></span><strong>Terminal</strong>
-              <span id="termCwd" class="muted small mono"></span>
+              <div class="term-tabs" id="termTabsList">
+                <button class="term-tab on" data-idx="0">
+                  <span class="ico tiny" data-icon="terminal"></span>
+                  <span class="term-tab-label">1: zsh</span>
+                </button>
+              </div>
+              <span id="termCwd" class="muted small mono term-cwd ellipsis"></span>
               <span class="spacer"></span>
-              <button id="termClear" class="icon-btn small" title="Clear" aria-label="Clear"></button>
-              <button id="termStop" class="icon-btn small" title="Stop the running command" aria-label="Stop command" hidden></button>
-              <button id="termClose" class="icon-btn small" title="Close" aria-label="Close terminal"></button>
+              <div class="term-actions">
+                <button id="termNew" class="icon-btn tiny" title="New Terminal (⌃⇧`)" aria-label="New Terminal"></button>
+                <button id="termSplit" class="icon-btn tiny" title="Split Terminal (⌘\)" aria-label="Split Terminal"></button>
+                <button id="termKill" class="icon-btn tiny" title="Kill Terminal (Trash)" aria-label="Kill Terminal"></button>
+                <button id="termClear" class="icon-btn tiny" title="Clear Output" aria-label="Clear"></button>
+                <button id="termStop" class="icon-btn tiny" title="Stop the running command" aria-label="Stop command" hidden></button>
+                <button id="termClose" class="icon-btn tiny" title="Close Terminal (⌃`)" aria-label="Close terminal"></button>
+              </div>
             </div>
-            <pre id="termOut" class="term-out"></pre>
-            <div class="term-row"><span class="term-prompt">$</span><input id="termInput" type="text" spellcheck="false" autocomplete="off" placeholder="npm install, git status, brew install ripgrep…" /></div>
-            <div class="term-note">Runs one command at a time with your Mac's PATH. Interactive programs (vim, password prompts) are not supported.</div>
+            <div class="term-body" id="termBody">
+              <div class="term-pane" id="termPaneLeft">
+                <pre id="termOut" class="term-out"></pre>
+                <div class="term-row">
+                  <span class="term-prompt">$</span>
+                  <input id="termInput" type="text" spellcheck="false" autocomplete="off" placeholder="npm test, git status, brew install…" />
+                </div>
+              </div>
+              <div class="term-pane term-pane-split" id="termPaneRight" hidden>
+                <div class="term-pane-header">
+                  <span class="ico tiny" data-icon="terminal"></span>
+                  <span class="term-tab-label">2: bash (split)</span>
+                  <span class="spacer"></span>
+                  <button id="termCloseSplit" class="icon-btn tiny" title="Close split pane" aria-label="Close split"></button>
+                </div>
+                <pre id="termOutSplit" class="term-out"></pre>
+                <div class="term-row">
+                  <span class="term-prompt">$</span>
+                  <input id="termInputSplit" type="text" spellcheck="false" autocomplete="off" placeholder="Run command in split pane…" />
+                </div>
+              </div>
+            </div>
           </section>
         </div>
 
-        <div id="splitter" class="splitter" hidden></div>
+        <div id="splitter" class="splitter"></div>
 
-        <aside id="changesPane" class="changes" hidden>
+        <aside id="changesPane" class="changes">
           <!-- Modern Modified Files Header -->
           <div class="ch-top-bar">
             <div class="ch-file-info">
@@ -217,6 +263,51 @@
             <button id="chRevertAll" class="btn small danger-text">Undo all</button>
           </div>
         </aside>
+
+        <!-- ===== overview panel ===== -->
+        <aside id="overviewPane" class="overview-pane" hidden>
+          <div class="ov-head">
+            <strong>Overview</strong>
+            <span class="spacer"></span>
+            <button id="ovMoreBtn" class="icon-btn tiny" title="More options" aria-label="More options"></button>
+          </div>
+          <div class="ov-list">
+            <button id="ovReviewBtn" class="ov-item" title="Review changed files">
+              <span class="ico ov-item-ico" data-icon="file"></span>
+              <span class="ov-label">Review</span>
+              <span id="ovDiffStat" class="ov-stat-badge">
+                <span class="ov-add">+0</span> <span class="ov-del">-0</span>
+              </span>
+            </button>
+            <button id="ovFilesBtn" class="ov-item" title="Browse files">
+              <span class="ico ov-item-ico" data-icon="folder"></span>
+              <span class="ov-label">Files</span>
+            </button>
+            <button id="ovTerminalBtn" class="ov-item" title="Terminal">
+              <span class="ico ov-item-ico" data-icon="terminal"></span>
+              <span class="ov-label">Terminal</span>
+            </button>
+            <button id="ovExtensionsBtn" class="ov-item" title="Extensions & Skills">
+              <span class="ico ov-item-ico" data-icon="puzzle"></span>
+              <span class="ov-label">Extensions</span>
+              <span class="ico tiny ov-arrow" data-icon="chevronRight"></span>
+            </button>
+          </div>
+
+          <div class="ov-section">
+            <div class="ov-section-head">
+              <span class="ov-section-title">Background Tasks</span>
+              <span id="ovTaskCount" class="ov-count-badge">1</span>
+            </div>
+            <div id="ovTaskList" class="ov-task-list">
+              <div class="ov-task-item" id="ovTaskActive">
+                <span class="ov-task-bullet">›</span>
+                <span class="ellipsis" id="ovTaskName">Run test suite</span>
+              </div>
+            </div>
+            <button id="ovSeeAllBtn" class="ov-see-all">See all</button>
+          </div>
+        </aside>
       </div>
     </section>
   </div>
@@ -242,97 +333,418 @@
   </dialog>
 
   <!-- ===== settings ===== -->
-  <dialog id="settingsDialog" class="dlg wide">
-    <div class="dlg-head"><h2>Settings</h2><button id="settingsClose" class="icon-btn" aria-label="Close"></button></div>
-    <div class="tabs" role="tablist">
-      <button class="tab on" data-tab="providers">Providers &amp; API keys</button>
-      <button class="tab" data-tab="agent">Agent</button>
-      <button class="tab" data-tab="accounts">Accounts</button>
-    </div>
+  <dialog id="settingsDialog" class="dlg wide settings-modal">
+    <!-- Settings Left Sidebar -->
+    <div class="set-side">
+      <div class="set-side-section">
+        <div class="set-side-title">Settings</div>
+        <button class="set-nav-item on" data-set-tab="general">
+          <span class="ico tiny" data-icon="sliders"></span>
+          <span>General</span>
+        </button>
+        <button class="set-nav-item" data-set-tab="application">
+          <span class="ico tiny" data-icon="monitor"></span>
+          <span>Application</span>
+        </button>
+        <button class="set-nav-item" data-set-tab="appearance">
+          <span class="ico tiny" data-icon="sparkles"></span>
+          <span>Appearance</span>
+        </button>
+        <button class="set-nav-item" data-set-tab="shortcuts">
+          <span class="ico tiny" data-icon="command"></span>
+          <span>Shortcuts</span>
+        </button>
+        <button class="set-nav-item" data-set-tab="notifications">
+          <span class="ico tiny" data-icon="bell"></span>
+          <span>Notifications</span>
+        </button>
+        <button class="set-nav-item" data-set-tab="models">
+          <span class="ico tiny" data-icon="sparkles"></span>
+          <span>Models</span>
+        </button>
+        <button class="set-nav-item" data-set-tab="browser">
+          <span class="ico tiny" data-icon="globe"></span>
+          <span>Browser</span>
+        </button>
+      </div>
 
-    <div id="tab-providers" class="tab-body">
-      <div class="prov-layout">
-        <div class="prov-side">
-          <div id="provList" class="prov-list"></div>
-          <button id="provAdd" class="btn full"><span class="ico" data-icon="plus"></span>Add provider</button>
-        </div>
-        <form id="provForm" class="prov-form" autocomplete="off">
-          <label>Name <input id="pfName" type="text" /></label>
-          <label>Base URL <input id="pfUrl" type="text" spellcheck="false" placeholder="https://openrouter.ai/api/v1" />
-            <small>Any OpenAI-compatible server. Ollama and LM Studio run on this Mac; OpenRouter, OpenAI, Together and others are online.</small></label>
-          <label>API key <input id="pfKey" type="password" spellcheck="false" autocomplete="off" placeholder="" />
-            <small id="pfKeyHint"></small></label>
-          <div id="pfPresetNote" class="preset-note" hidden><span id="pfPresetText"></span><button type="button" id="pfKeyLink" class="btn small" hidden>Get a key ↗</button></div>
-          <label id="pfClearRow" class="check small" hidden><input id="pfClear" type="checkbox" /> Remove the saved key</label>
-          <label>Model <input id="pfModel" type="text" spellcheck="false" list="pfModels" placeholder="Type a model name, or fetch the list" />
-            <datalist id="pfModels"></datalist>
-            <small id="pfModelHint">Must support tool calling. Use “Fetch models” to see what this provider offers.</small></label>
-          <p id="pfStatus" class="form-status" hidden></p>
-          <div class="form-actions">
-            <button type="button" id="pfDelete" class="btn danger-text">Delete</button>
-            <span class="spacer"></span>
-            <button type="button" id="pfFetch" class="btn">Save &amp; fetch models</button>
-            <button type="submit" id="pfSave" class="btn">Save</button>
-            <button type="button" id="pfActivate" class="btn primary">Use this provider</button>
+      <div class="set-side-section">
+        <div class="set-side-title">Projects</div>
+        <div id="setProjectList" class="set-project-list"></div>
+      </div>
+
+      <div class="set-side-section">
+        <div class="set-side-title">Not in Project</div>
+        <button class="set-nav-item" data-set-tab="conversations">
+          <span class="ico tiny" data-icon="mail"></span>
+          <span>Conversations</span>
+        </button>
+      </div>
+
+      <div class="set-side-spacer"></div>
+
+      <div class="set-side-footer">
+        <button id="setFeedbackBtn" class="set-feedback-btn">Give Feedback</button>
+        <div id="setUserBadge" class="set-user-badge" title="Manage Accounts">
+          <div class="set-avatar">A</div>
+          <div class="set-user-meta ellipsis">
+            <div class="set-user-name">Antigravity Cr3</div>
+            <div class="set-user-email ellipsis">antigravityarch09@gmail.com</div>
           </div>
-        </form>
+        </div>
       </div>
     </div>
 
-    <div id="tab-agent" class="tab-body" hidden>
-      <form id="agentForm" class="agent-form">
-        <label>When should the agent ask you first?
-          <select id="afApproval">
-            <option value="ask">Before every file change, command or web request (safest)</option>
-            <option value="edits">Only before commands and web requests</option>
-            <option value="auto">Never (use only in throwaway folders)</option>
-          </select>
-        </label>
-        <div class="two-col">
-          <label>Max steps per message <input id="afSteps" type="number" min="1" max="300" /></label>
-          <label>Memory per chat (characters) <input id="afContext" type="number" min="8000" max="2000000" step="1000" />
-            <small>Older messages are dropped past this. Raise it for models with a big context window.</small></label>
+    <!-- Settings Main Content -->
+    <div class="set-content">
+      <div class="set-top-bar">
+        <div>
+          <h2 id="setTitle" class="set-page-title">General</h2>
+          <p id="setSubtitle" class="set-page-sub">Configure agent execution, queued message delivery, and permissions.</p>
         </div>
-        <label class="check"><input id="afFallback" type="checkbox" /> If a model is rate-limited, out of credit or down, switch to the next provider’s model and keep going</label>
-        <p class="muted small">The next models are the other providers in your list that have a model chosen, in list order. Long replies that hit a model’s output limit are continued automatically.</p>
-        <h3 class="sub-h">“Approve always” rules for this project</h3>
-        <div id="afRules" class="rules-list"></div>
-        <p class="muted small">Commands run as you, with your permissions. File tools are limited to the project folder; commands are not. API keys are stored in your Mac Keychain.</p>
-        <p id="afStatus" class="form-status" hidden></p>
-        <div class="form-actions"><span class="spacer"></span><button type="submit" class="btn primary">Save</button></div>
-      </form>
-    </div>
-
-    <div id="tab-accounts" class="tab-body" hidden>
-      <p class="muted small acct-intro">Signing in is optional. <strong>GitHub</strong> lets the app push, pull and open pull requests for you. <strong>Google</strong> and <strong>Apple</strong> only identify you on this Mac: this app has no cloud service, so they do not unlock anything else.</p>
-
-      <div class="acct-card">
-        <div class="acct-head"><span class="ico" data-icon="branch"></span><strong>GitHub</strong><span id="ghState" class="acct-state"></span><span class="spacer"></span><button id="ghSignIn" class="btn primary small">Sign in with GitHub</button><button id="ghOut" class="btn small" hidden>Disconnect</button></div>
-        <div id="ghDevice" class="device-box" hidden></div>
-        <div id="ghTokenRow" class="acct-row">
-          <input id="ghToken" type="password" spellcheck="false" autocomplete="off" placeholder="…or paste a personal access token (needs the “repo” scope)" />
-          <button id="ghTokenBtn" class="btn small">Connect</button>
-        </div>
-        <details class="acct-setup"><summary>GitHub setup (one time)</summary>
-          <p class="muted small">Create an OAuth App at github.com → Settings → Developer settings → OAuth Apps. Tick <em>Enable Device Flow</em>. Any homepage URL works. Paste its Client ID here. No secret is needed.</p>
-          <div class="acct-row"><input id="ghClient" type="text" spellcheck="false" placeholder="Client ID (starts with Iv or Ov)" /><button id="ghClientBtn" class="btn small">Save</button></div>
-        </details>
-        <p id="ghStatus" class="form-status" hidden></p>
+        <button id="settingsClose" class="set-close-btn" title="Close (Esc)" aria-label="Close"></button>
       </div>
 
-      <div class="acct-card">
-        <div class="acct-head"><span class="ico" data-icon="user"></span><strong>Google</strong><span id="ggState" class="acct-state"></span><span class="spacer"></span><button id="ggSignIn" class="btn primary small">Sign in with Google</button><button id="ggOut" class="btn small" hidden>Disconnect</button></div>
-        <details class="acct-setup"><summary>Google setup (one time)</summary>
-          <p class="muted small">In Google Cloud Console create an OAuth client of type <em>Desktop app</em> and paste its Client ID and secret. (For a desktop app Google calls the secret “not confidential”.)</p>
-          <div class="acct-row"><input id="ggClient" type="text" spellcheck="false" placeholder="Client ID (….apps.googleusercontent.com)" /></div>
-          <div class="acct-row"><input id="ggSecret" type="password" spellcheck="false" autocomplete="off" placeholder="Client secret" /><button id="ggClientBtn" class="btn small">Save</button></div>
-        </details>
-        <p id="ggStatus" class="form-status" hidden></p>
-      </div>
+      <div class="set-body">
+        <!-- GENERAL TAB -->
+        <div id="tab-general" class="set-pane">
+          <!-- Interface Layout -->
+          <div class="set-group">
+            <div class="set-group-title">Interface Layout</div>
+            <div class="set-card-grid">
+              <div id="layoutKW" class="set-layout-card" title="Click to select Knowledge Work layout">
+                <div class="set-layout-ico"><span class="ico" data-icon="briefcase"></span></div>
+                <div class="set-layout-name">Knowledge Work</div>
+                <div class="set-layout-desc">Simplified interface for research, writing, and everyday tasks.</div>
+              </div>
+              <div id="layoutSE" class="set-layout-card on" title="Click to select Software Engineering layout">
+                <div class="set-layout-ico"><span class="ico" data-icon="code"></span></div>
+                <div class="set-layout-name">Software Engineering</div>
+                <div class="set-layout-desc">Full interface for coding, developer tools, and managing agents.</div>
+              </div>
+            </div>
+          </div>
 
-      <div class="acct-card">
-        <div class="acct-head"><span class="ico" data-icon="user"></span><strong>Apple</strong><span class="acct-state">not available yet</span><span class="spacer"></span><button id="apSignIn" class="btn small">Sign in with Apple</button></div>
-        <p id="apInfo" class="muted small" hidden>Sign in with Apple needs a paid Apple Developer account and a web address on your own domain for Apple to send you back to; Apple does not accept a local address. That cannot be set up inside this app alone, so the button only explains this. If you publish the app on the Mac App Store later, the native Apple sign-in can be added then.</p>
+          <!-- Global Permissions -->
+          <div class="set-group">
+            <div class="set-group-title">Global Permissions</div>
+            <p class="set-group-desc">Configure global allowed and denied resource permissions. <a href="#" id="genPermLearnMore" class="set-link">Learn more</a></p>
+            <div class="set-row">
+              <div class="set-row-text">
+                <div class="set-row-title">Permission Preset</div>
+                <div class="set-row-sub">Controls the actions the agent can take.</div>
+              </div>
+              <select id="genPermPreset" class="set-select">
+                <option value="ask">Default (Ask first)</option>
+                <option value="edits">Standard (Commands &amp; Edits)</option>
+                <option value="auto">Permissive (Auto-run in sandbox)</option>
+              </select>
+            </div>
+            <div class="set-row">
+              <div class="set-row-text">
+                <div class="set-row-title">Tool Permissions <span class="set-count-pill">14</span></div>
+                <div class="set-row-sub">Modify permissions for file, terminal, and MCP tools.</div>
+              </div>
+              <button id="genToolPermsBtn" class="btn small">Open</button>
+            </div>
+            <div class="set-row">
+              <div class="set-row-text">
+                <div class="set-row-title">Network Access Rules</div>
+                <div class="set-row-sub">Configure allowed and denied URLs for reading.</div>
+              </div>
+              <button id="genNetRulesBtn" class="btn small">Open</button>
+            </div>
+          </div>
+
+          <!-- Execution -->
+          <div class="set-group">
+            <div class="set-group-title">Execution</div>
+            <div class="set-row">
+              <div class="set-row-text">
+                <div class="set-row-title">Queued Messages</div>
+                <div class="set-row-sub">Configure when follow-up messages are sent. <span class="set-help-icon" title="Enter sends immediately, Shift+Enter queues">ⓘ</span></div>
+              </div>
+              <div class="seg" role="group">
+                <button id="execQueueBtn" class="seg-btn on">Queue</button>
+                <button id="execSendImmBtn" class="seg-btn">Send Immediately</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Voice mode -->
+          <div class="set-group">
+            <div class="set-group-title">Voice mode</div>
+            <div class="set-row">
+              <div class="set-row-text">
+                <div class="set-row-title">Voice</div>
+                <div class="set-row-sub">The voice used in Voice mode. Powered by Gemini Live.</div>
+              </div>
+              <div class="set-row-action">
+                <span class="muted small">Not set</span>
+                <button id="voiceChangeBtn" class="btn small">Change</button>
+              </div>
+            </div>
+            <div class="set-row">
+              <div class="set-row-text">
+                <div class="set-row-title">Microphone</div>
+                <div class="set-row-sub">Input device for voice mode and dictation.</div>
+              </div>
+              <select id="voiceMicSelect" class="set-select">
+                <option value="default">System default</option>
+                <option value="built-in">MacBook Pro Microphone</option>
+              </select>
+            </div>
+            <div class="set-row">
+              <div class="set-row-text">
+                <div class="set-row-title">Volume</div>
+              </div>
+              <div class="set-volume-wrap">
+                <input id="voiceVolume" type="range" min="0" max="100" value="100" class="set-range" />
+                <span id="voiceVolumeVal" class="small muted">100%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- APPLICATION TAB -->
+        <div id="tab-application" class="set-pane" hidden>
+          <div class="set-group">
+            <div class="set-group-title">Application Preferences</div>
+            <div class="set-row">
+              <div class="set-row-text">
+                <div class="set-row-title">Version</div>
+                <div class="set-row-sub">Cr3agent v0.3.0 (macOS Darwin x86_64/arm64)</div>
+              </div>
+              <button id="appCheckUpdateBtn" class="btn small">Check for Updates</button>
+            </div>
+            <div class="set-row">
+              <div class="set-row-text">
+                <div class="set-row-title">Open on Login</div>
+                <div class="set-row-sub">Automatically launch Cr3agent when you log into your Mac.</div>
+              </div>
+              <label class="check"><input id="appAutoLaunch" type="checkbox" /></label>
+            </div>
+            <div class="set-row">
+              <div class="set-row-text">
+                <div class="set-row-title">Diagnostics &amp; Crash Reports</div>
+                <div class="set-row-sub">Help improve Cr3agent with anonymous diagnostics. Stored locally only.</div>
+              </div>
+              <label class="check"><input id="appTelemetry" type="checkbox" checked /></label>
+            </div>
+          </div>
+        </div>
+
+        <!-- APPEARANCE TAB -->
+        <div id="tab-appearance" class="set-pane" hidden>
+          <div class="set-group">
+            <div class="set-group-title">Theme &amp; Display</div>
+            <div class="set-row">
+              <div class="set-row-text">
+                <div class="set-row-title">Color Theme</div>
+                <div class="set-row-sub">Choose your preferred visual appearance.</div>
+              </div>
+              <select id="themeSelect" class="set-select">
+                <option value="dark" selected>Dark (Antigravity default)</option>
+                <option value="dim">Dim Slate</option>
+                <option value="system">Follow macOS System</option>
+              </select>
+            </div>
+            <div class="set-row">
+              <div class="set-row-text">
+                <div class="set-row-title">Chat Column Width</div>
+                <div class="set-row-sub">Default width of the left conversational panel.</div>
+              </div>
+              <select id="chatWidthSelect" class="set-select">
+                <option value="420px">Compact (420px)</option>
+                <option value="460px" selected>Comfortable (460px)</option>
+                <option value="520px">Expanded (520px)</option>
+              </select>
+            </div>
+            <div class="set-row">
+              <div class="set-row-text">
+                <div class="set-row-title">Line Numbers in Diffs</div>
+                <div class="set-row-sub">Show gutters and line numbers in modified files.</div>
+              </div>
+              <label class="check"><input id="diffLineNums" type="checkbox" checked /></label>
+            </div>
+          </div>
+        </div>
+
+        <!-- SHORTCUTS TAB -->
+        <div id="tab-shortcuts" class="set-pane" hidden>
+          <div class="set-group">
+            <div class="set-group-title">Keyboard Shortcuts</div>
+            <div class="set-shortcuts-table">
+              <div class="set-sc-row"><span class="set-sc-label">Toggle Sidebar</span><kbd class="pm-kbd">⌘B</kbd></div>
+              <div class="set-sc-row"><span class="set-sc-label">Toggle Changes / Modified Files</span><kbd class="pm-kbd">⌥⌘B</kbd></div>
+              <div class="set-sc-row"><span class="set-sc-label">Toggle Overview Panel</span><kbd class="pm-kbd">⌥⌘O</kbd></div>
+              <div class="set-sc-row"><span class="set-sc-label">Toggle Terminal</span><kbd class="pm-kbd">⌃`</kbd></div>
+              <div class="set-sc-row"><span class="set-sc-label">Open Project Folder</span><kbd class="pm-kbd">⌘O</kbd></div>
+              <div class="set-sc-row"><span class="set-sc-label">New Conversation</span><kbd class="pm-kbd">⌘N</kbd></div>
+              <div class="set-sc-row"><span class="set-sc-label">Search Conversations</span><kbd class="pm-kbd">⌘F</kbd></div>
+              <div class="set-sc-row"><span class="set-sc-label">Previous Conversation</span><kbd class="pm-kbd">⌘[</kbd></div>
+              <div class="set-sc-row"><span class="set-sc-label">Next Conversation</span><kbd class="pm-kbd">⌘]</kbd></div>
+              <div class="set-sc-row"><span class="set-sc-label">Split Terminal</span><kbd class="pm-kbd">⌘\</kbd></div>
+              <div class="set-sc-row"><span class="set-sc-label">Send Message</span><kbd class="pm-kbd">Enter</kbd></div>
+              <div class="set-sc-row"><span class="set-sc-label">Newline / Queue Message</span><kbd class="pm-kbd">⇧Enter</kbd></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- NOTIFICATIONS TAB -->
+        <div id="tab-notifications" class="set-pane" hidden>
+          <div class="set-group">
+            <div class="set-group-title">Notification Settings</div>
+            <div class="set-row">
+              <div class="set-row-text">
+                <div class="set-row-title">Turn Completion Sound</div>
+                <div class="set-row-sub">Play an audible chime when the agent finishes answering or needs approval.</div>
+              </div>
+              <label class="check"><input id="notifSound" type="checkbox" checked /></label>
+            </div>
+            <div class="set-row">
+              <div class="set-row-text">
+                <div class="set-row-title">System Banners</div>
+                <div class="set-row-sub">Show macOS notification when the app is in the background.</div>
+              </div>
+              <label class="check"><input id="notifBanner" type="checkbox" checked /></label>
+            </div>
+          </div>
+        </div>
+
+        <!-- MODELS TAB (Existing Providers & Models) -->
+        <div id="tab-models" class="set-pane" hidden>
+          <div class="prov-layout">
+            <div class="prov-side">
+              <div id="provList" class="prov-list"></div>
+              <button id="provAdd" class="btn full"><span class="ico" data-icon="plus"></span>Add provider</button>
+            </div>
+            <form id="provForm" class="prov-form" autocomplete="off">
+              <label>Name <input id="pfName" type="text" /></label>
+              <label>Base URL <input id="pfUrl" type="text" spellcheck="false" placeholder="https://openrouter.ai/api/v1" />
+                <small>Any OpenAI-compatible server. Ollama and LM Studio run on this Mac; OpenRouter, OpenAI, Together and others are online.</small></label>
+              <label>API key <input id="pfKey" type="password" spellcheck="false" autocomplete="off" placeholder="" />
+                <small id="pfKeyHint"></small></label>
+              <div id="pfPresetNote" class="preset-note" hidden><span id="pfPresetText"></span><button type="button" id="pfKeyLink" class="btn small" hidden>Get a key ↗</button></div>
+              <label id="pfClearRow" class="check small" hidden><input id="pfClear" type="checkbox" /> Remove the saved key</label>
+              <label>Model <input id="pfModel" type="text" spellcheck="false" list="pfModels" placeholder="Type a model name, or fetch the list" />
+                <datalist id="pfModels"></datalist>
+                <small id="pfModelHint">Must support tool calling. Use “Fetch models” to see what this provider offers.</small></label>
+              <p id="pfStatus" class="form-status" hidden></p>
+              <div class="form-actions">
+                <button type="button" id="pfDelete" class="btn danger-text">Delete</button>
+                <span class="spacer"></span>
+                <button type="button" id="pfFetch" class="btn">Save &amp; fetch models</button>
+                <button type="submit" id="pfSave" class="btn">Save</button>
+                <button type="button" id="pfActivate" class="btn primary">Use this provider</button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- BROWSER TAB -->
+        <div id="tab-browser" class="set-pane" hidden>
+          <div class="set-group">
+            <div class="set-group-title">Browser Automation</div>
+            <div class="set-row">
+              <div class="set-row-text">
+                <div class="set-row-title">Browser Sandbox Mode</div>
+                <div class="set-row-sub">Run browser automation in isolated container.</div>
+              </div>
+              <select id="browserSandboxMode" class="set-select">
+                <option value="isolated" selected>Isolated Sandbox</option>
+                <option value="direct">Direct Connection</option>
+              </select>
+            </div>
+            <div class="set-row">
+              <div class="set-row-text">
+                <div class="set-row-title">Headless Window</div>
+                <div class="set-row-sub">Hide automation browser window unless inspection is requested.</div>
+              </div>
+              <label class="check"><input id="browserHeadless" type="checkbox" checked /></label>
+            </div>
+          </div>
+        </div>
+
+        <!-- PROJECT / AGENT TAB -->
+        <div id="tab-agent" class="set-pane" hidden>
+          <form id="agentForm" class="agent-form">
+            <label>When should the agent ask you first?
+              <select id="afApproval">
+                <option value="ask">Before every file change, command or web request (safest)</option>
+                <option value="edits">Only before commands and web requests</option>
+                <option value="auto">Never (use only in throwaway folders)</option>
+              </select>
+            </label>
+            <div class="two-col">
+              <label>Max steps per message <input id="afSteps" type="number" min="1" max="300" /></label>
+              <label>Memory per chat (characters) <input id="afContext" type="number" min="8000" max="2000000" step="1000" />
+                <small>Older messages are dropped past this. Raise it for models with a big context window.</small></label>
+            </div>
+            <label class="check"><input id="afFallback" type="checkbox" /> If a model is rate-limited, out of credit or down, switch to the next provider’s model and keep going</label>
+            <p class="muted small">The next models are the other providers in your list that have a model chosen, in list order. Long replies that hit a model’s output limit are continued automatically.</p>
+            <h3 class="sub-h">“Approve always” rules for this project</h3>
+            <div id="afRules" class="rules-list"></div>
+            <p class="muted small">Commands run as you, with your permissions. File tools are limited to the project folder; commands are not. API keys are stored in your Mac Keychain.</p>
+            <p id="afStatus" class="form-status" hidden></p>
+            <div class="form-actions"><span class="spacer"></span><button type="submit" class="btn primary">Save</button></div>
+          </form>
+        </div>
+
+        <!-- CONVERSATIONS TAB -->
+        <div id="tab-conversations" class="set-pane" hidden>
+          <div class="set-group">
+            <div class="set-group-title">Conversations Management</div>
+            <div class="set-row">
+              <div class="set-row-text">
+                <div class="set-row-title">Export All Conversations</div>
+                <div class="set-row-sub">Export your chats to a structured JSON or Markdown archive.</div>
+              </div>
+              <button id="convExportBtn" class="btn small">Export…</button>
+            </div>
+            <div class="set-row">
+              <div class="set-row-text">
+                <div class="set-row-title">Clear Inactive Chats</div>
+                <div class="set-row-sub">Delete local chats that haven't been active in 30 days.</div>
+              </div>
+              <button id="convClearOldBtn" class="btn small danger-text">Clear Old</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ACCOUNTS TAB -->
+        <div id="tab-accounts" class="set-pane" hidden>
+          <p class="muted small acct-intro">Signing in is optional. <strong>GitHub</strong> lets the app push, pull and open pull requests for you. <strong>Google</strong> and <strong>Apple</strong> only identify you on this Mac: this app has no cloud service, so they do not unlock anything else.</p>
+
+          <div class="acct-card">
+            <div class="acct-head"><span class="ico" data-icon="branch"></span><strong>GitHub</strong><span id="ghState" class="acct-state"></span><span class="spacer"></span><button id="ghSignIn" class="btn primary small">Sign in with GitHub</button><button id="ghOut" class="btn small" hidden>Disconnect</button></div>
+            <div id="ghDevice" class="device-box" hidden></div>
+            <div id="ghTokenRow" class="acct-row">
+              <input id="ghToken" type="password" spellcheck="false" autocomplete="off" placeholder="…or paste a personal access token (needs the “repo” scope)" />
+              <button id="ghTokenBtn" class="btn small">Connect</button>
+            </div>
+            <details class="acct-setup"><summary>GitHub setup (one time)</summary>
+              <p class="muted small">Create an OAuth App at github.com → Settings → Developer settings → OAuth Apps. Tick <em>Enable Device Flow</em>. Any homepage URL works. Paste its Client ID here. No secret is needed.</p>
+              <div class="acct-row"><input id="ghClient" type="text" spellcheck="false" placeholder="Client ID (starts with Iv or Ov)" /><button id="ghClientBtn" class="btn small">Save</button></div>
+            </details>
+            <p id="ghStatus" class="form-status" hidden></p>
+          </div>
+
+          <div class="acct-card">
+            <div class="acct-head"><span class="ico" data-icon="user"></span><strong>Google</strong><span id="ggState" class="acct-state"></span><span class="spacer"></span><button id="ggSignIn" class="btn primary small">Sign in with Google</button><button id="ggOut" class="btn small" hidden>Disconnect</button></div>
+            <details class="acct-setup"><summary>Google setup (one time)</summary>
+              <p class="muted small">In Google Cloud Console create an OAuth client of type <em>Desktop app</em> and paste its Client ID and secret. (For a desktop app Google calls the secret “not confidential”.)</p>
+              <div class="acct-row"><input id="ggClient" type="text" spellcheck="false" placeholder="Client ID (….apps.googleusercontent.com)" /></div>
+              <div class="acct-row"><input id="ggSecret" type="password" spellcheck="false" autocomplete="off" placeholder="Client secret" /><button id="ggClientBtn" class="btn small">Save</button></div>
+            </details>
+            <p id="ggStatus" class="form-status" hidden></p>
+          </div>
+
+          <div class="acct-card">
+            <div class="acct-head"><span class="ico" data-icon="user"></span><strong>Apple</strong><span class="acct-state">not available yet</span><span class="spacer"></span><button id="apSignIn" class="btn small">Sign in with Apple</button></div>
+            <p id="apInfo" class="muted small" hidden>Sign in with Apple needs a paid Apple Developer account and a web address on your own domain for Apple to send you back to; Apple does not accept a local address. That cannot be set up inside this app alone, so the button only explains this. If you publish the app on the Mac App Store later, the native Apple sign-in can be added then.</p>
+          </div>
+        </div>
       </div>
     </div>
   </dialog>

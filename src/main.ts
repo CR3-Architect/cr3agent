@@ -758,12 +758,14 @@ function buildMenu(): void {
 // ---------- window ----------
 
 function createWindow(): void {
+  const iconPath = path.join(__dirname, '..', 'build', 'icon.png');
   win = new BrowserWindow({
     width: 1320,
     height: 860,
     minWidth: 900,
     minHeight: 600,
-    title: 'Folder Agent',
+    title: 'CR3-Agentic AI',
+    icon: iconPath,
     titleBarStyle: 'hiddenInset',
     trafficLightPosition: { x: 16, y: 16 },
     backgroundColor: nativeTheme.shouldUseDarkColors ? '#262624' : '#faf9f5',
@@ -774,6 +776,12 @@ function createWindow(): void {
       sandbox: true,
     },
   });
+
+  if (process.platform === 'darwin' && app.dock) {
+    try {
+      app.dock.setIcon(iconPath);
+    } catch {}
+  }
 
   win.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
   win.webContents.on('will-navigate', (e) => e.preventDefault());

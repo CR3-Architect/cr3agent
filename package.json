@@ -1,7 +1,7 @@
 {
-  "name": "cr3agent",
+  "name": "cr3-agentic-ai",
   "version": "0.3.0",
-  "description": "Desktop AI Coding Agent for macOS to run local AI or free APIs, designed for developers.",
+  "description": "Next-Gen Desktop Autonomous Agent with Multi-Step Reasoning, Tool Execution & Human-in-the-Loop Control.",
   "author": "CR3 Architect",
   "main": "dist/main.js",
   "scripts": {
@@ -13,9 +13,10 @@
     "dist:dir": "npm run build && electron-builder --mac --dir"
   },
   "build": {
-    "appId": "com.cr3agent.desktop",
-    "productName": "Cr3agent",
+    "appId": "com.cr3.agentic-ai",
+    "productName": "CR3-Agentic AI",
     "mac": {
+      "icon": "build/icon.icns",
       "category": "public.app-category.developer-tools",
       "target": [
         "dmg",
@@ -30,6 +31,8 @@
     "files": [
       "dist/**/*",
       "renderer/**/*",
+      "build/icon.icns",
+      "build/icon.png",
       "package.json"
     ]
   },
