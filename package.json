@@ -10,6 +10,10 @@
     "start": "npm run build && electron .",
     "test": "npm run build && node --test dist/test/*.test.js",
     "dist": "npm run build && electron-builder --mac",
+    "dist:mac": "npm run build && electron-builder --mac",
+    "dist:win": "npm run build && electron-builder --win",
+    "dist:linux": "npm run build && electron-builder --linux",
+    "dist:all": "npm run build && electron-builder -mwl",
     "dist:dir": "npm run build && electron-builder --mac --dir"
   },
   "build": {
@@ -24,6 +28,21 @@
       ],
       "hardenedRuntime": false,
       "gatekeeperAssess": false
+    },
+    "win": {
+      "icon": "build/icon.png",
+      "target": [
+        "nsis",
+        "zip"
+      ]
+    },
+    "linux": {
+      "icon": "build/icon.png",
+      "category": "Development",
+      "target": [
+        "AppImage",
+        "deb"
+      ]
     },
     "directories": {
       "output": "release"

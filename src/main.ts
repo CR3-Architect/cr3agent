@@ -774,8 +774,10 @@ function createWindow(): void {
     minHeight: 600,
     title: 'CR3-Agentic AI',
     icon: finalIcon,
-    titleBarStyle: 'hiddenInset',
-    trafficLightPosition: { x: 16, y: 16 },
+    ...(process.platform === 'darwin' ? {
+      titleBarStyle: 'hiddenInset' as const,
+      trafficLightPosition: { x: 16, y: 16 },
+    } : {}),
     backgroundColor: nativeTheme.shouldUseDarkColors ? '#262624' : '#faf9f5',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
