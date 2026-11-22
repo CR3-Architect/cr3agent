@@ -558,28 +558,23 @@
       <div class="set-body">
         <!-- GENERAL TAB -->
         <div id="tab-general" class="set-pane">
-          <!-- Agent Persona / Focus Domain (Active Selected Domain) -->
+          <!-- Agent Persona / Focus Domain (Active Domain) -->
           <div class="set-group">
             <div class="set-group-title">Agent Focus Domain</div>
             <p class="set-group-desc">Tailors system prompt instructions, architectural choices, and execution strategies.</p>
-            <div class="persona-active-wrap" id="generalActiveDomainWrap">
-              <div class="persona-active-card" id="generalActiveDomainCard">
-                <div class="persona-active-main">
-                  <div class="persona-icon-box" id="activeDomainIcon">💻</div>
-                  <div class="persona-active-info">
-                    <div class="persona-active-headline">
-                      <span class="persona-tag" id="activeDomainTag">SOFTWARE</span>
-                      <span class="persona-active-badge"><span class="active-dot"></span>Active Domain</span>
-                    </div>
-                    <div class="persona-title" id="activeDomainTitle">Software Engineering</div>
-                    <div class="persona-desc" id="activeDomainDesc">Modular clean architecture, TypeScript/Python/React, unit tests, refactoring, and Git commits.</div>
+            <div class="active-domain-box" id="generalActiveDomainWrap">
+              <div class="adb-left">
+                <div class="adb-icon" id="activeDomainIcon">💻</div>
+                <div class="adb-info">
+                  <div class="adb-headline">
+                    <span class="adb-tag" id="activeDomainTag">SOFTWARE</span>
+                    <span class="adb-badge">Active Domain</span>
                   </div>
-                </div>
-                <div class="persona-active-actions">
-                  <span class="persona-active-hint">Selected during onboarding setup.</span>
-                  <button type="button" id="genReconfigDomainBtn" class="btn small"><span class="ico tiny" data-icon="sparkles"></span>Change Focus Domain…</button>
+                  <div class="adb-title" id="activeDomainTitle">Software Engineering</div>
+                  <div class="adb-desc" id="activeDomainDesc">Modular clean architecture, TypeScript/Python/React, unit tests, refactoring, and Git commits.</div>
                 </div>
               </div>
+              <button type="button" id="genReconfigDomainBtn" class="btn small">Change…</button>
             </div>
           </div>
 
@@ -702,90 +697,45 @@
             <div class="set-group-title">Color Theme</div>
             <p class="set-group-desc">Select your visual appearance. Changes apply instantly across the entire desktop workspace.</p>
             <div class="theme-cards-grid" id="themeCardsGrid">
-              <!-- Night / Dark Card -->
-              <div class="theme-card on" data-theme-val="night">
-                <div class="theme-preview-box theme-night-preview">
-                  <div class="tp-header"></div>
-                  <div class="tp-body">
-                    <div class="tp-side"></div>
-                    <div class="tp-editor">
-                      <div class="tp-line short accent"></div>
-                      <div class="tp-line"></div>
-                      <div class="tp-line mid"></div>
-                    </div>
-                  </div>
+              <!-- Dark Card -->
+              <div class="theme-card on" data-theme-val="dark">
+                <div class="theme-swatch swatch-dark">
+                  <span class="swatch-pill"></span>
                 </div>
                 <div class="theme-meta">
                   <div class="theme-title-row">
-                    <span class="theme-name">Night (Obsidian)</span>
-                    <span class="theme-check"><span class="ico tiny" data-icon="check"></span></span>
+                    <span class="theme-name">Dark Mode</span>
+                    <span class="theme-check"></span>
                   </div>
-                  <div class="theme-desc">Deep obsidian palette (#0d0f12) with crisp neon accents. Ideal for low-light coding.</div>
+                  <div class="theme-desc">Warm charcoal tone with copper accents. Default CR3-Agentic appearance.</div>
                 </div>
               </div>
 
               <!-- Light Card -->
               <div class="theme-card" data-theme-val="light">
-                <div class="theme-preview-box theme-light-preview">
-                  <div class="tp-header"></div>
-                  <div class="tp-body">
-                    <div class="tp-side"></div>
-                    <div class="tp-editor">
-                      <div class="tp-line short accent"></div>
-                      <div class="tp-line"></div>
-                      <div class="tp-line mid"></div>
-                    </div>
-                  </div>
+                <div class="theme-swatch swatch-light">
+                  <span class="swatch-pill"></span>
                 </div>
                 <div class="theme-meta">
                   <div class="theme-title-row">
-                    <span class="theme-name">Daylight (Clean Light)</span>
-                    <span class="theme-check"><span class="ico tiny" data-icon="check"></span></span>
+                    <span class="theme-name">Light Mode</span>
+                    <span class="theme-check"></span>
                   </div>
-                  <div class="theme-desc">Crisp daylight palette (#ffffff) with warm terracotta accents. High clarity for daytime.</div>
-                </div>
-              </div>
-
-              <!-- Dim Slate Card -->
-              <div class="theme-card" data-theme-val="dim">
-                <div class="theme-preview-box theme-dim-preview">
-                  <div class="tp-header"></div>
-                  <div class="tp-body">
-                    <div class="tp-side"></div>
-                    <div class="tp-editor">
-                      <div class="tp-line short accent"></div>
-                      <div class="tp-line"></div>
-                      <div class="tp-line mid"></div>
-                    </div>
-                  </div>
-                </div>
-                <div class="theme-meta">
-                  <div class="theme-title-row">
-                    <span class="theme-name">Dim Slate</span>
-                    <span class="theme-check"><span class="ico tiny" data-icon="check"></span></span>
-                  </div>
-                  <div class="theme-desc">Muted navy slate (#1b1f27) with softened contrast. Gentle on the eyes.</div>
+                  <div class="theme-desc">Crisp paper tone with terracotta accents. High clarity for daytime.</div>
                 </div>
               </div>
 
               <!-- Follow System Card -->
               <div class="theme-card" data-theme-val="system">
-                <div class="theme-preview-box theme-system-preview">
-                  <div class="tp-header"></div>
-                  <div class="tp-body">
-                    <div class="tp-split-side"></div>
-                    <div class="tp-split-main">
-                      <div class="tp-line short accent"></div>
-                      <div class="tp-line"></div>
-                    </div>
-                  </div>
+                <div class="theme-swatch swatch-system">
+                  <span class="swatch-pill"></span>
                 </div>
                 <div class="theme-meta">
                   <div class="theme-title-row">
-                    <span class="theme-name">Follow macOS System</span>
-                    <span class="theme-check"><span class="ico tiny" data-icon="check"></span></span>
+                    <span class="theme-name">System Default</span>
+                    <span class="theme-check"></span>
                   </div>
-                  <div class="theme-desc">Automatically synchronizes with your macOS system Dark and Light mode schedule.</div>
+                  <div class="theme-desc">Automatically synchronizes with your macOS Light and Dark appearance.</div>
                 </div>
               </div>
             </div>
@@ -800,33 +750,33 @@
               <div class="diff-mode-card" data-diff-mode="split">
                 <div class="dmc-top">
                   <div class="dmc-icon-box">
-                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                       <rect x="3" y="3" width="18" height="18" rx="2"/>
                       <line x1="12" y1="3" x2="12" y2="21"/>
                     </svg>
                   </div>
                   <span class="dmc-badge">50 / 50 SPLIT</span>
-                  <span class="dmc-check"><span class="ico tiny" data-icon="check"></span></span>
+                  <span class="dmc-check"></span>
                 </div>
                 <div class="dmc-title">Side-by-Side Split View</div>
-                <div class="dmc-desc">Two synchronized panes comparing original code and agent modifications side-by-side with full scroll lock.</div>
+                <div class="dmc-desc">Two synchronized panes comparing original code and edits side-by-side.</div>
               </div>
 
               <!-- Unified Inline -->
               <div class="diff-mode-card on" data-diff-mode="unified">
                 <div class="dmc-top">
                   <div class="dmc-icon-box">
-                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                       <rect x="3" y="3" width="18" height="18" rx="2"/>
                       <line x1="3" y1="9" x2="21" y2="9"/>
                       <line x1="3" y1="15" x2="21" y2="15"/>
                     </svg>
                   </div>
                   <span class="dmc-badge">UNIFIED</span>
-                  <span class="dmc-check"><span class="ico tiny" data-icon="check"></span></span>
+                  <span class="dmc-check"></span>
                 </div>
                 <div class="dmc-title">Unified Inline Stream</div>
-                <div class="dmc-desc">Single-column stream showing diff chunks with highlighted added (+) and deleted (-) lines inline.</div>
+                <div class="dmc-desc">Single-column stream showing diff chunks with added and deleted lines.</div>
               </div>
             </div>
           </div>

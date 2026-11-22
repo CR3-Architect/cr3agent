@@ -3044,7 +3044,8 @@ export class AgentService {
   }
 
   function applyTheme(theme) {
-    const t = theme || 'night';
+    let t = theme || store('cr3.theme') || 'dark';
+    if (t === 'night') t = 'dark';
     store('cr3.theme', t);
     if (t === 'system') {
       document.documentElement.removeAttribute('data-theme');
@@ -3060,7 +3061,7 @@ export class AgentService {
     switchTab(tab || 'general');
     const s = S.app?.settings || {};
     renderActiveFocusDomain();
-    const curTheme = store('cr3.theme') || 'night';
+    const curTheme = store('cr3.theme') || 'dark';
     applyTheme(curTheme);
     const curDiffMode = S.diffMode || store('cr3.diffMode') || 'unified';
     document.querySelectorAll('#diffModeCardsGrid .diff-mode-card').forEach((c) => {
@@ -3185,7 +3186,7 @@ export class AgentService {
     // Theme Cards -> Click to switch theme instantly
     document.querySelectorAll('#themeCardsGrid .theme-card').forEach((card) => {
       card.addEventListener('click', () => {
-        const th = card.getAttribute('data-theme-val') || 'night';
+        const th = card.getAttribute('data-theme-val') || 'dark';
         applyTheme(th);
         toast(`Visual theme set to ${card.querySelector('.theme-name')?.textContent || th}`);
       });
@@ -4199,7 +4200,7 @@ export class AgentService {
   }
 
   async function init() {
-    applyTheme(store('cr3.theme') || 'night');
+    applyTheme(store('cr3.theme') || 'dark');
     if (store('cr3.diffMode')) S.diffMode = store('cr3.diffMode');
     document.querySelectorAll('[data-icon]').forEach((n) => { n.textContent = ''; n.appendChild(icon(n.dataset.icon)); });
     Object.keys(BUTTON_ICONS).forEach((id) => { const b = $(id); if (b) setIcon(b, BUTTON_ICONS[id]); });
