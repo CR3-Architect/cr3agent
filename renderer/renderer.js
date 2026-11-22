@@ -3346,12 +3346,51 @@ export class AgentService {
     const s = S.app.settings;
     const gh = s.accounts.github;
     const gg = s.accounts.google;
-    $('ghState').textContent = gh ? 'signed in as @' + gh.login : 'not signed in';
+
+    if (gh) {
+      $('ghState').innerHTML = `<span class="acct-badge-connected">Connected</span>`;
+      if ($('ghProfileBox')) {
+        $('ghProfileBox').hidden = false;
+        $('ghProfileBox').innerHTML = `
+          <div class="acct-user-card">
+            <img class="acct-avatar-img" src="https://github.com/${gh.login}.png" alt="${gh.login}" onerror="this.style.display='none'" />
+            <div class="acct-user-details">
+              <div class="acct-user-name">@${gh.login}</div>
+              <div class="acct-user-role">GitHub Account · Authorized to commit and push</div>
+            </div>
+          </div>
+        `;
+      }
+    } else {
+      $('ghState').textContent = 'not signed in';
+      if ($('ghProfileBox')) $('ghProfileBox').hidden = true;
+    }
+
     $('ghSignIn').hidden = !!gh;
     $('ghOut').hidden = !gh;
     $('ghTokenRow').hidden = !!gh;
     $('ghClient').value = s.oauth.githubClientId || '';
-    $('ggState').textContent = gg ? 'signed in as ' + (gg.email || gg.name) : 'not signed in';
+
+    if (gg) {
+      $('ggState').innerHTML = `<span class="acct-badge-connected">Connected</span>`;
+      if ($('ggProfileBox')) {
+        $('ggProfileBox').hidden = false;
+        const initial = ((gg.name || gg.email || 'G')[0] || 'G').toUpperCase();
+        $('ggProfileBox').innerHTML = `
+          <div class="acct-user-card">
+            ${gg.picture ? `<img class="acct-avatar-img" src="${gg.picture}" alt="${gg.name || ''}" />` : `<div class="acct-avatar-fallback">${initial}</div>`}
+            <div class="acct-user-details">
+              <div class="acct-user-name">${gg.name || gg.email}</div>
+              <div class="acct-user-role">${gg.email && gg.name ? gg.email : 'Google Account (Local Identity)'}</div>
+            </div>
+          </div>
+        `;
+      }
+    } else {
+      $('ggState').textContent = 'not signed in';
+      if ($('ggProfileBox')) $('ggProfileBox').hidden = true;
+    }
+
     $('ggSignIn').hidden = !!gg;
     $('ggOut').hidden = !gg;
     $('ggClient').value = s.oauth.googleClientId || '';
