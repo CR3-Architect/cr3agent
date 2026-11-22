@@ -491,18 +491,18 @@ code, pre, .mono { font-family: var(--mono); }
 }
 .proj-path { font-size: 11px; color: var(--muted); font-family: var(--mono); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; direction: rtl; text-align: left; }
 .top-header-icons {
-  display: flex; align-items: center; gap: 6px; margin-left: auto;
+  display: flex; align-items: center; gap: 4px; margin-left: auto;
 }
 .top-header-icons .icon-btn {
-  width: 28px; height: 28px; border-radius: 6px; color: var(--muted);
+  width: 30px; height: 30px; border-radius: 7px; color: var(--muted);
   display: inline-flex; align-items: center; justify-content: center;
-  background: var(--card); border: 1px solid var(--border); cursor: pointer; transition: background 0.12s, color 0.12s;
+  background: transparent; border: 0; cursor: pointer; transition: background 0.12s, color 0.12s;
 }
 .top-header-icons .icon-btn:hover { background: var(--hover); color: var(--text); }
-.top-header-icons .icon-btn.on { background: rgba(255, 255, 255, 0.1); color: #fff; }
-.top-header-icons .icon-btn .ico { width: 14px; height: 14px; }
+.top-header-icons .icon-btn.on { background: rgba(255, 255, 255, 0.12); color: #fff; }
+.top-header-icons .icon-btn .ico { width: 17px; height: 17px; }
 .top-sep-v {
-  width: 1px; height: 16px; background: var(--border); margin: 0 2px;
+  width: 1px; height: 16px; background: var(--border); margin: 0 3px;
 }
 
 .top-btn {
@@ -1290,19 +1290,26 @@ input.search { margin-bottom: 10px; }
   position: absolute;
   top: 48px;
   right: 14px;
-  width: 232px;
+  width: 256px;
   background: var(--card);
   border: 1px solid var(--border);
-  border-radius: 12px;
-  box-shadow: var(--shadow);
-  backdrop-filter: blur(16px);
+  border-radius: 16px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(20px);
   z-index: 45;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  padding: 8px;
-  gap: 6px;
-  animation: ovFadeIn 0.15s ease-out;
+  padding: 12px 10px;
+  gap: 4px;
+  animation: ovFadeIn 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@media (prefers-color-scheme: dark) {
+  .overview-pane {
+    background: #141416;
+    border-color: rgba(255, 255, 255, 0.09);
+  }
 }
 
 @keyframes ovFadeIn {
@@ -1314,11 +1321,32 @@ input.search { margin-bottom: 10px; }
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 4px 6px 6px;
-  border-bottom: 1px solid var(--border);
-  font-size: 13px;
+  padding: 2px 8px 6px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--text);
+}
+
+.ov-head-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+
+.ov-head .icon-btn.tiny {
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  color: var(--muted);
+}
+.ov-head .icon-btn.tiny:hover {
+  background: var(--hover);
+  color: var(--text);
+}
+.ov-head .icon-btn.tiny .ico {
+  width: 14px;
+  height: 14px;
 }
 
 .ov-list {
@@ -1330,14 +1358,16 @@ input.search { margin-bottom: 10px; }
 .ov-item {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   width: 100%;
-  padding: 6px 8px;
-  border-radius: 6px;
+  height: 36px;
+  padding: 0 10px;
+  border-radius: 8px;
   border: 0;
   background: transparent;
   color: var(--text);
-  font-size: 12.5px;
+  font-size: 13.5px;
+  font-weight: 500;
   text-align: left;
   cursor: pointer;
   transition: background 0.1s, color 0.1s;
@@ -1349,14 +1379,14 @@ input.search { margin-bottom: 10px; }
 }
 
 .ov-item .ov-item-ico {
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
   color: var(--muted);
   flex: none;
 }
 
 .ov-item:hover .ov-item-ico {
-  color: var(--accent);
+  color: var(--text);
 }
 
 .ov-label {
@@ -1364,10 +1394,10 @@ input.search { margin-bottom: 10px; }
 }
 
 .ov-stat-badge {
-  font-size: 11.5px;
+  font-size: 12.5px;
   font-weight: 600;
   display: inline-flex;
-  gap: 5px;
+  gap: 6px;
 }
 
 .ov-add {
@@ -1381,38 +1411,46 @@ input.search { margin-bottom: 10px; }
 .ov-arrow {
   color: var(--muted);
   margin-left: auto;
+  width: 14px;
+  height: 14px;
 }
 
 .ov-section {
   border-top: 1px solid var(--border);
-  padding-top: 6px;
-  margin-top: 2px;
+  padding-top: 8px;
+  margin-top: 6px;
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
 
+@media (prefers-color-scheme: dark) {
+  .ov-section {
+    border-top-color: rgba(255, 255, 255, 0.08);
+  }
+}
+
 .ov-section-head {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 2px 6px;
+  justify-content: flex-start;
+  gap: 8px;
+  padding: 2px 8px 4px;
 }
 
 .ov-section-title {
-  font-size: 11px;
-  font-weight: 600;
+  font-size: 13px;
+  font-weight: 500;
   color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: -0.01em;
 }
 
 .ov-count-badge {
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 600;
-  padding: 1px 5px;
-  border-radius: 8px;
-  background: var(--code-bg);
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
   color: var(--muted);
 }
 
@@ -1425,15 +1463,18 @@ input.search { margin-bottom: 10px; }
 .ov-task-item {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 5px 8px;
-  border-radius: 6px;
+  gap: 8px;
+  height: 34px;
+  padding: 0 10px;
+  border-radius: 8px;
   border: 0;
   background: transparent;
   color: var(--text);
-  font-size: 12px;
+  font-size: 13.5px;
+  font-weight: 500;
   cursor: pointer;
   text-align: left;
+  transition: background 0.1s, color 0.1s;
 }
 
 .ov-task-item:hover {
@@ -1441,24 +1482,29 @@ input.search { margin-bottom: 10px; }
   color: var(--text);
 }
 
-.ov-task-bullet {
-  color: var(--accent);
-  font-weight: bold;
+.ov-task-ico {
+  width: 14px;
+  height: 14px;
+  color: var(--muted);
+  flex: none;
 }
 
 .ov-see-all {
   border: 0;
   background: transparent;
-  color: var(--accent);
-  font-size: 11.5px;
+  color: var(--muted);
+  font-size: 13px;
   text-align: left;
-  padding: 4px 6px;
+  padding: 6px 10px;
   cursor: pointer;
   margin-top: 2px;
+  border-radius: 6px;
+  transition: color 0.1s;
 }
 
 .ov-see-all:hover {
-  text-decoration: underline;
+  color: var(--text);
+  text-decoration: none;
 }
 
 /* ==========================================================================

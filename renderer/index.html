@@ -268,7 +268,7 @@
         <!-- ===== overview panel ===== -->
         <aside id="overviewPane" class="overview-pane" hidden>
           <div class="ov-head">
-            <strong>Overview</strong>
+            <span class="ov-head-title">Overview</span>
             <span class="spacer"></span>
             <button id="ovMoreBtn" class="icon-btn tiny" title="More options" aria-label="More options"></button>
           </div>
@@ -285,7 +285,7 @@
               <span class="ov-label">Files</span>
             </button>
             <button id="ovTerminalBtn" class="ov-item" title="Terminal">
-              <span class="ico ov-item-ico" data-icon="terminal"></span>
+              <span class="ico ov-item-ico" data-icon="termBox"></span>
               <span class="ov-label">Terminal</span>
             </button>
             <button id="ovExtensionsBtn" class="ov-item" title="Extensions & Skills">
@@ -298,11 +298,11 @@
           <div class="ov-section">
             <div class="ov-section-head">
               <span class="ov-section-title">Background Tasks</span>
-              <span id="ovTaskCount" class="ov-count-badge">1</span>
+              <span id="ovTaskCount" class="ov-count-badge">16</span>
             </div>
             <div id="ovTaskList" class="ov-task-list">
               <div class="ov-task-item" id="ovTaskActive">
-                <span class="ov-task-bullet">&gt;_</span>
+                <span class="ico ov-task-ico" data-icon="terminalPrompt"></span>
                 <span class="ellipsis" id="ovTaskName">Run unit tests</span>
               </div>
             </div>
