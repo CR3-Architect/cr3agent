@@ -68,24 +68,104 @@
   const RE_QUOTE = /^\s{0,3}>\s?(.*)$/;
   const RE_TABLE_SEP = /^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?\s*$/;
 
+  function escapeHtml(s) {
+    return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function highlightCodeBlock(code, lang) {
+    const l = String(lang || '').toLowerCase();
+    const isBash = /bash|sh|zsh|shell/i.test(l);
+
+    if (isBash) {
+      const re = /(#[^\n]*)|('(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*"|`(?:[^`\\]|\\.)*`)|(https?:\/\/[^\s]+)|(\b(?:git|cd|npm|npx|node|brew|curl|wget|yarn|pnpm|echo|cat|ls|mkdir|cp|mv|rm|chmod|chown|sudo|export|source|pip|python|python3|cargo|docker|make|find|grep|sed|awk|tar|zip|unzip|touch)\b)|(-{1,2}[a-zA-Z0-9_-]+)/g;
+      let lastIndex = 0;
+      let html = '';
+      let m;
+      while ((m = re.exec(code)) !== null) {
+        if (m.index > lastIndex) html += escapeHtml(code.slice(lastIndex, m.index));
+        const [full, cmt, str, url, cmd, flag] = m;
+        const esc = escapeHtml(full);
+        if (cmt) html += `<span class="syn-cmt">${esc}</span>`;
+        else if (str) html += `<span class="syn-str">${esc}</span>`;
+        else if (url) html += `<span class="syn-url">${esc}</span>`;
+        else if (cmd) html += `<span class="syn-cmd">${esc}</span>`;
+        else if (flag) html += `<span class="syn-flag">${esc}</span>`;
+        else html += esc;
+        lastIndex = re.lastIndex;
+      }
+      if (lastIndex < code.length) html += escapeHtml(code.slice(lastIndex));
+      return html;
+    }
+
+    const re = /(\/\/[^\n]*|#[^\n]*)|('(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*"|`(?:[^`\\]|\\.)*`)|(\b(?:const|let|var|function|class|import|export|from|as|return|if|else|for|while|do|switch|case|default|break|continue|new|this|super|async|await|try|catch|finally|throw|typeof|instanceof|void|interface|type|enum|implements|extends|public|private|protected|readonly|static|get|set|def|lambda|elif|pass|in|is|not|and|or|yield|with|assert|fn|pub|mut|struct|impl|trait|select|insert|update|delete)\b)|(\b(?:true|false|null|undefined|None|True|False|NaN|Infinity)\b)|(\b(?:0x[0-9a-fA-F]+|\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)\b)|(\b[A-Z][a-zA-Z0-9_$]*\b)|(\b[a-zA-Z_$][a-zA-Z0-9_$]*(?=\s*\())/g;
+    let lastIndex = 0;
+    let html = '';
+    let m;
+    while ((m = re.exec(code)) !== null) {
+      if (m.index > lastIndex) html += escapeHtml(code.slice(lastIndex, m.index));
+      const [full, cmt, str, kwd, lit, num, typ, fn] = m;
+      const esc = escapeHtml(full);
+      if (cmt) html += `<span class="syn-cmt">${esc}</span>`;
+      else if (str) html += `<span class="syn-str">${esc}</span>`;
+      else if (kwd) html += `<span class="syn-kwd">${esc}</span>`;
+      else if (lit) html += `<span class="syn-lit">${esc}</span>`;
+      else if (num) html += `<span class="syn-num">${esc}</span>`;
+      else if (typ) html += `<span class="syn-typ">${esc}</span>`;
+      else if (fn) html += `<span class="syn-fn">${esc}</span>`;
+      else html += esc;
+      lastIndex = re.lastIndex;
+    }
+    if (lastIndex < code.length) html += escapeHtml(code.slice(lastIndex));
+    return html;
+  }
+
   function codeBlock(lang, code) {
     const box = el('div', 'codeblock');
     const head = el('div', 'codehead');
     head.appendChild(el('span', 'codelang', lang || 'code'));
-    const copy = el('button', 'codecopy', 'Copy');
+
+    const actions = el('div', 'code-actions');
+
+    const mention = el('button', 'codemention', '@');
+    mention.type = 'button';
+    mention.title = 'Mention / insert code block in chat (@[code_block])';
+    mention.addEventListener('click', () => {
+      const input = document.getElementById('input');
+      if (input) {
+        const snippet = `\`\`\`${lang || ''}\n${code}\n\`\`\`\n`;
+        const val = input.value;
+        input.value = val ? val + '\n' + snippet : snippet;
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        input.focus();
+        if (window.toast) window.toast('Inserted code block into composer');
+      }
+    });
+    actions.appendChild(mention);
+
+    const copy = el('button', 'codecopy');
     copy.type = 'button';
+    copy.title = 'Copy code';
+    copy.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>';
     copy.addEventListener('click', () => {
       const done = () => {
-        copy.textContent = 'Copied';
-        setTimeout(() => (copy.textContent = 'Copy'), 1200);
+        copy.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3fb950" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+        if (window.toast) window.toast('Copied code to clipboard');
+        setTimeout(() => {
+          copy.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>';
+        }, 1400);
       };
       if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(code).then(done, () => {});
       else done();
     });
-    head.appendChild(copy);
+    actions.appendChild(copy);
+
+    head.appendChild(actions);
     box.appendChild(head);
+
     const pre = el('pre');
-    pre.appendChild(el('code', '', code));
+    const codeEl = el('code');
+    codeEl.innerHTML = highlightCodeBlock(code, lang);
+    pre.appendChild(codeEl);
     box.appendChild(pre);
     return box;
   }
