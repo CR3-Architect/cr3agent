@@ -1382,6 +1382,7 @@
 
   function resetChatView() {
     flushAssistant();
+    stopThinkingTimer();
     els.messages.textContent = '';
     S.current = null;
     S.tools.clear();
@@ -1424,6 +1425,86 @@
     append(wrap);
   }
 
+  function formatThinkingTime(sec) {
+    if (sec < 60) return `${sec}s`;
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    if (m < 60) return `${m}m ${s}s`;
+    const h = Math.floor(m / 60);
+    const remM = m % 60;
+    return `${h}h ${remM}m ${s}s`;
+  }
+
+  function createThinkingBlock() {
+    stopThinkingTimer();
+    const wrap = h('div', 'thinking-wrap');
+    const head = h('button', 'thinking-head');
+    head.type = 'button';
+
+    const chev = iconSpan('chevronRight', 'thinking-chev');
+    head.appendChild(chev);
+
+    const pulse = h('span', 'thinking-pulse');
+    head.appendChild(pulse);
+
+    const label = h('span', 'thinking-label');
+    label.innerHTML = `Thinking for <span class="thinking-timer">0s</span>`;
+    head.appendChild(label);
+
+    wrap.appendChild(head);
+
+    const body = h('div', 'thinking-body');
+    body.hidden = true;
+    const list = h('ul', 'thinking-steps');
+    body.appendChild(list);
+    wrap.appendChild(body);
+
+    head.addEventListener('click', () => {
+      const isHidden = body.hidden;
+      body.hidden = !isHidden;
+      wrap.classList.toggle('open', !isHidden);
+    });
+
+    append(wrap);
+
+    const startTime = Date.now();
+    const timerEl = label.querySelector('.thinking-timer');
+
+    const addStep = (stepText) => {
+      if (!stepText) return;
+      const li = h('li', 'thinking-step-item');
+      li.textContent = stepText;
+      list.appendChild(li);
+    };
+
+    addStep('Analyzing workspace context and project instructions…');
+
+    const interval = setInterval(() => {
+      const elapsed = Math.max(0, Math.floor((Date.now() - startTime) / 1000));
+      if (timerEl) timerEl.textContent = formatThinkingTime(elapsed);
+    }, 1000);
+
+    const finish = () => {
+      if (!S.activeThinking) return;
+      clearInterval(interval);
+      const totalElapsed = Math.max(1, Math.floor((Date.now() - startTime) / 1000));
+      pulse.remove();
+      label.textContent = `Thought for ${formatThinkingTime(totalElapsed)}`;
+      wrap.classList.add('completed');
+      S.activeThinking = null;
+    };
+
+    S.activeThinking = { wrap, head, body, finish, addStep, startTime, interval };
+    return S.activeThinking;
+  }
+
+  function stopThinkingTimer() {
+    if (S.activeThinking) {
+      if (S.activeThinking.interval) clearInterval(S.activeThinking.interval);
+      S.activeThinking = null;
+    }
+  }
+
   function startAssistant() {
     const wrap = h('div', 'msg-assistant-wrap');
     const el = h('div', 'msg-assistant');
@@ -1443,6 +1524,7 @@
   }
 
   function onText(delta) {
+    if (S.activeThinking) S.activeThinking.finish();
     if (!S.current) startAssistant();
     S.current.raw += delta;
     if (!S.current.raf) S.current.raf = requestAnimationFrame(drawAssistant);
@@ -1706,6 +1788,7 @@
 
   function onToolCall(ev) {
     flushAssistant();
+    if (S.activeThinking) S.activeThinking.addStep(ev.summary || summarizeCall(ev.name, ev.args));
     const rec = makeToolCard(ev.id, ev.name, ev.summary, ev.args, ev.awaitingApproval, ev.preview);
     if (ev.awaitingApproval) {
       const row = h('div', 'approve-row');
@@ -1874,9 +1957,9 @@
       case 'tool_output': onToolOutput(ev); break;
       case 'tool_result': onToolResult(ev); break;
       case 'notice': flushAssistant(); append(h('div', 'notice', ev.message)); break;
-      case 'error': flushAssistant(); finalizeTurnFooter(); append(h('div', 'error-msg', ev.message)); setRunning(false); processNextQueued(); break;
-      case 'stopped': flushAssistant(); finalizeTurnFooter(); append(h('div', 'stopped', 'Stopped.')); setRunning(false); processNextQueued(); break;
-      case 'done': flushAssistant(); finalizeTurnFooter(); setRunning(false); processNextQueued(); break;
+      case 'error': flushAssistant(); if (S.activeThinking) S.activeThinking.finish(); finalizeTurnFooter(); append(h('div', 'error-msg', ev.message)); setRunning(false); processNextQueued(); break;
+      case 'stopped': flushAssistant(); if (S.activeThinking) S.activeThinking.finish(); finalizeTurnFooter(); append(h('div', 'stopped', 'Stopped.')); setRunning(false); processNextQueued(); break;
+      case 'done': flushAssistant(); if (S.activeThinking) S.activeThinking.finish(); finalizeTurnFooter(); setRunning(false); processNextQueued(); break;
     }
   }
 
@@ -2068,6 +2151,7 @@ export class AgentService {
     addUser(text, atts);
     S.current = null;
     S.turnStartTime = Date.now();
+    createThinkingBlock();
     setRunning(true);
     const payload = atts.map((a) => (a.kind === 'image' ? { kind: 'image', name: a.name, dataUrl: a.dataUrl } : a.kind === 'file' ? { kind: 'file', name: a.name, text: a.text } : { kind: 'link', url: a.url }));
     const r = await api.send(text, payload);
