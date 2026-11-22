@@ -1,6 +1,6 @@
 {
   "name": "cr3-agentic-ai",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Next-Gen Desktop Autonomous Agent with Multi-Step Reasoning, Tool Execution & Human-in-the-Loop Control.",
   "author": "CR3 Architect",
   "main": "dist/main.js",
