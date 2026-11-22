@@ -258,19 +258,53 @@
 
           <!-- Git Commit & Push Section inside Review Sidebar -->
           <div id="chGitBar" class="ch-git-bar">
-            <div class="ch-git-head">
-              <div class="ch-git-branch-tag">
-                <span class="ico tiny" data-icon="branch"></span>
-                <span id="chGitBranchName">main</span>
+            <!-- Uninitialized State Card -->
+            <div id="chGitUninit" class="ch-git-state-card" hidden>
+              <div class="ch-git-state-info">
+                <span class="ico small" data-icon="branch"></span>
+                <div>
+                  <div class="ch-git-state-title">Git repository not initialized</div>
+                  <div class="ch-git-state-sub muted small">Initialize Git for this project to start tracking changes, reviewing diffs, and syncing with GitHub.</div>
+                </div>
               </div>
-              <span id="chGitFilesSummary" class="muted small">0 files changed</span>
-              <span class="spacer"></span>
-              <button type="button" id="chAutoCommitBtn" class="btn tiny" title="Generate commit message from modified files">✨ Auto-generate</button>
+              <button type="button" id="chInitRepoBtn" class="btn small primary"><span class="ico tiny" data-icon="plus"></span>Initialize Git Repository</button>
             </div>
-            <div class="ch-git-actions-row">
-              <input type="text" id="chCommitInput" class="ch-commit-input" placeholder="Commit message (e.g. feat: update overview design)…" spellcheck="false" autocomplete="off" />
-              <button type="button" id="chCommitBtn" class="btn small primary" title="Commit all modified files">Commit</button>
-              <button type="button" id="chPushBtn" class="btn small primary-glow" title="Push commits to GitHub" hidden><span class="ico tiny" data-icon="arrowUp"></span>Push to GitHub</button>
+
+            <!-- Unassigned / No Remote Connected State Card -->
+            <div id="chGitNoRemote" class="ch-git-state-card" hidden>
+              <div class="ch-git-state-info">
+                <span class="ico small" data-icon="link"></span>
+                <div>
+                  <div class="ch-git-state-title">No GitHub remote connected</div>
+                  <div class="ch-git-state-sub muted small">Assign a repository to commit and push changes for this project.</div>
+                </div>
+              </div>
+              <div class="ch-git-remote-row">
+                <input type="text" id="chRemoteUrlInput" class="ch-remote-input" placeholder="https://github.com/owner/repository.git" spellcheck="false" autocomplete="off" />
+                <button type="button" id="chSetRemoteBtn" class="btn small primary">Connect Repo</button>
+              </div>
+            </div>
+
+            <!-- Active Ready State -->
+            <div id="chGitActive" class="ch-git-active-wrap">
+              <div class="ch-git-head">
+                <div class="ch-git-repo-tag" id="chGitRepoTag" title="Assigned GitHub repository">
+                  <span class="ico tiny" data-icon="link"></span>
+                  <span id="chGitRepoName">origin</span>
+                </div>
+                <div class="ch-git-branch-tag">
+                  <span class="ico tiny" data-icon="branch"></span>
+                  <span id="chGitBranchName">main</span>
+                </div>
+                <span id="chGitFilesSummary" class="muted small">0 files changed</span>
+                <span class="spacer"></span>
+                <button type="button" id="chAutoCommitBtn" class="btn tiny" title="Generate commit message from modified files">✨ Auto-generate</button>
+              </div>
+              <div class="ch-git-actions-row">
+                <input type="text" id="chCommitInput" class="ch-commit-input" placeholder="Commit message (e.g. feat: update overview design)…" spellcheck="false" autocomplete="off" />
+                <button type="button" id="chCommitBtn" class="btn small primary" title="Commit all modified files">Commit</button>
+                <button type="button" id="chPushBtn" class="btn small primary-glow" title="Push commits to GitHub" hidden><span class="ico tiny" data-icon="arrowUp"></span>Push to GitHub</button>
+              </div>
             </div>
           </div>
 

@@ -41,6 +41,7 @@ contextBridge.exposeInMainWorld('api', {
   // git & GitHub
   gitStatus: () => call('git:status'),
   gitInit: () => call('git:init'),
+  gitSetRemote: (url: string) => call('git:setRemote', url),
   gitCommit: (msg: string) => call('git:commit', msg),
   gitPush: () => call('git:push'),
   gitPull: () => call('git:pull'),

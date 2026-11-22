@@ -174,6 +174,9 @@
     chBreadcrumbs: $('chBreadcrumbs'), chFileTabs: $('chFileTabs'), chRevealFile: $('chRevealFile'),
     chKeepFile: $('chKeepFile'), chRevertFile: $('chRevertFile'), chClose: $('chClose'),
     chGitBar: $('chGitBar'), chGitBranchName: $('chGitBranchName'), chGitFilesSummary: $('chGitFilesSummary'),
+    chGitUninit: $('chGitUninit'), chInitRepoBtn: $('chInitRepoBtn'), chGitNoRemote: $('chGitNoRemote'),
+    chRemoteUrlInput: $('chRemoteUrlInput'), chSetRemoteBtn: $('chSetRemoteBtn'), chGitActive: $('chGitActive'),
+    chGitRepoTag: $('chGitRepoTag'), chGitRepoName: $('chGitRepoName'),
     chAutoCommitBtn: $('chAutoCommitBtn'), chCommitInput: $('chCommitInput'), chCommitBtn: $('chCommitBtn'), chPushBtn: $('chPushBtn'),
     onboardDialog: $('onboardDialog'), onboardSubmitBtn: $('onboardSubmitBtn'),
     pfModelCaps: $('pfModelCaps'), pfModelCapsList: $('pfModelCapsList'),
@@ -2390,14 +2393,34 @@ export class AgentService {
       els.chGitBar.hidden = true;
       return;
     }
+    els.chGitBar.hidden = false;
     try {
       const r = await api.gitStatus();
       if (!r || !r.ok || !r.git || !r.git.isRepo) {
-        els.chGitBar.hidden = true;
+        if (els.chGitUninit) els.chGitUninit.hidden = false;
+        if (els.chGitNoRemote) els.chGitNoRemote.hidden = true;
+        if (els.chGitActive) els.chGitActive.hidden = true;
         return;
       }
-      els.chGitBar.hidden = false;
+
       const g = r.git;
+      if (!g.remote) {
+        if (els.chGitUninit) els.chGitUninit.hidden = true;
+        if (els.chGitNoRemote) els.chGitNoRemote.hidden = false;
+        if (els.chGitActive) els.chGitActive.hidden = true;
+        return;
+      }
+
+      if (els.chGitUninit) els.chGitUninit.hidden = true;
+      if (els.chGitNoRemote) els.chGitNoRemote.hidden = true;
+      if (els.chGitActive) els.chGitActive.hidden = false;
+
+      if (els.chGitRepoName) {
+        const match = /(?:[:/])([a-zA-Z0-9_.-]+)\/([a-zA-Z0-9_.-]+?)(?:\.git)?$/.exec(g.remote);
+        els.chGitRepoName.textContent = match ? `${match[1]}/${match[2]}` : 'origin';
+        if (els.chGitRepoTag) els.chGitRepoTag.title = `Connected: ${g.remote}`;
+      }
+
       if (els.chGitBranchName) els.chGitBranchName.textContent = g.branch || 'main';
       const changedCount = g.files ? g.files.length : (S.changes ? S.changes.length : 0);
       if (els.chGitFilesSummary) {
@@ -2437,6 +2460,54 @@ export class AgentService {
   }
 
   function initGitReviewBar() {
+    if (els.chInitRepoBtn) {
+      els.chInitRepoBtn.addEventListener('click', async () => {
+        els.chInitRepoBtn.disabled = true;
+        els.chInitRepoBtn.textContent = 'Initializing…';
+        const r = await api.gitInit();
+        els.chInitRepoBtn.disabled = false;
+        els.chInitRepoBtn.textContent = 'Initialize Git Repository';
+        if (r && r.ok) {
+          toast('Git repository initialized successfully!');
+          await refreshChanges();
+          await updateGitReviewBar();
+        } else {
+          toast(r?.error || 'Failed to initialize Git repository.');
+        }
+      });
+    }
+
+    if (els.chSetRemoteBtn) {
+      const doSetRemote = async () => {
+        const url = (els.chRemoteUrlInput?.value || '').trim();
+        if (!url) {
+          toast('Please enter a GitHub repository URL.');
+          return;
+        }
+        els.chSetRemoteBtn.disabled = true;
+        els.chSetRemoteBtn.textContent = 'Connecting…';
+        const r = await api.gitSetRemote(url);
+        els.chSetRemoteBtn.disabled = false;
+        els.chSetRemoteBtn.textContent = 'Connect Repo';
+        if (r && r.ok) {
+          toast('GitHub repository connected successfully!');
+          if (els.chRemoteUrlInput) els.chRemoteUrlInput.value = '';
+          await updateGitReviewBar();
+        } else {
+          toast(r?.error || 'Failed to connect repository.');
+        }
+      };
+      els.chSetRemoteBtn.addEventListener('click', doSetRemote);
+      if (els.chRemoteUrlInput) {
+        els.chRemoteUrlInput.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            doSetRemote();
+          }
+        });
+      }
+    }
+
     if (els.chAutoCommitBtn) {
       els.chAutoCommitBtn.addEventListener('click', () => {
         const msg = generateSmartCommitMsg();

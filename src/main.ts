@@ -625,6 +625,12 @@ function registerIpc(): void {
     afterGit();
     return { message };
   });
+  handle('git:setRemote', async (url: unknown) => {
+    if (typeof url !== 'string' || !url.trim()) throw new Error('Enter a valid repository URL.');
+    await gitSetRemote(repoDir(), url.trim());
+    afterGit();
+    return { message: 'Connected repository remote.' };
+  });
   handle('git:createRepo', async (input: any) => {
     const token = githubToken();
     if (!token) throw new Error('Sign in to GitHub first (Settings → Accounts).');
