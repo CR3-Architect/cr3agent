@@ -1640,8 +1640,13 @@
       lbl(body, 'with');
       pre(body, String(args.new_string || '').slice(0, 2000));
     } else if (name === 'run_command') {
-      lbl(body, 'Command');
-      pre(body, String(args.command || ''));
+      const box = h('div', 'tool-cmd-box');
+      box.appendChild(h('span', 'tool-cmd-ps1', '$'));
+      const code = h('code', 'tool-cmd-code');
+      const cmdStr = String(args.command || '');
+      code.innerHTML = Md.highlightBash ? Md.highlightBash(cmdStr) : cmdStr;
+      box.appendChild(code);
+      body.appendChild(box);
     } else if (name === 'fetch_url') {
       lbl(body, 'Address');
       pre(body, String(args.url || ''));
@@ -1649,23 +1654,52 @@
   }
 
   function makeToolCard(id, name, summary, args, awaiting, preview) {
-    const card = h('div', 'tool ' + (awaiting ? 'waiting' : 'running'));
-    const head = h('button', 'tool-head');
+    const isCmd = name === 'run_command';
+    const card = h('div', 'tool ' + (awaiting ? 'waiting' : 'running') + (isCmd ? ' tool-cmd' : ''));
+    const head = h('button', 'tool-head' + (isCmd ? ' tool-cmd-head' : ''));
     head.type = 'button';
-    head.appendChild(h('span', 'tool-dot'));
-    const title = h('span', 'tool-title', summary);
-    title.title = summary;
-    head.appendChild(title);
-    const state = h('span', 'tool-state', awaiting ? 'needs approval' : 'running…');
-    head.appendChild(state);
+    if (isCmd) {
+      head.appendChild(iconSpan('terminalPrompt', 'tool-cmd-ico'));
+      const cmdStr = (args && args.command) ? `$ ${args.command}` : summary;
+      const title = h('span', 'tool-title tool-cmd-title', cmdStr);
+      title.title = cmdStr;
+      head.appendChild(title);
+      const state = h('span', 'tool-state tool-cmd-badge', awaiting ? 'Needs Approval' : 'Running…');
+      head.appendChild(state);
+
+      const copyBtn = h('button', 'tool-cmd-copy-btn');
+      copyBtn.type = 'button';
+      copyBtn.title = 'Copy command';
+      copyBtn.appendChild(iconSpan('copy', 'tiny'));
+      copyBtn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        try {
+          await navigator.clipboard.writeText((args && args.command) || summary);
+          copyBtn.innerHTML = '';
+          copyBtn.appendChild(iconSpan('check', 'tiny'));
+          setTimeout(() => {
+            copyBtn.innerHTML = '';
+            copyBtn.appendChild(iconSpan('copy', 'tiny'));
+          }, 1500);
+        } catch (err) {}
+      });
+      head.appendChild(copyBtn);
+    } else {
+      head.appendChild(h('span', 'tool-dot'));
+      const title = h('span', 'tool-title', summary);
+      title.title = summary;
+      head.appendChild(title);
+      const state = h('span', 'tool-state', awaiting ? 'needs approval' : 'running…');
+      head.appendChild(state);
+    }
     head.appendChild(iconSpan('chevron', 'tool-chev'));
     card.appendChild(head);
-    const body = h('div', 'tool-body');
+    const body = h('div', 'tool-body' + (isCmd ? ' tool-cmd-body' : ''));
     fillToolBody(body, name, args || {}, preview);
     card.appendChild(body);
     head.addEventListener('click', () => card.classList.toggle('open'));
-    const rec = { card, state, body, out: null, row: null, name };
-    if (awaiting || name === 'run_command') card.classList.add('open');
+    const rec = { card, state, body, out: null, row: null, name, isCmd };
+    if (awaiting || isCmd) card.classList.add('open');
     S.tools.set(id, rec);
     return rec;
   }
@@ -1686,8 +1720,8 @@
         row.remove();
         rec.row = null;
         const allow = decision !== 'deny';
-        rec.state.textContent = allow ? 'running…' : 'denied';
-        rec.card.className = 'tool ' + (allow ? 'running' : 'fail') + (allow && ev.name === 'run_command' ? ' open' : '');
+        rec.state.textContent = allow ? (rec.isCmd ? 'Running…' : 'running…') : 'denied';
+        rec.card.className = 'tool ' + (allow ? 'running' : 'fail') + (rec.isCmd ? ' tool-cmd' : '') + (allow && ev.name === 'run_command' ? ' open' : '');
         const r = await api.approve(ev.id, decision);
         if (decision === 'always' && r && r.ok && r.settings) {
           S.app.settings = r.settings;
@@ -1707,8 +1741,15 @@
 
   function ensureOut(rec) {
     if (!rec.out) {
-      lbl(rec.body, 'Output');
-      rec.out = pre(rec.body, '', 'tool-out');
+      if (rec.name === 'run_command') {
+        const termBar = h('div', 'tool-term-bar');
+        termBar.appendChild(h('span', 'tool-term-label', 'TERMINAL OUTPUT'));
+        rec.body.appendChild(termBar);
+        rec.out = pre(rec.body, '', 'tool-out tool-term-out');
+      } else {
+        lbl(rec.body, 'Output');
+        rec.out = pre(rec.body, '', 'tool-out');
+      }
     }
     return rec.out;
   }
@@ -1731,7 +1772,11 @@
     rec.row = null;
     rec.card.classList.remove('waiting', 'running', 'ok', 'fail');
     rec.card.classList.add(ev.ok ? 'ok' : 'fail');
-    rec.state.textContent = ev.ok ? 'done' : 'failed';
+    if (rec.name === 'run_command') {
+      rec.state.textContent = ev.ok ? 'Completed' : 'Failed';
+    } else {
+      rec.state.textContent = ev.ok ? 'done' : 'failed';
+    }
     const text = Md.stripAnsi(ev.output || '');
     if (rec.name === 'run_command') {
       if (text) ensureOut(rec).textContent = text;
@@ -1739,7 +1784,7 @@
       lbl(rec.body, ev.ok ? 'Result' : 'Error');
       pre(rec.body, text.slice(0, 20000));
     }
-    if (ev.ok) rec.card.classList.remove('open');
+    if (ev.ok && rec.name !== 'run_command') rec.card.classList.remove('open');
     else rec.card.classList.add('open');
     if (CHANGING.has(rec.name)) scheduleChangesRefresh();
   }
