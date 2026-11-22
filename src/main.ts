@@ -32,6 +32,7 @@ import {
   saveSettings,
   setActive,
   setProviderModels,
+  isToolSupportedModel,
   StoredSettings,
   upsertProvider,
 } from './settings';
@@ -73,7 +74,13 @@ let accountFlow: AbortController | null = null;
 // ---------- helpers ----------
 
 function encodeKey(plain: string): string {
-  if (safeStorage.isEncryptionAvailable()) return 'enc:' + safeStorage.encryptString(plain).toString('base64');
+  if (safeStorage.isEncryptionAvailable()) {
+    try {
+      return 'enc:' + safeStorage.encryptString(plain).toString('base64');
+    } catch (err) {
+      console.warn('[safeStorage] Encryption failed, falling back to plain base64:', err);
+    }
+  }
   return 'plain:' + Buffer.from(plain, 'utf8').toString('base64');
 }
 
@@ -82,7 +89,8 @@ function decodeKey(stored: string | undefined): string | undefined {
   try {
     if (stored.startsWith('enc:')) return safeStorage.decryptString(Buffer.from(stored.slice(4), 'base64'));
     if (stored.startsWith('plain:')) return Buffer.from(stored.slice(6), 'base64').toString('utf8');
-  } catch {
+  } catch (err) {
+    console.error('[Key Decryption Error]:', err);
     /* unreadable key: treat as none */
   }
   return undefined;
@@ -94,12 +102,21 @@ function target(p: { baseUrl: string; apiKey?: string; model: string }): ModelTa
 
 function agentConfig(): AgentConfig {
   const p = activeProvider(settings);
+  const mainTarget = target(p);
+
+  // Intra-provider fallback targets: try the other tool-supported models of this provider first
+  const alternateTargets: ModelTarget[] = (p.models ?? [])
+    .filter((m) => m && m !== p.model && isToolSupportedModel(m))
+    .map((m) => ({ baseUrl: p.baseUrl, apiKey: mainTarget.apiKey, model: m }));
+
+  const otherProviderTargets = fallbackProviders(settings).map(target);
+
   return {
-    ...target(p),
+    ...mainTarget,
     maxSteps: settings.maxSteps,
     maxContextChars: settings.maxContextChars,
     approvalMode: settings.approvalMode,
-    fallbacks: fallbackProviders(settings).map(target),
+    fallbacks: [...alternateTargets, ...otherProviderTargets],
     persona: settings.persona ?? 'software',
   };
 }
@@ -202,7 +219,7 @@ function activeSession(): Session {
 
 function appState() {
   return {
-    settings: publicSettings(settings),
+    settings: publicSettings(settings, (k) => Boolean(decodeKey(k))),
     presets: PRESETS,
     folder: activeFolder,
     chatId: activeChat,
@@ -326,7 +343,11 @@ function registerIpc(): void {
   handle('providers:fetchModels', async (id: string) => {
     const p = settings.providers.find((x) => x.id === id);
     if (!p) throw new Error('That provider no longer exists.');
-    const models = await fetchModelList(p.baseUrl, decodeKey(p.apiKey));
+    const key = decodeKey(p.apiKey);
+    if (p.apiKey && !key) {
+      throw new Error(`The saved API key for provider "${p.name}" could not be decrypted. Please re-enter your API key in Settings → Providers & Models.`);
+    }
+    const models = await fetchModelList(p.baseUrl, key);
     persistSettings(setProviderModels(settings, id, models));
     return appState();
   });
@@ -445,7 +466,10 @@ function registerIpc(): void {
     const s = activeSession();
     if (s.running) throw new Error('This chat is still working on the previous message.');
     const p = activeProvider(settings);
-    if (p.model.trim() === '') throw new Error('Choose a model first (Settings → Providers).');
+    if (p.model.trim() === '') throw new Error('Choose a model first (Settings → Providers & Models).');
+    if (p.apiKey && !decodeKey(p.apiKey)) {
+      throw new Error(`The saved API key for provider "${p.name}" could not be decrypted. Please re-enter your API key in Settings → Providers & Models.`);
+    }
 
     const controller = new AbortController();
     s.running = controller;
@@ -465,6 +489,13 @@ function registerIpc(): void {
               s.pending.set(call.id, { call, resolve: (d) => resolve(d !== 'deny') });
             }),
           preApproved: (name, args) => isPreApproved(settings.allowRules[s.folder] ?? [], name, args),
+          onModelSwitched: (newTarget) => {
+            const currentP = activeProvider(settings);
+            if (currentP.baseUrl === newTarget.baseUrl && currentP.model !== newTarget.model) {
+              persistSettings(setActive(settings, currentP.id, newTarget.model));
+              send('app:changed', { what: 'settings' });
+            }
+          },
         },
         controller.signal,
         files,

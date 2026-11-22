@@ -55,6 +55,8 @@ export interface AgentHooks {
   approve(call: ToolCallInfo): Promise<boolean>;
   /** True when a saved "always allow" rule already covers this call. */
   preApproved?(name: string, args: Args): boolean;
+  /** Fired when an auto-fallback switches the active model successfully. */
+  onModelSwitched?(target: ModelTarget): void;
 }
 
 interface ToolCallMessage {
@@ -227,7 +229,14 @@ export class Agent {
   async run(userText: string, hooks: AgentHooks, signal: AbortSignal, attachments: Attachment[] = []): Promise<void> {
     const skills = this.getSkills();
     this.messages[0] = { role: 'system', content: buildSystemPrompt(this.workspace.root, skills, this.cfg.persona) };
-    this.messages.push(buildUserMessage(userText, attachments));
+    const userMsg = buildUserMessage(userText, attachments);
+    const lastMsg = this.messages[this.messages.length - 1];
+    if (lastMsg && lastMsg.role === 'user') {
+      const merged = coalesceUserMessages([lastMsg, userMsg]);
+      this.messages[this.messages.length - 1] = merged[0]!;
+    } else {
+      this.messages.push(userMsg);
+    }
     const hasImages = attachments.some((a) => a.kind === 'image');
     this.targetStart = 0;
     let continues = 0;
@@ -378,6 +387,9 @@ export class Agent {
           }
         }
         this.targetStart = i;
+        if (i > 0 && hooks.onModelSwitched) {
+          hooks.onModelSwitched(t);
+        }
         return turn;
       } catch (e) {
         if (signal.aborted) throw e;
@@ -398,7 +410,7 @@ export class Agent {
 
     const body: Record<string, unknown> = {
       model: target.model,
-      messages: this.messages,
+      messages: coalesceUserMessages(this.messages),
       tools: openAiToolSchemas(withSkills),
       stream: true,
     };
@@ -589,6 +601,33 @@ export class Agent {
 }
 
 /**
+ * Coalesce consecutive user messages into a single user message.
+ * Strict APIs (Groq, Anthropic, etc.) reject consecutive user turns.
+ */
+export function coalesceUserMessages(messages: ChatMessage[]): ChatMessage[] {
+  const result: ChatMessage[] = [];
+  for (const msg of messages) {
+    const prev = result[result.length - 1];
+    if (prev && prev.role === 'user' && msg.role === 'user') {
+      if (typeof prev.content === 'string' && typeof msg.content === 'string') {
+        prev.content = `${prev.content}\n\n${msg.content}`.trim();
+      } else {
+        const prevParts: ContentPart[] = Array.isArray(prev.content)
+          ? [...prev.content]
+          : prev.content !== null && prev.content !== undefined ? [{ type: 'text' as const, text: String(prev.content) }] : [];
+        const nextParts: ContentPart[] = Array.isArray(msg.content)
+          ? [...msg.content]
+          : msg.content !== null && msg.content !== undefined ? [{ type: 'text' as const, text: String(msg.content) }] : [];
+        prev.content = [...prevParts, ...nextParts];
+      }
+    } else {
+      result.push({ ...msg });
+    }
+  }
+  return result;
+}
+
+/**
  * A history a server will accept: starts at a user message, and every tool call has its answer.
  * Used when restoring a saved chat (which may have been cut off by a crash or a stop).
  */
@@ -618,7 +657,7 @@ export function sanitizeHistory(messages: ChatMessage[]): ChatMessage[] {
       }
     }
   }
-  return result;
+  return coalesceUserMessages(result);
 }
 
 function validJson(text: string): boolean {

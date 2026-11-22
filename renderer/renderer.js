@@ -2276,7 +2276,8 @@ export class AgentService {
       items.push({ type: 'head', label: 'Switch any time, even mid-chat. Auto-switch is on: if this model fails, the next one takes over.' });
     }
     for (const p of s.providers) {
-      items.push({ type: 'head', label: p.name + (p.hasApiKey ? ' · key saved' : '') });
+      const keyStatus = p.keyDecryptionFailed ? ' · ⚠️ key re-entry needed' : p.hasApiKey ? ' · key saved' : '';
+      items.push({ type: 'head', label: p.name + keyStatus });
       const list = p.models.length > 0 ? p.models.slice(0, 40) : p.model ? [p.model] : [];
       if (list.length === 0) items.push({ label: 'No model chosen yet', disabled: true });
       for (const m of list) {
@@ -3160,10 +3161,15 @@ export class AgentService {
     $('pfUrl').value = p ? p.baseUrl : '';
     $('pfModel').value = p ? p.model : '';
     $('pfKey').value = '';
-    $('pfKey').placeholder = p && p.hasApiKey ? '••••••••  (saved)' : 'Paste your API key';
-    $('pfKeyHint').textContent = p && p.hasApiKey
-      ? 'A key is saved in your Mac Keychain. Leave this empty to keep it, or paste a new one to replace it.'
-      : 'No key saved. Local servers such as Ollama do not need one. Online providers show the key on their website under “API keys”.';
+    if (p && p.keyDecryptionFailed) {
+      $('pfKey').placeholder = '⚠️ Key could not be decrypted';
+      $('pfKeyHint').textContent = 'The operating system could not decrypt the saved key. Please paste your API key again to save a fresh copy.';
+    } else {
+      $('pfKey').placeholder = p && p.hasApiKey ? '••••••••  (saved)' : 'Paste your API key';
+      $('pfKeyHint').textContent = p && p.hasApiKey
+        ? 'A key is saved in your Mac Keychain. Leave this empty to keep it, or paste a new one to replace it.'
+        : 'No key saved. Local servers such as Ollama do not need one. Online providers show the key on their website under “API keys”.';
+    }
     $('pfClearRow').hidden = !(p && p.hasApiKey);
     $('pfClear').checked = false;
     const dl = $('pfModels');

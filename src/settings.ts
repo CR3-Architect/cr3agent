@@ -78,7 +78,7 @@ export const PRESETS: ProviderPreset[] = [
   { name: 'OpenCode Zen', baseUrl: 'https://opencode.ai/zen/v1', needsKey: true, exampleModel: '', free: true, keyUrl: 'https://opencode.ai/auth', note: 'Has several free models (names ending in -free). Needs an account key.' },
   { name: 'OpenRouter', baseUrl: 'https://openrouter.ai/api/v1', needsKey: true, exampleModel: '', free: true, keyUrl: 'https://openrouter.ai/keys', note: 'Many models marked :free. Free use has daily request limits.' },
   { name: 'Google Gemini', baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai', needsKey: true, exampleModel: 'gemini-2.5-flash', free: true, keyUrl: 'https://aistudio.google.com/apikey', note: 'Free tier with rate limits. Good for long files.' },
-  { name: 'Groq', baseUrl: 'https://api.groq.com/openai/v1', needsKey: true, exampleModel: 'llama-3.3-70b-versatile', free: true, keyUrl: 'https://console.groq.com/keys', note: 'Free tier, ultra-fast, supports full tool calling.' },
+  { name: 'Groq', baseUrl: 'https://api.groq.com/openai/v1', needsKey: true, exampleModel: 'llama-3.1-8b-instant', free: true, keyUrl: 'https://console.groq.com/keys', note: 'Free tier, ultra-fast, supports full tool calling.' },
   { name: 'Cerebras', baseUrl: 'https://api.cerebras.ai/v1', needsKey: true, exampleModel: 'llama-3.3-70b', free: true, keyUrl: 'https://cloud.cerebras.ai', note: 'Free tier with daily token limits.' },
   { name: 'Mistral', baseUrl: 'https://api.mistral.ai/v1', needsKey: true, exampleModel: 'codestral-latest', free: true, keyUrl: 'https://console.mistral.ai/api-keys', note: 'Free experiment tier (read their data terms).' },
   { name: 'NVIDIA NIM', baseUrl: 'https://integrate.api.nvidia.com/v1', needsKey: true, exampleModel: '', free: true, keyUrl: 'https://build.nvidia.com', note: 'Free developer credits and rate-limited free endpoints.' },
@@ -207,16 +207,17 @@ export function isToolSupportedModel(name: string): boolean {
 export function sortModelsWithPriority(models: string[]): string[] {
   function score(m: string): number {
     const lower = m.toLowerCase();
-    if (lower === 'llama-3.3-70b-versatile') return 0;
-    if (lower === 'llama-3.1-8b-instant') return 1;
-    if (lower.includes('qwen2.5-coder') || lower.includes('qwen3.8') || lower.includes('qwen/qwen3.8')) return 2;
-    if (lower.includes('deepseek-coder') || lower.includes('deepseek-chat')) return 3;
-    if (lower.includes('gpt-4o')) return 4;
-    if (lower.includes('llama-3.3') || lower.includes('llama-3.1')) return 5;
-    if (lower.includes('codestral')) return 6;
-    if (lower.includes('gpt-oss-120b')) return 7;
-    if (lower.includes('gpt-oss')) return 8;
-    if (lower.includes('coder') || lower.includes('code')) return 9;
+    if (lower === 'llama-3.1-8b-instant') return 0;
+    if (lower.includes('gpt-oss-120b')) return 1;
+    if (lower.includes('gpt-oss-20b')) return 2;
+    if (lower.includes('qwen3.8') || lower.includes('qwen/qwen3.8')) return 3;
+    if (lower.includes('qwen2.5-coder')) return 4;
+    if (lower.includes('deepseek-coder') || lower.includes('deepseek-chat')) return 5;
+    if (lower.includes('gpt-4o')) return 6;
+    if (lower.includes('llama-3.1')) return 7;
+    if (lower.includes('llama-3.3')) return 8;
+    if (lower.includes('codestral')) return 9;
+    if (lower.includes('coder') || lower.includes('code')) return 10;
     return 20;
   }
   return [...models].sort((a, b) => {
@@ -238,7 +239,7 @@ export function setProviderModels(current: StoredSettings, id: string, models: s
 
   // For Groq endpoints, ensure flagship tool-calling models are available
   if (/api\.groq\.com/i.test(p.baseUrl)) {
-    for (const gm of ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant']) {
+    for (const gm of ['llama-3.1-8b-instant', 'openai/gpt-oss-120b', 'openai/gpt-oss-20b', 'qwen/qwen3.8-27b']) {
       if (!candidateList.includes(gm)) candidateList.push(gm);
     }
   }
@@ -360,9 +361,17 @@ export function activeProvider(s: StoredSettings): StoredProvider {
 }
 
 /** What the window may see: never the keys themselves. */
-export function publicSettings(s: StoredSettings) {
+export function publicSettings(s: StoredSettings, isKeyValid?: (stored: string | undefined) => boolean) {
   return {
-    providers: s.providers.map((p) => ({ id: p.id, name: p.name, baseUrl: p.baseUrl, model: p.model, models: p.models, hasApiKey: !!p.apiKey })),
+    providers: s.providers.map((p) => ({
+      id: p.id,
+      name: p.name,
+      baseUrl: p.baseUrl,
+      model: p.model,
+      models: p.models,
+      hasApiKey: isKeyValid ? isKeyValid(p.apiKey) : !!p.apiKey,
+      keyDecryptionFailed: Boolean(p.apiKey && isKeyValid && !isKeyValid(p.apiKey)),
+    })),
     activeProviderId: activeProvider(s).id,
     approvalMode: s.approvalMode,
     maxSteps: s.maxSteps,
@@ -534,7 +543,7 @@ export async function fetchModelList(baseUrl: string, apiKey: string | undefined
   const candidateList = filtered.length > 0 ? filtered : ids;
 
   if (/api\.groq\.com/i.test(baseUrl)) {
-    for (const gm of ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant']) {
+    for (const gm of ['llama-3.1-8b-instant', 'openai/gpt-oss-120b', 'openai/gpt-oss-20b', 'qwen/qwen3.8-27b']) {
       if (!candidateList.includes(gm)) candidateList.push(gm);
     }
   }

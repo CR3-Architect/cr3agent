@@ -6,7 +6,7 @@ import * as path from 'node:path';
 import * as http from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { Workspace } from '../agent/workspace';
-import { Agent, AgentConfig, AgentEvent, AUTO_CONTINUE, ToolCallInfo } from '../agent/agent';
+import { Agent, AgentConfig, AgentEvent, AgentHooks, AUTO_CONTINUE, ModelTarget, ToolCallInfo } from '../agent/agent';
 import { commandKey, isPreApproved, isValidRule, suggestRule } from '../agent/rules';
 import {
   DEFAULT_SETTINGS,
@@ -70,7 +70,11 @@ function cfg(url: string, over: Partial<AgentConfig> = {}): AgentConfig {
 function rec(allow = true) {
   const events: AgentEvent[] = [];
   const approvals: ToolCallInfo[] = [];
-  return { events, approvals, hooks: { onEvent: (e: AgentEvent) => events.push(e), approve: async (c: ToolCallInfo) => (approvals.push(c), allow) } };
+  const hooks: AgentHooks = {
+    onEvent: (e: AgentEvent) => { events.push(e); },
+    approve: async (c: ToolCallInfo) => { approvals.push(c); return allow; },
+  };
+  return { events, approvals, hooks };
 }
 const noSignal = () => new AbortController().signal;
 
@@ -142,10 +146,13 @@ test('agent: switches to the next model when the first is down, out of credit or
   try {
     const agent = new Agent(cfg(bad.url, { fallbacks: [{ baseUrl: good.url, model: 'backup' }] }), new Workspace(root));
     const r = rec();
+    let switchedModel = '';
+    r.hooks.onModelSwitched = (t: ModelTarget) => { switchedModel = t.model; };
     await agent.run('hi', r.hooks, noSignal());
     assert.equal(bad.requests.length, 1);
     assert.equal(good.requests.length, 1);
     assert.equal(good.requests[0].model, 'backup');
+    assert.equal(switchedModel, 'backup');
     assert.ok(r.events.some((e) => e.type === 'notice' && /Switching to backup/.test(e.message)));
     assert.ok(r.events.some((e) => e.type === 'text' && e.delta === 'hello from backup'));
 

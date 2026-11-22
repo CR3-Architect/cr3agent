@@ -7,7 +7,7 @@ import * as http from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { Workspace } from '../agent/workspace';
 import { findTool, applyEdit } from '../agent/tools';
-import { Agent, AgentConfig, AgentEvent, ToolCallInfo, buildUserMessage, sanitizeHistory, ChatMessage } from '../agent/agent';
+import { Agent, AgentConfig, AgentEvent, ToolCallInfo, buildUserMessage, sanitizeHistory, coalesceUserMessages, ChatMessage } from '../agent/agent';
 import { htmlToText, fetchUrlText, parseHttpUrl } from '../agent/web';
 import { compactDiff, diffText } from '../agent/diff';
 import { createSkill, loadSkills } from '../agent/skills';
@@ -348,12 +348,26 @@ test('agent: a saved conversation can be restored, and broken histories are repa
       { role: 'assistant', content: 'orphan at the start' },
       { role: 'tool', tool_call_id: 'zzz', content: 'orphan result' },
       { role: 'user', content: 'hello' },
+      { role: 'user', content: 'how are you' },
       { role: 'assistant', content: null, tool_calls: [{ id: 't1', type: 'function', function: { name: 'list_dir', arguments: '{}' } }] },
     ];
     const fixed = sanitizeHistory(broken);
     assert.deepEqual(fixed.map((m) => m.role), ['user', 'assistant', 'tool']);
+    assert.equal(fixed[0]!.content, 'hello\n\nhow are you', 'consecutive user messages are coalesced');
     assert.match(String(fixed[2]!.content), /interrupted/);
     assert.equal(fixed[2]!.tool_call_id, 't1');
+
+    // direct test of coalesceUserMessages
+    const coalesced = coalesceUserMessages([
+      { role: 'user', content: 'first' },
+      { role: 'user', content: 'second' },
+      { role: 'user', content: 'third' },
+      { role: 'assistant', content: 'reply' },
+      { role: 'user', content: 'fourth' },
+    ]);
+    assert.deepEqual(coalesced.map((m) => m.role), ['user', 'assistant', 'user']);
+    assert.equal(coalesced[0]!.content, 'first\n\nsecond\n\nthird');
+    assert.equal(coalesced[2]!.content, 'fourth');
   } finally {
     await mock.close();
     await fs.rm(root, { recursive: true, force: true });
@@ -376,6 +390,10 @@ test('settings: add, update, switch and delete providers; keys never reach the w
   const pub = publicSettings(s);
   assert.ok(!JSON.stringify(pub).includes('sk-1') && !JSON.stringify(pub).includes('enc:'));
   assert.equal(pub.providers.find((x) => x.id === added.id)!.hasApiKey, true);
+
+  const pubWithDecryptionFailure = publicSettings(s, (k) => k !== 'enc:sk-1');
+  assert.equal(pubWithDecryptionFailure.providers.find((x) => x.id === added.id)!.hasApiKey, false);
+  assert.equal(pubWithDecryptionFailure.providers.find((x) => x.id === added.id)!.keyDecryptionFailed, true);
 
   // update: key kept when not mentioned, replaced, then removed
   s = upsertProvider(s, { id: added.id, name: 'OR', baseUrl: p.baseUrl }, enc).settings;
