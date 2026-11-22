@@ -2996,13 +2996,79 @@ export class AgentService {
     }
   }
 
+  const PERSONA_META = {
+    software: {
+      icon: '💻',
+      tag: 'SOFTWARE',
+      title: 'Software Engineering',
+      desc: 'Modular clean architecture, TypeScript/Python/React, unit tests, refactoring, and Git commits.'
+    },
+    agent: {
+      icon: '🤖',
+      tag: 'AI AGENTS',
+      title: 'AI Agent Building',
+      desc: 'Autonomous multi-agent workflows, tool schemas, eval loops, subagents, and LLMs.'
+    },
+    science: {
+      icon: '🔬',
+      tag: 'RESEARCH',
+      title: 'Science & Research',
+      desc: 'Empirical scientific rigor, data analysis, reproducible scripts, mathematics, and research papers.'
+    },
+    devops: {
+      icon: '☁️',
+      tag: 'SYSTEMS',
+      title: 'DevOps & Cloud',
+      desc: 'CI/CD pipelines, Docker, Kubernetes, shell scripts, cloud infrastructure, and stability.'
+    },
+    general: {
+      icon: '⚡',
+      tag: 'GENERAL',
+      title: 'General Purpose',
+      desc: 'Versatile everyday assistant for documents, text analysis, workflow automation, and coding.'
+    }
+  };
+
+  function renderActiveFocusDomain() {
+    const s = S.app?.settings || {};
+    const key = s.persona || 'software';
+    const info = PERSONA_META[key] || PERSONA_META.software;
+    const iconEl = $('activeDomainIcon');
+    const tagEl = $('activeDomainTag');
+    const titleEl = $('activeDomainTitle');
+    const descEl = $('activeDomainDesc');
+    if (iconEl) iconEl.textContent = info.icon;
+    if (tagEl) tagEl.textContent = info.tag;
+    if (titleEl) titleEl.textContent = info.title;
+    if (descEl) descEl.textContent = info.desc;
+  }
+
+  function applyTheme(theme) {
+    const t = theme || 'night';
+    store('cr3.theme', t);
+    if (t === 'system') {
+      document.documentElement.removeAttribute('data-theme');
+    } else {
+      document.documentElement.setAttribute('data-theme', t);
+    }
+    document.querySelectorAll('#themeCardsGrid .theme-card').forEach((card) => {
+      card.classList.toggle('on', card.getAttribute('data-theme-val') === t);
+    });
+  }
+
   function openSettings(tab) {
     switchTab(tab || 'general');
     const s = S.app?.settings || {};
-    const persona = s.persona || 'software';
-    document.querySelectorAll('#generalPersonaGrid .persona-card').forEach((c) => {
-      c.classList.toggle('on', c.getAttribute('data-persona') === persona);
+    renderActiveFocusDomain();
+    const curTheme = store('cr3.theme') || 'night';
+    applyTheme(curTheme);
+    const curDiffMode = S.diffMode || store('cr3.diffMode') || 'unified';
+    document.querySelectorAll('#diffModeCardsGrid .diff-mode-card').forEach((c) => {
+      c.classList.toggle('on', c.getAttribute('data-diff-mode') === curDiffMode);
     });
+    if ($('diffLineNums')) $('diffLineNums').checked = store('cr3.diffLineNums') !== 'false';
+    if ($('diffFullContext')) $('diffFullContext').checked = !!S.diffFull;
+
     const mode = s.approvalMode || 'ask';
     if ($('layoutSE')) $('layoutSE').classList.toggle('on', mode === 'auto');
     if ($('layoutKW')) $('layoutKW').classList.toggle('on', mode !== 'auto');
@@ -3033,21 +3099,7 @@ export class AgentService {
   }
 
   function renderModelCapsInSettings(modelName) {
-    if (!els.pfModelCaps || !els.pfModelCapsList) return;
-    const name = String(modelName || '').trim();
-    if (!name) {
-      els.pfModelCaps.hidden = true;
-      els.pfModelCapsList.textContent = '';
-      return;
-    }
-    const caps = getModelCapabilities(name);
-    els.pfModelCapsList.textContent = '';
-    for (const c of caps) {
-      const pill = h('span', 'model-cap-pill ' + (c.class || ''), c.label);
-      if (c.tip) pill.title = c.tip;
-      els.pfModelCapsList.appendChild(pill);
-    }
-    els.pfModelCaps.hidden = false;
+    if (els.pfModelCaps) els.pfModelCaps.hidden = true;
   }
 
   function renderProviders() {
@@ -3113,19 +3165,54 @@ export class AgentService {
     });
     $('settingsClose')?.addEventListener('click', () => $('settingsDialog').close());
 
-    // General Persona cards
-    document.querySelectorAll('#generalPersonaGrid .persona-card').forEach((card) => {
-      card.addEventListener('click', async () => {
-        const persona = card.getAttribute('data-persona');
-        document.querySelectorAll('#generalPersonaGrid .persona-card').forEach((c) => c.classList.toggle('on', c === card));
-        const r = await api.setGeneral({ persona });
-        if (r.ok) {
-          applyState(r);
-          toast(`Agent domain set to ${card.querySelector('.persona-title')?.textContent || persona}`);
-        } else {
-          toast(r.error);
-        }
+    // Reconfigure Domain button -> Opens onboarding
+    $('genReconfigDomainBtn')?.addEventListener('click', () => {
+      const d = $('onboardDialog');
+      if (d) {
+        const s = S.app?.settings || {};
+        const persona = s.persona || 'software';
+        document.querySelectorAll('#onboardPersonaGrid .persona-card').forEach((c) => {
+          c.classList.toggle('on', c.getAttribute('data-persona') === persona);
+        });
+        const mode = s.approvalMode || 'ask';
+        document.querySelectorAll('#onboardModeGrid .set-layout-card').forEach((c) => {
+          c.classList.toggle('on', c.getAttribute('data-mode') === mode);
+        });
+        d.showModal();
+      }
+    });
+
+    // Theme Cards -> Click to switch theme instantly
+    document.querySelectorAll('#themeCardsGrid .theme-card').forEach((card) => {
+      card.addEventListener('click', () => {
+        const th = card.getAttribute('data-theme-val') || 'night';
+        applyTheme(th);
+        toast(`Visual theme set to ${card.querySelector('.theme-name')?.textContent || th}`);
       });
+    });
+
+    // Diff Mode Cards -> Click to switch diff view mode
+    document.querySelectorAll('#diffModeCardsGrid .diff-mode-card').forEach((card) => {
+      card.addEventListener('click', () => {
+        const mode = card.getAttribute('data-diff-mode') || 'unified';
+        store('cr3.diffMode', mode);
+        setDiffMode(mode);
+        document.querySelectorAll('#diffModeCardsGrid .diff-mode-card').forEach((c) => {
+          c.classList.toggle('on', c === card);
+        });
+        toast(`Diff review mode set to ${card.querySelector('.dmc-title')?.textContent || mode}`);
+      });
+    });
+
+    // Diff View Preferences
+    $('diffLineNums')?.addEventListener('change', (e) => {
+      store('cr3.diffLineNums', e.target.checked ? 'true' : 'false');
+      document.body.classList.toggle('hide-diff-linenums', !e.target.checked);
+      if (S.selected) showDiff(S.selected);
+    });
+    $('diffFullContext')?.addEventListener('change', (e) => {
+      S.diffFull = e.target.checked;
+      if (S.selected) showDiff(S.selected);
     });
 
     // Layout cards -> Execution Mode (Autonomous vs Supervised)
@@ -3230,7 +3317,7 @@ export class AgentService {
     });
 
     $('appCheckUpdateBtn')?.addEventListener('click', () => {
-      toast('Cr3agent is up to date (v0.3.0).');
+      toast('Cr3agent is up to date (v0.3.1).');
     });
 
     $('chatWidthSelect')?.addEventListener('change', (e) => {
@@ -4104,6 +4191,7 @@ export class AgentService {
       $('onboardDialog')?.close();
       if (r.ok) {
         applyState(r);
+        renderActiveFocusDomain();
         toast(`CR3-Agentic AI configured for ${persona.toUpperCase()} domain.`);
       }
       if (!els.input.disabled) els.input.focus();
@@ -4111,6 +4199,8 @@ export class AgentService {
   }
 
   async function init() {
+    applyTheme(store('cr3.theme') || 'night');
+    if (store('cr3.diffMode')) S.diffMode = store('cr3.diffMode');
     document.querySelectorAll('[data-icon]').forEach((n) => { n.textContent = ''; n.appendChild(icon(n.dataset.icon)); });
     Object.keys(BUTTON_ICONS).forEach((id) => { const b = $(id); if (b) setIcon(b, BUTTON_ICONS[id]); });
     initSettings();

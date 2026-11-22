@@ -497,9 +497,29 @@
           <span class="ico tiny" data-icon="monitor"></span>
           <span>Appearance &amp; Diff</span>
         </button>
+        <button class="set-nav-item" data-set-tab="accounts">
+          <span class="ico tiny" data-icon="user"></span>
+          <span>Accounts &amp; Logins</span>
+        </button>
+        <button class="set-nav-item" data-set-tab="agent">
+          <span class="ico tiny" data-icon="shield"></span>
+          <span>Workspace &amp; Rules</span>
+        </button>
+      </div>
+
+      <div class="set-side-section">
+        <div class="set-side-title">Tools &amp; System</div>
         <button class="set-nav-item" data-set-tab="shortcuts">
           <span class="ico tiny" data-icon="command"></span>
           <span>Shortcuts</span>
+        </button>
+        <button class="set-nav-item" data-set-tab="browser">
+          <span class="ico tiny" data-icon="external"></span>
+          <span>Browser</span>
+        </button>
+        <button class="set-nav-item" data-set-tab="notifications">
+          <span class="ico tiny" data-icon="bell"></span>
+          <span>Notifications</span>
         </button>
         <button class="set-nav-item" data-set-tab="application">
           <span class="ico tiny" data-icon="puzzle"></span>
@@ -519,7 +539,7 @@
           <div class="set-avatar">C</div>
           <div class="set-user-meta ellipsis">
             <div class="set-user-name">CR3-Agentic AI</div>
-            <div class="set-user-email ellipsis">v0.3.0 · Autonomous Agent</div>
+            <div class="set-user-email ellipsis">v0.3.1 · Autonomous Agent</div>
           </div>
         </div>
       </div>
@@ -538,55 +558,27 @@
       <div class="set-body">
         <!-- GENERAL TAB -->
         <div id="tab-general" class="set-pane">
-          <!-- Agent Persona / Focus Domain -->
+          <!-- Agent Persona / Focus Domain (Active Selected Domain) -->
           <div class="set-group">
             <div class="set-group-title">Agent Focus Domain</div>
             <p class="set-group-desc">Tailors system prompt instructions, architectural choices, and execution strategies.</p>
-            <div class="persona-cards-grid" id="generalPersonaGrid">
-              <div class="persona-card on" data-persona="software">
-                <div class="persona-card-top">
-                  <div class="persona-icon-box">💻</div>
-                  <span class="persona-tag">SOFTWARE</span>
-                  <span class="persona-check"><span class="ico tiny" data-icon="check"></span></span>
+            <div class="persona-active-wrap" id="generalActiveDomainWrap">
+              <div class="persona-active-card" id="generalActiveDomainCard">
+                <div class="persona-active-main">
+                  <div class="persona-icon-box" id="activeDomainIcon">💻</div>
+                  <div class="persona-active-info">
+                    <div class="persona-active-headline">
+                      <span class="persona-tag" id="activeDomainTag">SOFTWARE</span>
+                      <span class="persona-active-badge"><span class="active-dot"></span>Active Domain</span>
+                    </div>
+                    <div class="persona-title" id="activeDomainTitle">Software Engineering</div>
+                    <div class="persona-desc" id="activeDomainDesc">Modular clean architecture, TypeScript/Python/React, unit tests, refactoring, and Git commits.</div>
+                  </div>
                 </div>
-                <div class="persona-title">Software Engineering</div>
-                <div class="persona-desc">Modular clean architecture, TypeScript/Python/React, unit tests, refactoring, and Git commits.</div>
-              </div>
-              <div class="persona-card" data-persona="agent">
-                <div class="persona-card-top">
-                  <div class="persona-icon-box">🤖</div>
-                  <span class="persona-tag">AI AGENTS</span>
-                  <span class="persona-check"><span class="ico tiny" data-icon="check"></span></span>
+                <div class="persona-active-actions">
+                  <span class="persona-active-hint">Selected during onboarding setup.</span>
+                  <button type="button" id="genReconfigDomainBtn" class="btn small"><span class="ico tiny" data-icon="sparkles"></span>Change Focus Domain…</button>
                 </div>
-                <div class="persona-title">AI Agent Building</div>
-                <div class="persona-desc">Autonomous multi-agent workflows, tool schemas, eval loops, subagents, and LLMs.</div>
-              </div>
-              <div class="persona-card" data-persona="science">
-                <div class="persona-card-top">
-                  <div class="persona-icon-box">🔬</div>
-                  <span class="persona-tag">RESEARCH</span>
-                  <span class="persona-check"><span class="ico tiny" data-icon="check"></span></span>
-                </div>
-                <div class="persona-title">Science &amp; Research</div>
-                <div class="persona-desc">Empirical scientific rigor, data analysis, reproducible scripts, mathematics, and research papers.</div>
-              </div>
-              <div class="persona-card" data-persona="devops">
-                <div class="persona-card-top">
-                  <div class="persona-icon-box">☁️</div>
-                  <span class="persona-tag">SYSTEMS</span>
-                  <span class="persona-check"><span class="ico tiny" data-icon="check"></span></span>
-                </div>
-                <div class="persona-title">DevOps &amp; Cloud</div>
-                <div class="persona-desc">CI/CD pipelines, Docker, Kubernetes, shell scripts, cloud infrastructure, and stability.</div>
-              </div>
-              <div class="persona-card" data-persona="general">
-                <div class="persona-card-top">
-                  <div class="persona-icon-box">⚡</div>
-                  <span class="persona-tag">GENERAL</span>
-                  <span class="persona-check"><span class="ico tiny" data-icon="check"></span></span>
-                </div>
-                <div class="persona-title">General Purpose</div>
-                <div class="persona-desc">Versatile everyday assistant for documents, text analysis, workflow automation, and coding.</div>
               </div>
             </div>
           </div>
@@ -655,7 +647,7 @@
               <img src="icon.png" class="set-about-icon" alt="CR3-Agentic AI" />
               <div class="set-about-meta">
                 <div class="set-about-title">CR3-Agentic AI</div>
-                <div class="set-about-ver">Version 0.3.0 · Desktop Release</div>
+                <div class="set-about-ver">Version 0.3.1 · Desktop Release</div>
                 <div class="set-about-desc">High-performance autonomous agent desktop workspace with native tool orchestration, diff review, and terminal integration.</div>
               </div>
             </div>
@@ -682,7 +674,7 @@
             <div class="set-row">
               <div class="set-row-text">
                 <div class="set-row-title">Version</div>
-                <div class="set-row-sub">CR3-Agentic AI v0.3.0 (macOS Darwin x86_64/arm64)</div>
+                <div class="set-row-sub">CR3-Agentic AI v0.3.1 (macOS Darwin x86_64/arm64)</div>
               </div>
               <button id="appCheckUpdateBtn" class="btn small">Check for Updates</button>
             </div>
@@ -705,23 +697,161 @@
 
         <!-- APPEARANCE TAB -->
         <div id="tab-appearance" class="set-pane" hidden>
+          <!-- Theme Selection Cards -->
           <div class="set-group">
-            <div class="set-group-title">Theme &amp; Display</div>
+            <div class="set-group-title">Color Theme</div>
+            <p class="set-group-desc">Select your visual appearance. Changes apply instantly across the entire desktop workspace.</p>
+            <div class="theme-cards-grid" id="themeCardsGrid">
+              <!-- Night / Dark Card -->
+              <div class="theme-card on" data-theme-val="night">
+                <div class="theme-preview-box theme-night-preview">
+                  <div class="tp-header"></div>
+                  <div class="tp-body">
+                    <div class="tp-side"></div>
+                    <div class="tp-editor">
+                      <div class="tp-line short accent"></div>
+                      <div class="tp-line"></div>
+                      <div class="tp-line mid"></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="theme-meta">
+                  <div class="theme-title-row">
+                    <span class="theme-name">Night (Obsidian)</span>
+                    <span class="theme-check"><span class="ico tiny" data-icon="check"></span></span>
+                  </div>
+                  <div class="theme-desc">Deep obsidian palette (#0d0f12) with crisp neon accents. Ideal for low-light coding.</div>
+                </div>
+              </div>
+
+              <!-- Light Card -->
+              <div class="theme-card" data-theme-val="light">
+                <div class="theme-preview-box theme-light-preview">
+                  <div class="tp-header"></div>
+                  <div class="tp-body">
+                    <div class="tp-side"></div>
+                    <div class="tp-editor">
+                      <div class="tp-line short accent"></div>
+                      <div class="tp-line"></div>
+                      <div class="tp-line mid"></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="theme-meta">
+                  <div class="theme-title-row">
+                    <span class="theme-name">Daylight (Clean Light)</span>
+                    <span class="theme-check"><span class="ico tiny" data-icon="check"></span></span>
+                  </div>
+                  <div class="theme-desc">Crisp daylight palette (#ffffff) with warm terracotta accents. High clarity for daytime.</div>
+                </div>
+              </div>
+
+              <!-- Dim Slate Card -->
+              <div class="theme-card" data-theme-val="dim">
+                <div class="theme-preview-box theme-dim-preview">
+                  <div class="tp-header"></div>
+                  <div class="tp-body">
+                    <div class="tp-side"></div>
+                    <div class="tp-editor">
+                      <div class="tp-line short accent"></div>
+                      <div class="tp-line"></div>
+                      <div class="tp-line mid"></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="theme-meta">
+                  <div class="theme-title-row">
+                    <span class="theme-name">Dim Slate</span>
+                    <span class="theme-check"><span class="ico tiny" data-icon="check"></span></span>
+                  </div>
+                  <div class="theme-desc">Muted navy slate (#1b1f27) with softened contrast. Gentle on the eyes.</div>
+                </div>
+              </div>
+
+              <!-- Follow System Card -->
+              <div class="theme-card" data-theme-val="system">
+                <div class="theme-preview-box theme-system-preview">
+                  <div class="tp-header"></div>
+                  <div class="tp-body">
+                    <div class="tp-split-side"></div>
+                    <div class="tp-split-main">
+                      <div class="tp-line short accent"></div>
+                      <div class="tp-line"></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="theme-meta">
+                  <div class="theme-title-row">
+                    <span class="theme-name">Follow macOS System</span>
+                    <span class="theme-check"><span class="ico tiny" data-icon="check"></span></span>
+                  </div>
+                  <div class="theme-desc">Automatically synchronizes with your macOS system Dark and Light mode schedule.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Diff Mode Cards -->
+          <div class="set-group">
+            <div class="set-group-title">Diff &amp; Code Review View</div>
+            <p class="set-group-desc">Choose how file modifications, additions, and deletions are presented during agent reviews.</p>
+            <div class="diff-mode-cards-grid" id="diffModeCardsGrid">
+              <!-- Side by Side Split -->
+              <div class="diff-mode-card" data-diff-mode="split">
+                <div class="dmc-top">
+                  <div class="dmc-icon-box">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                      <rect x="3" y="3" width="18" height="18" rx="2"/>
+                      <line x1="12" y1="3" x2="12" y2="21"/>
+                    </svg>
+                  </div>
+                  <span class="dmc-badge">50 / 50 SPLIT</span>
+                  <span class="dmc-check"><span class="ico tiny" data-icon="check"></span></span>
+                </div>
+                <div class="dmc-title">Side-by-Side Split View</div>
+                <div class="dmc-desc">Two synchronized panes comparing original code and agent modifications side-by-side with full scroll lock.</div>
+              </div>
+
+              <!-- Unified Inline -->
+              <div class="diff-mode-card on" data-diff-mode="unified">
+                <div class="dmc-top">
+                  <div class="dmc-icon-box">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                      <rect x="3" y="3" width="18" height="18" rx="2"/>
+                      <line x1="3" y1="9" x2="21" y2="9"/>
+                      <line x1="3" y1="15" x2="21" y2="15"/>
+                    </svg>
+                  </div>
+                  <span class="dmc-badge">UNIFIED</span>
+                  <span class="dmc-check"><span class="ico tiny" data-icon="check"></span></span>
+                </div>
+                <div class="dmc-title">Unified Inline Stream</div>
+                <div class="dmc-desc">Single-column stream showing diff chunks with highlighted added (+) and deleted (-) lines inline.</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Display Preferences -->
+          <div class="set-group">
+            <div class="set-group-title">Display &amp; Layout Preferences</div>
             <div class="set-row">
               <div class="set-row-text">
-                <div class="set-row-title">Color Theme</div>
-                <div class="set-row-sub">Choose your preferred visual appearance.</div>
+                <div class="set-row-title">Line Numbers in Diffs</div>
+                <div class="set-row-sub">Show gutter line numbers in both unified and split diff views.</div>
               </div>
-              <select id="themeSelect" class="set-select">
-                <option value="dark" selected>Dark (Antigravity default)</option>
-                <option value="dim">Dim Slate</option>
-                <option value="system">Follow macOS System</option>
-              </select>
+              <label class="check"><input id="diffLineNums" type="checkbox" checked /></label>
             </div>
             <div class="set-row">
               <div class="set-row-text">
-                <div class="set-row-title">Chat Column Width</div>
-                <div class="set-row-sub">Default width of the left conversational panel.</div>
+                <div class="set-row-title">Full File Context in Diffs</div>
+                <div class="set-row-sub">Show the entire file instead of folding unedited code into 3-line hunks.</div>
+              </div>
+              <label class="check"><input id="diffFullContext" type="checkbox" /></label>
+            </div>
+            <div class="set-row">
+              <div class="set-row-text">
+                <div class="set-row-title">Chat Column Default Width</div>
+                <div class="set-row-sub">Initial width of the left conversational agent column.</div>
               </div>
               <select id="chatWidthSelect" class="set-select">
                 <option value="420px">Compact (420px)</option>
@@ -729,33 +859,79 @@
                 <option value="520px">Expanded (520px)</option>
               </select>
             </div>
-            <div class="set-row">
-              <div class="set-row-text">
-                <div class="set-row-title">Line Numbers in Diffs</div>
-                <div class="set-row-sub">Show gutters and line numbers in modified files.</div>
-              </div>
-              <label class="check"><input id="diffLineNums" type="checkbox" checked /></label>
-            </div>
           </div>
         </div>
 
         <!-- SHORTCUTS TAB -->
         <div id="tab-shortcuts" class="set-pane" hidden>
           <div class="set-group">
-            <div class="set-group-title">Keyboard Shortcuts</div>
-            <div class="set-shortcuts-table">
-              <div class="set-sc-row"><span class="set-sc-label">Toggle Sidebar</span><kbd class="pm-kbd">⌘B</kbd></div>
-              <div class="set-sc-row"><span class="set-sc-label">Toggle Changes / Modified Files</span><kbd class="pm-kbd">⌥⌘B</kbd></div>
-              <div class="set-sc-row"><span class="set-sc-label">Toggle Overview Panel</span><kbd class="pm-kbd">⌥⌘O</kbd></div>
-              <div class="set-sc-row"><span class="set-sc-label">Toggle Terminal</span><kbd class="pm-kbd">⌃`</kbd></div>
-              <div class="set-sc-row"><span class="set-sc-label">Open Project Folder</span><kbd class="pm-kbd">⌘O</kbd></div>
-              <div class="set-sc-row"><span class="set-sc-label">New Conversation</span><kbd class="pm-kbd">⌘N</kbd></div>
-              <div class="set-sc-row"><span class="set-sc-label">Search Conversations</span><kbd class="pm-kbd">⌘F</kbd></div>
-              <div class="set-sc-row"><span class="set-sc-label">Previous Conversation</span><kbd class="pm-kbd">⌘[</kbd></div>
-              <div class="set-sc-row"><span class="set-sc-label">Next Conversation</span><kbd class="pm-kbd">⌘]</kbd></div>
-              <div class="set-sc-row"><span class="set-sc-label">Split Terminal</span><kbd class="pm-kbd">⌘\</kbd></div>
-              <div class="set-sc-row"><span class="set-sc-label">Send Message</span><kbd class="pm-kbd">Enter</kbd></div>
-              <div class="set-sc-row"><span class="set-sc-label">Newline / Queue Message</span><kbd class="pm-kbd">⇧Enter</kbd></div>
+            <div class="set-shortcuts-header">
+              <div>
+                <div class="set-group-title">Keyboard Shortcuts</div>
+                <p class="set-group-desc">Full directory of productivity shortcuts and global keybindings.</p>
+              </div>
+              <div class="set-sc-stats">32 Shortcuts</div>
+            </div>
+            <div class="set-shortcuts-scroll-wrap">
+              <!-- Category 1: Navigation & Workspace -->
+              <div class="set-sc-category">
+                <div class="set-sc-cat-title"><span class="ico tiny" data-icon="folder"></span> Navigation &amp; Workspace</div>
+                <div class="set-shortcuts-table">
+                  <div class="set-sc-row"><span class="set-sc-label">Open Project Folder</span><kbd class="pm-kbd">⌘O</kbd></div>
+                  <div class="set-sc-row"><span class="set-sc-label">Toggle Sidebar</span><kbd class="pm-kbd">⌘B</kbd></div>
+                  <div class="set-sc-row"><span class="set-sc-label">Toggle Changes &amp; Modified Files</span><kbd class="pm-kbd">⌥⌘B</kbd></div>
+                  <div class="set-sc-row"><span class="set-sc-label">Toggle Overview &amp; Git Panel</span><kbd class="pm-kbd">⌥⌘O</kbd></div>
+                  <div class="set-sc-row"><span class="set-sc-label">Toggle Integrated Terminal</span><kbd class="pm-kbd">⌃`</kbd></div>
+                  <div class="set-sc-row"><span class="set-sc-label">Open Settings Preferences</span><kbd class="pm-kbd">⌘,</kbd></div>
+                  <div class="set-sc-row"><span class="set-sc-label">Quick Command Palette</span><span class="set-sc-keys"><kbd class="pm-kbd">⌘K</kbd> / <kbd class="pm-kbd">⌘P</kbd></span></div>
+                  <div class="set-sc-row"><span class="set-sc-label">Dismiss Dialog / Cancel Modal</span><kbd class="pm-kbd">Esc</kbd></div>
+                  <div class="set-sc-row"><span class="set-sc-label">Reload Desktop Window</span><kbd class="pm-kbd">⌘R</kbd></div>
+                  <div class="set-sc-row"><span class="set-sc-label">Toggle Fullscreen Mode</span><kbd class="pm-kbd">⌃⌘F</kbd></div>
+                </div>
+              </div>
+
+              <!-- Category 2: Chat & AI Composer -->
+              <div class="set-sc-category">
+                <div class="set-sc-cat-title"><span class="ico tiny" data-icon="sparkles"></span> Chat &amp; AI Composer</div>
+                <div class="set-shortcuts-table">
+                  <div class="set-sc-row"><span class="set-sc-label">New Conversation</span><kbd class="pm-kbd">⌘N</kbd></div>
+                  <div class="set-sc-row"><span class="set-sc-label">Search Conversations</span><kbd class="pm-kbd">⌘F</kbd></div>
+                  <div class="set-sc-row"><span class="set-sc-label">Previous Conversation</span><kbd class="pm-kbd">⌘[</kbd></div>
+                  <div class="set-sc-row"><span class="set-sc-label">Next Conversation</span><kbd class="pm-kbd">⌘]</kbd></div>
+                  <div class="set-sc-row"><span class="set-sc-label">Focus Chat Input Field</span><kbd class="pm-kbd">⌘/</kbd></div>
+                  <div class="set-sc-row"><span class="set-sc-label">Send Message / Execute Action</span><kbd class="pm-kbd">Enter</kbd></div>
+                  <div class="set-sc-row"><span class="set-sc-label">Newline / Queue Follow-up</span><kbd class="pm-kbd">⇧Enter</kbd></div>
+                  <div class="set-sc-row"><span class="set-sc-label">Stop Generation / Abort Turn</span><kbd class="pm-kbd">⌘.</kbd></div>
+                  <div class="set-sc-row"><span class="set-sc-label">Clear Chat History</span><kbd class="pm-kbd">⌥⌘K</kbd></div>
+                </div>
+              </div>
+
+              <!-- Category 3: Diff Review & Git -->
+              <div class="set-sc-category">
+                <div class="set-sc-cat-title"><span class="ico tiny" data-icon="git"></span> Diff Review &amp; Git</div>
+                <div class="set-shortcuts-table">
+                  <div class="set-sc-row"><span class="set-sc-label">Toggle Split / Unified Diff</span><kbd class="pm-kbd">⌥D</kbd></div>
+                  <div class="set-sc-row"><span class="set-sc-label">Select Next Modified File</span><kbd class="pm-kbd">⌥↓</kbd></div>
+                  <div class="set-sc-row"><span class="set-sc-label">Select Previous Modified File</span><kbd class="pm-kbd">⌥↑</kbd></div>
+                  <div class="set-sc-row"><span class="set-sc-label">Stage All &amp; Auto-Commit</span><kbd class="pm-kbd">⌥⌘C</kbd></div>
+                  <div class="set-sc-row"><span class="set-sc-label">Push to GitHub Remote</span><kbd class="pm-kbd">⌥⌘P</kbd></div>
+                  <div class="set-sc-row"><span class="set-sc-label">Copy Active File Patch</span><kbd class="pm-kbd">⌥⌘D</kbd></div>
+                  <div class="set-sc-row"><span class="set-sc-label">Toggle Full / Compact Context</span><kbd class="pm-kbd">⌥F</kbd></div>
+                </div>
+              </div>
+
+              <!-- Category 4: Integrated Terminal -->
+              <div class="set-sc-category">
+                <div class="set-sc-cat-title"><span class="ico tiny" data-icon="terminal"></span> Integrated Terminal</div>
+                <div class="set-shortcuts-table">
+                  <div class="set-sc-row"><span class="set-sc-label">New Terminal Session</span><kbd class="pm-kbd">⌃⇧T</kbd></div>
+                  <div class="set-sc-row"><span class="set-sc-label">Split Terminal Pane</span><kbd class="pm-kbd">⌘\</kbd></div>
+                  <div class="set-sc-row"><span class="set-sc-label">Close Active Terminal Tab</span><kbd class="pm-kbd">⌃⇧W</kbd></div>
+                  <div class="set-sc-row"><span class="set-sc-label">Clear Terminal Screen</span><kbd class="pm-kbd">⌘K</kbd></div>
+                  <div class="set-sc-row"><span class="set-sc-label">Next Terminal Tab</span><kbd class="pm-kbd">⌃Tab</kbd></div>
+                  <div class="set-sc-row"><span class="set-sc-label">Previous Terminal Tab</span><kbd class="pm-kbd">⌃⇧Tab</kbd></div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -799,10 +975,6 @@
               <label>Model <input id="pfModel" type="text" spellcheck="false" list="pfModels" placeholder="Type a model name, or fetch the list" />
                 <datalist id="pfModels"></datalist>
                 <small id="pfModelHint">Must support tool calling. Use “Fetch models” to see what this provider offers.</small></label>
-              <div id="pfModelCaps" class="model-caps-box" hidden>
-                <span class="model-caps-label">Model Capabilities:</span>
-                <div id="pfModelCapsList" class="model-caps-tags"></div>
-              </div>
               <p id="pfStatus" class="form-status" hidden></p>
               <div class="form-actions">
                 <button type="button" id="pfDelete" class="btn danger-text">Delete</button>
