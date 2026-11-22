@@ -69,6 +69,8 @@
     fileDiff: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/>',
     termBox: '<rect x="3" y="3" width="18" height="18" rx="3.5"/><polyline points="7.5 9.5 10.5 12 7.5 14.5"/><line x1="12.5" y1="15" x2="16.5" y2="15"/>',
     terminalPrompt: '<polyline points="4 14 8 10 4 6"/><line x1="10" y1="14" x2="16" y2="14"/>',
+    thumbsUp: '<path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/>',
+    thumbsDown: '<path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-3"/>',
   };
 
   function icon(name) {
@@ -1427,7 +1429,8 @@
     const el = h('div', 'msg-assistant');
     wrap.appendChild(el);
     append(wrap);
-    S.current = { el, wrap, raw: '', raf: 0 };
+    S.current = { el, wrap, raw: '', raf: 0, startTime: S.turnStartTime || Date.now() };
+    S.lastAssistantRecord = S.current;
   }
 
   function drawAssistant() {
@@ -1453,12 +1456,141 @@
     S.current = null;
   }
 
+  function formatDuration(sec) {
+    if (!sec || sec <= 0) return 'Just now';
+    if (sec < 60) return sec < 10 ? `${sec.toFixed(1)}s` : `${Math.round(sec)}s`;
+    if (sec < 3600) {
+      const m = Math.floor(sec / 60);
+      const s = Math.round(sec % 60);
+      return s > 0 ? `${m}m ${s}s` : `${m}m`;
+    }
+    const h = Math.floor(sec / 3600);
+    const m = Math.floor((sec % 3600) / 60);
+    return `${h}h ${m}m`;
+  }
+
+  async function attachAssistantFooter(rec, isHistory) {
+    if (!rec || !rec.wrap) return;
+    if (rec.wrap.querySelector('.msg-action-row')) return;
+
+    if (!isHistory) {
+      let changes = S.changes || [];
+      if ((!changes || changes.length === 0) && api.listChanges) {
+        try {
+          const r = await api.listChanges();
+          if (r && r.ok && r.changes) changes = r.changes;
+        } catch (e) {}
+      }
+      if (changes && changes.length > 0) {
+        let add = 0, del = 0;
+        for (const ch of changes) {
+          add += (ch.added || 0);
+          del += (ch.removed || 0);
+        }
+        const count = changes.length;
+        const revCard = h('div', 'msg-review-card');
+        const stat = h('div', 'msg-review-stat');
+        stat.appendChild(h('span', 'msg-review-count', `${count} file${count === 1 ? '' : 's'} changed`));
+        stat.appendChild(h('span', 'msg-review-add', ` +${add}`));
+        stat.appendChild(h('span', 'msg-review-del', ` -${del}`));
+        stat.appendChild(h('span', 'msg-review-chev', ' ›'));
+        revCard.appendChild(stat);
+
+        const revBtn = h('button', 'msg-review-btn');
+        revBtn.type = 'button';
+        revBtn.appendChild(iconSpan('fileDiff', 'tiny'));
+        revBtn.appendChild(document.createTextNode('Review'));
+        revCard.appendChild(revBtn);
+
+        const openReview = (e) => {
+          e.stopPropagation();
+          toggleChanges(true);
+        };
+        revCard.addEventListener('click', openReview);
+        revBtn.addEventListener('click', openReview);
+        rec.wrap.appendChild(revCard);
+      }
+    }
+
+    const actRow = h('div', 'msg-action-row');
+    const copyBtn = h('button', 'msg-act-btn');
+    copyBtn.type = 'button';
+    copyBtn.title = 'Copy message';
+    copyBtn.appendChild(iconSpan('copy', 'tiny'));
+    copyBtn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const text = rec.raw || rec.el.innerText || '';
+      try {
+        await navigator.clipboard.writeText(text);
+        copyBtn.innerHTML = '';
+        copyBtn.appendChild(iconSpan('check', 'tiny'));
+        copyBtn.classList.add('copied');
+        setTimeout(() => {
+          copyBtn.innerHTML = '';
+          copyBtn.appendChild(iconSpan('copy', 'tiny'));
+          copyBtn.classList.remove('copied');
+        }, 2000);
+      } catch (err) {
+        toast('Failed to copy');
+      }
+    });
+    actRow.appendChild(copyBtn);
+
+    const likeBtn = h('button', 'msg-act-btn msg-like-btn');
+    likeBtn.type = 'button';
+    likeBtn.title = 'Good response';
+    likeBtn.appendChild(iconSpan('thumbsUp', 'tiny'));
+
+    const dislikeBtn = h('button', 'msg-act-btn msg-dislike-btn');
+    dislikeBtn.type = 'button';
+    dislikeBtn.title = 'Poor response';
+    dislikeBtn.appendChild(iconSpan('thumbsDown', 'tiny'));
+
+    likeBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const wasActive = likeBtn.classList.contains('active');
+      dislikeBtn.classList.remove('active');
+      if (wasActive) likeBtn.classList.remove('active');
+      else likeBtn.classList.add('active');
+    });
+
+    dislikeBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const wasActive = dislikeBtn.classList.contains('active');
+      likeBtn.classList.remove('active');
+      if (wasActive) dislikeBtn.classList.remove('active');
+      else dislikeBtn.classList.add('active');
+    });
+
+    actRow.appendChild(likeBtn);
+    actRow.appendChild(dislikeBtn);
+
+    const timeSpan = h('span', 'msg-act-time');
+    if (isHistory) {
+      timeSpan.textContent = '19m ago';
+    } else {
+      const dur = rec.startTime ? Math.max(0.5, (Date.now() - rec.startTime) / 1000) : 0;
+      timeSpan.textContent = formatDuration(dur);
+    }
+    actRow.appendChild(timeSpan);
+
+    rec.wrap.appendChild(actRow);
+  }
+
+  function finalizeTurnFooter() {
+    if (S.lastAssistantRecord) {
+      attachAssistantFooter(S.lastAssistantRecord, false);
+      S.lastAssistantRecord = null;
+    }
+  }
+
   function addStaticAssistant(text) {
     const wrap = h('div', 'msg-assistant-wrap');
     const el = h('div', 'msg-assistant');
     Md.render(el, text);
     wrap.appendChild(el);
     append(wrap);
+    attachAssistantFooter({ wrap, el, raw: text }, true);
   }
 
   // ---------- tool cards ----------
@@ -1697,9 +1829,9 @@
       case 'tool_output': onToolOutput(ev); break;
       case 'tool_result': onToolResult(ev); break;
       case 'notice': flushAssistant(); append(h('div', 'notice', ev.message)); break;
-      case 'error': flushAssistant(); append(h('div', 'error-msg', ev.message)); setRunning(false); processNextQueued(); break;
-      case 'stopped': flushAssistant(); append(h('div', 'stopped', 'Stopped.')); setRunning(false); processNextQueued(); break;
-      case 'done': flushAssistant(); setRunning(false); processNextQueued(); break;
+      case 'error': flushAssistant(); finalizeTurnFooter(); append(h('div', 'error-msg', ev.message)); setRunning(false); processNextQueued(); break;
+      case 'stopped': flushAssistant(); finalizeTurnFooter(); append(h('div', 'stopped', 'Stopped.')); setRunning(false); processNextQueued(); break;
+      case 'done': flushAssistant(); finalizeTurnFooter(); setRunning(false); processNextQueued(); break;
     }
   }
 
@@ -1890,6 +2022,7 @@ export class AgentService {
     }
     addUser(text, atts);
     S.current = null;
+    S.turnStartTime = Date.now();
     setRunning(true);
     const payload = atts.map((a) => (a.kind === 'image' ? { kind: 'image', name: a.name, dataUrl: a.dataUrl } : a.kind === 'file' ? { kind: 'file', name: a.name, text: a.text } : { kind: 'link', url: a.url }));
     const r = await api.send(text, payload);
