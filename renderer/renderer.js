@@ -1493,6 +1493,11 @@
       const totalElapsed = Math.max(1, Math.floor((Date.now() - startTime) / 1000));
       pulse.remove();
       label.textContent = `Thought for ${formatThinkingTime(totalElapsed)}`;
+      if (S.changes && S.changes.length > 0) {
+        let add = 0, del = 0;
+        for (const ch of S.changes) { add += (ch.added || 0); del += (ch.removed || 0); }
+        addStep(`Modified ${S.changes.length} file${S.changes.length === 1 ? '' : 's'} (+${add}, -${del})`);
+      }
       wrap.classList.add('completed');
       S.activeThinking = null;
     };
@@ -1538,6 +1543,10 @@
     if (!c) return;
     if (c.raf) cancelAnimationFrame(c.raf);
     drawAssistant();
+    if (S.lastAssistantRecord) {
+      S.lastAssistantRecord.duration = S.turnStartTime ? Math.max(0.5, (Date.now() - S.turnStartTime) / 1000) : 0;
+      S.lastAssistantRecord.completedAt = Date.now();
+    }
     S.current = null;
   }
 
@@ -1575,16 +1584,16 @@
         const count = changes.length;
         const revCard = h('div', 'msg-review-card');
         const stat = h('div', 'msg-review-stat');
-        stat.appendChild(h('span', 'msg-review-count', `${count} file${count === 1 ? '' : 's'} changed`));
-        stat.appendChild(h('span', 'msg-review-add', ` +${add}`));
-        stat.appendChild(h('span', 'msg-review-del', ` -${del}`));
-        stat.appendChild(h('span', 'msg-review-chev', ' ›'));
+        stat.appendChild(h('span', 'msg-review-count', `${count} file${count === 1 ? '' : 's'} changed `));
+        stat.appendChild(h('span', 'msg-review-add', `+${add}`));
+        stat.appendChild(h('span', 'msg-review-del', `-${del}`));
+        stat.appendChild(h('span', 'msg-review-chev', ' >'));
         revCard.appendChild(stat);
 
         const revBtn = h('button', 'msg-review-btn');
         revBtn.type = 'button';
         revBtn.appendChild(iconSpan('fileDiff', 'tiny'));
-        revBtn.appendChild(document.createTextNode('Review'));
+        revBtn.appendChild(document.createTextNode(' Review'));
         revCard.appendChild(revBtn);
 
         const openReview = (e) => {
@@ -1651,12 +1660,33 @@
     actRow.appendChild(dislikeBtn);
 
     const timeSpan = h('span', 'msg-act-time');
-    if (isHistory) {
-      timeSpan.textContent = '19m ago';
-    } else {
-      const dur = rec.startTime ? Math.max(0.5, (Date.now() - rec.startTime) / 1000) : 0;
-      timeSpan.textContent = formatDuration(dur);
+    const completedAt = rec.completedAt || (rec.startTime ? rec.startTime + (rec.duration ? rec.duration * 1000 : 0) : Date.now());
+    const dur = rec.duration || (rec.startTime ? Math.max(0.5, (Date.now() - rec.startTime) / 1000) : 0);
+
+    function formatRelative(ts) {
+      if (!ts) return 'Just now';
+      const sec = Math.max(0, Math.floor((Date.now() - ts) / 1000));
+      if (sec < 45) return 'Just now';
+      const m = Math.floor(sec / 60);
+      if (m < 60) return `${m}m ago`;
+      const h = Math.floor(m / 60);
+      if (h < 24) return `${h}h ago`;
+      const d = Math.floor(h / 24);
+      return `${d}d ago`;
     }
+
+    function renderTime() {
+      const rel = formatRelative(completedAt);
+      timeSpan.textContent = rel;
+      if (dur > 0) {
+        timeSpan.title = `Working time: ${dur < 60 ? dur.toFixed(1) + 's' : formatDuration(dur)} · Completed ${new Date(completedAt).toLocaleTimeString()}`;
+      } else {
+        timeSpan.title = `Completed ${new Date(completedAt).toLocaleTimeString()}`;
+      }
+    }
+    renderTime();
+    timeSpan.dataset.completedAt = String(completedAt);
+    timeSpan.dataset.duration = String(dur);
     actRow.appendChild(timeSpan);
 
     rec.wrap.appendChild(actRow);
@@ -1862,6 +1892,13 @@
       rec.state.textContent = ev.ok ? 'Completed' : 'Failed';
     } else {
       rec.state.textContent = ev.ok ? 'done' : 'failed';
+    }
+    if (S.activeThinking) {
+      if (rec.name === 'write_file' || rec.name === 'edit_file') {
+        S.activeThinking.addStep((ev.ok ? 'Updated ' : 'Failed updating ') + (rec.args?.path || 'file'));
+      } else if (rec.name === 'run_command') {
+        S.activeThinking.addStep((ev.ok ? 'Finished: ' : 'Command error: ') + (rec.args?.command || '').slice(0, 50));
+      }
     }
     const text = Md.stripAnsi(ev.output || '');
     if (rec.name === 'run_command') {
@@ -2429,6 +2466,9 @@ export class AgentService {
       if (els.chCommitBtn) {
         els.chCommitBtn.disabled = changedCount === 0;
         els.chCommitBtn.textContent = changedCount > 0 ? `Commit (${changedCount})` : 'Commit';
+      }
+      if (els.chCommitInput && !els.chCommitInput.value.trim() && changedCount > 0) {
+        els.chCommitInput.value = generateSmartCommitMsg();
       }
       if (els.chPushBtn) {
         const ahead = g.ahead || 0;
@@ -4128,7 +4168,16 @@ export class AgentService {
       }
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       if (e.key && e.key.length === 1 && !els.input.disabled) {
-        els.input.focus();
+        if (active !== els.input) {
+          els.input.focus();
+          const start = els.input.selectionStart || 0;
+          const end = els.input.selectionEnd || 0;
+          const val = els.input.value;
+          els.input.value = val.slice(0, start) + e.key + val.slice(end);
+          els.input.selectionStart = els.input.selectionEnd = start + 1;
+          autoGrow();
+          e.preventDefault();
+        }
       }
     });
 
@@ -4140,6 +4189,27 @@ export class AgentService {
 
     initGitReviewBar();
     initOnboarding();
+
+    // Auto-update relative timestamps in message footers every 20 seconds
+    setInterval(() => {
+      document.querySelectorAll('.msg-act-time[data-completed-at]').forEach((el) => {
+        const ts = Number(el.dataset.completedAt);
+        if (ts) {
+          const sec = Math.max(0, Math.floor((Date.now() - ts) / 1000));
+          let rel = 'Just now';
+          if (sec >= 45) {
+            const m = Math.floor(sec / 60);
+            if (m < 60) rel = `${m}m ago`;
+            else {
+              const h = Math.floor(m / 60);
+              if (h < 24) rel = `${h}h ago`;
+              else rel = `${Math.floor(h / 24)}d ago`;
+            }
+          }
+          if (el.textContent !== rel) el.textContent = rel;
+        }
+      });
+    }, 20000);
 
     api.onEvent(onAgentEvent);
     api.onTerminal(onTerminalEvent);
