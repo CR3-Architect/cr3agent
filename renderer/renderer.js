@@ -136,11 +136,11 @@
     sortConversations: 'Last Updated',
     sortProjects: 'Custom Order',
     filterType: 'All',
-    displayDensity: 'Comfortable',
+    displayDensity: store('cr3.displayDensity') || 'Comfortable',
     autoPin: false,
     filterArchivedOnly: false,
-    showBranch: false,
-    showPath: false,
+    showBranch: store('cr3.showBranch') === '1',
+    showPath: store('cr3.showPath') === '1',
     terminalTabs: ['1: zsh'],
     terminalActiveTab: 0,
     terminalSplit: false,
@@ -992,8 +992,10 @@
 
   function applyDisplayDensity() {
     const compact = S.displayDensity === 'Compact';
+    if (els.projectList) els.projectList.classList.toggle('sb-compact', compact);
     if (els.chatList) els.chatList.classList.toggle('sb-compact', compact);
     if (els.conversationsList) els.conversationsList.classList.toggle('sb-compact', compact);
+    store('cr3.displayDensity', S.displayDensity);
   }
 
   function showProjectFilterMenu(anchor) {
@@ -1038,10 +1040,44 @@
       {
         label: 'Display',
         children: [
-          { label: 'Comfortable', checked: (S.displayDensity || 'Comfortable') === 'Comfortable', onClick: () => { S.displayDensity = 'Comfortable'; applyDisplayDensity(); } },
-          { label: 'Compact', checked: S.displayDensity === 'Compact', onClick: () => { S.displayDensity = 'Compact'; applyDisplayDensity(); } },
-          { label: 'Show Branch', checked: !!S.showBranch, onClick: () => { S.showBranch = !S.showBranch; renderProjects(); } },
-          { label: 'Show Path', checked: !!S.showPath, onClick: () => { S.showPath = !S.showPath; renderProjects(); } },
+          {
+            label: 'Comfortable',
+            checked: (S.displayDensity || 'Comfortable') === 'Comfortable',
+            onClick: () => {
+              S.displayDensity = 'Comfortable';
+              applyDisplayDensity();
+              toast('Sidebar density: Comfortable');
+            }
+          },
+          {
+            label: 'Compact',
+            checked: S.displayDensity === 'Compact',
+            onClick: () => {
+              S.displayDensity = 'Compact';
+              applyDisplayDensity();
+              toast('Sidebar density: Compact');
+            }
+          },
+          {
+            label: 'Show Branch',
+            checked: !!S.showBranch,
+            onClick: () => {
+              S.showBranch = !S.showBranch;
+              store('cr3.showBranch', S.showBranch ? '1' : '0');
+              renderProjects();
+              toast(S.showBranch ? 'Showing Git branches' : 'Hidden Git branches');
+            }
+          },
+          {
+            label: 'Show Path',
+            checked: !!S.showPath,
+            onClick: () => {
+              S.showPath = !S.showPath;
+              store('cr3.showPath', S.showPath ? '1' : '0');
+              renderProjects();
+              toast(S.showPath ? 'Showing full project paths' : 'Hidden project paths');
+            }
+          },
         ]
       },
       {
@@ -1165,6 +1201,11 @@
       nameSpan.title = f;
       head.appendChild(nameSpan);
 
+      if (S.showBranch) {
+        const branchBadge = h('span', 'sb-proj-branch-badge', (isCurFolder && S.app?.git?.branch) ? S.app.git.branch : 'main');
+        head.appendChild(branchBadge);
+      }
+
       const acts = h('div', 'proj-hover-actions no-drag');
 
       const moreBtn = h('button', 'icon-btn tiny sb-more-btn');
@@ -1202,6 +1243,11 @@
       });
 
       card.appendChild(head);
+      if (S.showPath) {
+        const pathDiv = h('div', 'sb-proj-path-sub ellipsis', f);
+        pathDiv.title = f;
+        card.appendChild(pathDiv);
+      }
 
       // Sub-content Tree Container
       if (!isCardCollapsed) {
@@ -3702,6 +3748,7 @@ export class AgentService {
     initGit();
     initHistory();
     initEvents();
+    applyDisplayDensity();
     if (store('fa.sidebar') === '0') setSidebar(false);
     if (store('cr3.changes') === '0') toggleChanges(false);
     else toggleChanges(true);
