@@ -839,15 +839,19 @@ code, pre, .mono { font-family: var(--mono); }
 .approve-row { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-top: 1px solid var(--border); background: color-mix(in srgb, var(--warn) 10%, transparent); }
 .approve-row .hint { color: var(--muted); font-size: 12px; margin-left: auto; }
 
-/* ---------- diff (syntax highlighted & split scrolling) ---------- */
-.diff-wrap { overflow: auto; width: 100%; }
+/* ---------- diff (syntax highlighted & full-page split scrolling) ---------- */
+.diff-wrap {
+  overflow: auto;
+  width: 100%;
+  height: 100%;
+}
 table.diff { border-collapse: collapse; width: 100%; font-family: var(--mono); font-size: 12px; line-height: 1.5; }
 table.diff td { padding: 0; vertical-align: top; }
 table.diff td.ln { width: 44px; min-width: 44px; max-width: 44px; padding: 0 8px; text-align: right; color: var(--muted); user-select: none; opacity: 0.75; font-size: 11px; }
 table.diff td.sign { width: 18px; min-width: 18px; text-align: center; user-select: none; font-weight: 600; padding: 0 2px; }
 
 /* Syntax Highlighting Tokens */
-.code-inner { padding: 0 8px; overflow-x: auto; white-space: pre; tab-size: 4; color: #e6edf3; }
+.code-inner { padding: 0 10px; overflow: visible; white-space: pre; tab-size: 4; color: #e6edf3; display: block; }
 .syn-kwd  { color: #ff7b72; font-weight: 500; } /* Pink/Red keywords (const, function, return) */
 .syn-str  { color: #a5d6ff; }                   /* Soft cyan/blue strings */
 .syn-num  { color: #79c0ff; }                   /* Sky blue numbers */
@@ -862,8 +866,8 @@ table.diff tr.add td.ln { background: var(--add-bg-strong); color: #3fb950; font
 table.diff tr.del td.code, table.diff tr.del td.sign { background: var(--del-bg); }
 table.diff tr.del td.ln { background: var(--del-bg-strong); color: #f85149; font-weight: 600; }
 
-/* Split Diff View: 50% / 50% Middle Split like VS Code */
-table.diff.split { table-layout: fixed; width: 100%; }
+/* Split Diff View: 50% / 50% Middle Split with Full Page Horizontal Scrolling */
+table.diff.split { table-layout: fixed; width: 100%; min-width: 820px; }
 table.diff.split col.col-ln { width: 44px; }
 table.diff.split col.col-code { width: calc(50% - 44px); }
 .diff-split-head th {
@@ -871,7 +875,7 @@ table.diff.split col.col-code { width: calc(50% - 44px); }
   color: var(--muted); background: rgba(255, 255, 255, 0.03); border-bottom: 1px solid var(--border); text-align: left;
 }
 .diff-split-head th.left { border-right: 2px solid var(--border); }
-table.diff.split td.code { width: calc(50% - 44px); max-width: 0; white-space: nowrap; }
+table.diff.split td.code { width: calc(50% - 44px); white-space: pre; overflow: visible; }
 table.diff.split td.code:nth-child(2) { border-right: 2px solid var(--border); }
 table.diff.split td.code.add { background: var(--add-bg); }
 table.diff.split td.code.del { background: var(--del-bg); }
@@ -879,10 +883,10 @@ table.diff.split td.ln.add { background: var(--add-bg-strong); color: #3fb950; }
 table.diff.split td.ln.del { background: var(--del-bg-strong); color: #f85149; }
 table.diff.split td.blank { background: color-mix(in srgb, var(--muted) 6%, transparent); }
 
-/* Per-line Horizontal Scrollbar in Split Mode */
-.diff-wrap.is-split .code-inner { scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, 0.2) transparent; }
-.diff-wrap.is-split .code-inner::-webkit-scrollbar { height: 4px; }
-.diff-wrap.is-split .code-inner::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 2px; }
+/* Full-pane scrollbar in diff viewer */
+.diff-wrap::-webkit-scrollbar { width: 8px; height: 8px; }
+.diff-wrap::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.18); border-radius: 4px; }
+.diff-wrap::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.3); }
 
 table.diff tr.gap td { text-align: left; padding: 4px 0; background: var(--code-bg); color: var(--muted); font-family: var(--sans); font-size: 11px; white-space: normal; }
 /* pinned to the left edge so the label stays visible while a wide diff is scrolled sideways */
