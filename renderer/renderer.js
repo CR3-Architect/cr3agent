@@ -171,6 +171,10 @@
     chFileName: $('chFileName'), chFileStatus: $('chFileStatus'), chFileDiffStat: $('chFileDiffStat'),
     chBreadcrumbs: $('chBreadcrumbs'), chFileTabs: $('chFileTabs'), chRevealFile: $('chRevealFile'),
     chKeepFile: $('chKeepFile'), chRevertFile: $('chRevertFile'), chClose: $('chClose'),
+    chGitBar: $('chGitBar'), chGitBranchName: $('chGitBranchName'), chGitFilesSummary: $('chGitFilesSummary'),
+    chAutoCommitBtn: $('chAutoCommitBtn'), chCommitInput: $('chCommitInput'), chCommitBtn: $('chCommitBtn'), chPushBtn: $('chPushBtn'),
+    onboardDialog: $('onboardDialog'), onboardSubmitBtn: $('onboardSubmitBtn'),
+    pfModelCaps: $('pfModelCaps'), pfModelCapsList: $('pfModelCapsList'),
     approvalLabel: $('approvalLabel'), modelLabel: $('modelLabel'),
     topChatMenuBtn: $('topChatMenuBtn'), topOverviewBtn: $('topOverviewBtn'), topPanelToggleBtn: $('topPanelToggleBtn'),
     changesBtn: $('changesBtn'), changesBadge: $('changesBadge'), changesPane: $('changesPane'), splitter: $('splitter'),
@@ -238,6 +242,48 @@
       /* storage can be unavailable: the app works without it */
     }
     return null;
+  }
+
+  function getModelCapabilities(modelName) {
+    const name = String(modelName || '').toLowerCase();
+    const caps = [];
+
+    // Vision / Multimodal / Ink
+    if (/vision|4o|gemini|pixtral|llava|vl|multimodal|claude-3/i.test(name)) {
+      caps.push({ label: '👁️ Vision & Ink', class: 'cap-vision', tip: 'Can inspect and reason over screenshots, mockups, images, diagrams, and handwriting' });
+    }
+
+    // Code specialist
+    if (/coder|code|deepseek-coder|qwen.*coder|codellama/i.test(name)) {
+      caps.push({ label: '💻 Code', class: 'cap-code', tip: 'Specialized for writing, refactoring, and debugging source code' });
+    }
+
+    // Tools / Function calling
+    const noTool = /prompt-guard|guard|embed|allam-2-7b/i.test(name);
+    if (!noTool) {
+      caps.push({ label: '⚡ Tools', class: 'cap-tools', tip: 'Supports function calling and tool execution (reading files, terminal, git)' });
+    }
+
+    // Deep reasoning / Thought
+    if (/r1|o1|o3|reasoner|thinking|qwq/i.test(name)) {
+      caps.push({ label: '🧠 Deep Reasoning', class: 'cap-reasoning', tip: 'Chain-of-thought mathematical reasoning and logic verification' });
+    }
+
+    // Context Window
+    if (/1m|1000k/i.test(name)) {
+      caps.push({ label: '📏 1M Context', class: 'cap-context', tip: 'Ultra-large 1,000,000 token context window' });
+    } else if (/128k|llama-3\.3|llama-3\.1|qwen2\.5/i.test(name)) {
+      caps.push({ label: '📏 128k Context', class: 'cap-context', tip: 'Large 128,000 token context window for full repositories' });
+    } else if (/200k|claude/i.test(name)) {
+      caps.push({ label: '📏 200k Context', class: 'cap-context', tip: '200,000 token context window' });
+    } else if (/32k|mistral/i.test(name)) {
+      caps.push({ label: '📏 32k Context', class: 'cap-context', tip: '32,000 token context window' });
+    }
+
+    // Docs & Text
+    caps.push({ label: '📄 Docs & Text', class: 'cap-docs', tip: 'Processes Markdown, source files, structured JSON, YAML, and logs' });
+
+    return caps;
   }
 
   // ---------- popup menu ----------
@@ -331,6 +377,15 @@
         const main = h('span', 'pm-main');
         main.appendChild(document.createTextNode(it.label));
         if (it.sub) main.appendChild(h('span', 'pm-sub', it.sub));
+        if (it.caps && it.caps.length) {
+          const capWrap = h('div', 'pm-model-caps');
+          for (const c of it.caps) {
+            const pill = h('span', 'model-cap-pill ' + (c.class || ''), c.label);
+            if (c.tip) pill.title = c.tip;
+            capWrap.appendChild(pill);
+          }
+          main.appendChild(capWrap);
+        }
         b.appendChild(main);
 
         if (it.shortcut) {
@@ -753,6 +808,12 @@
     els.input.placeholder = has ? 'Ask the agent to do something in this folder…' : 'Open a folder to start';
     els.termCwd.textContent = app.folder || '';
     if (S.provSel && !app.settings.providers.some((p) => p.id === S.provSel)) S.provSel = null;
+
+    if (!app.settings.onboarded && !store('cr3.onboarded')) {
+      openOnboardDialog();
+    } else if (has && !document.querySelector('dialog[open]')) {
+      els.input.focus();
+    }
   }
 
   function renderHeader() {
@@ -1871,8 +1932,11 @@ export class AgentService {
       const list = p.models.length > 0 ? p.models.slice(0, 40) : p.model ? [p.model] : [];
       if (list.length === 0) items.push({ label: 'No model chosen yet', disabled: true });
       for (const m of list) {
+        const caps = getModelCapabilities(m);
         items.push({
-          label: m, checked: p.id === s.activeProviderId && m === p.model,
+          label: m,
+          checked: p.id === s.activeProviderId && m === p.model,
+          caps,
           onClick: async () => { const r = await api.activateProvider(p.id, m); if (r.ok) applyState(r); else toast(r.error); },
         });
       }
@@ -1995,11 +2059,13 @@ export class AgentService {
     if (!S.app || !S.app.folder) {
       S.changes = [];
       renderChangesList();
+      updateGitReviewBar();
       return;
     }
     const r = await api.listChanges();
     S.changes = r.ok ? r.changes : [];
     renderChangesList();
+    updateGitReviewBar();
     if (S.selected && !S.changes.some((c) => c.path === S.selected)) {
       S.selected = null;
       $('chFile').textContent = '';
@@ -2007,6 +2073,118 @@ export class AgentService {
       $('chDiff').appendChild(h('div', 'ch-empty', 'Select a file to compare the before and after versions.'));
     } else if (S.selected && !els.changesPane.hidden) {
       showDiff(S.selected);
+    }
+  }
+
+  async function updateGitReviewBar() {
+    if (!els.chGitBar) return;
+    if (!S.app?.folder) {
+      els.chGitBar.hidden = true;
+      return;
+    }
+    try {
+      const r = await api.gitStatus();
+      if (!r || !r.ok || !r.git || !r.git.isRepo) {
+        els.chGitBar.hidden = true;
+        return;
+      }
+      els.chGitBar.hidden = false;
+      const g = r.git;
+      if (els.chGitBranchName) els.chGitBranchName.textContent = g.branch || 'main';
+      const changedCount = g.files ? g.files.length : (S.changes ? S.changes.length : 0);
+      if (els.chGitFilesSummary) {
+        els.chGitFilesSummary.textContent = `${changedCount} file${changedCount === 1 ? '' : 's'} modified`;
+      }
+      if (els.chCommitBtn) {
+        els.chCommitBtn.disabled = changedCount === 0;
+        els.chCommitBtn.textContent = changedCount > 0 ? `Commit (${changedCount})` : 'Commit';
+      }
+      if (els.chPushBtn) {
+        const ahead = g.ahead || 0;
+        els.chPushBtn.hidden = ahead === 0 && !S.justCommitted;
+        if (ahead > 0) {
+          els.chPushBtn.innerHTML = `<span class="ico tiny" data-icon="arrowUp"></span>Push (${ahead})`;
+        } else {
+          els.chPushBtn.innerHTML = `<span class="ico tiny" data-icon="arrowUp"></span>Push to GitHub`;
+        }
+      }
+    } catch (err) {
+      console.error('updateGitReviewBar error:', err);
+    }
+  }
+
+  function generateSmartCommitMsg() {
+    const files = (S.changes || []).map((c) => c.path);
+    if (files.length === 0) return 'chore: update project files';
+    const isAllDocs = files.every((f) => f.endsWith('.md') || f.endsWith('.txt'));
+    if (isAllDocs) return `docs: update documentation (${files.map(baseName).slice(0, 2).join(', ')})`;
+    const isAllTests = files.every((f) => f.includes('test') || f.endsWith('.spec.ts'));
+    if (isAllTests) return `test: add unit and integration test coverage`;
+    const isAllStyles = files.every((f) => f.endsWith('.css') || f.endsWith('.scss'));
+    if (isAllStyles) return `style: polish UI layout and component styling`;
+    const first = baseName(files[0]);
+    if (files.length === 1) return `fix: update ${first}`;
+    const dir = files[0].split('/')[0];
+    return `feat(${dir || 'core'}): improve implementation and update ${files.length} files`;
+  }
+
+  function initGitReviewBar() {
+    if (els.chAutoCommitBtn) {
+      els.chAutoCommitBtn.addEventListener('click', () => {
+        const msg = generateSmartCommitMsg();
+        if (els.chCommitInput) {
+          els.chCommitInput.value = msg;
+          els.chCommitInput.focus();
+          els.chCommitInput.select();
+        }
+      });
+    }
+
+    if (els.chCommitBtn) {
+      els.chCommitBtn.addEventListener('click', async () => {
+        const msg = (els.chCommitInput?.value || '').trim() || generateSmartCommitMsg();
+        els.chCommitBtn.disabled = true;
+        els.chCommitBtn.textContent = 'Committing…';
+        const r = await api.gitCommit(msg);
+        els.chCommitBtn.disabled = false;
+        if (r.ok) {
+          toast(`Committed: "${msg}"`);
+          if (els.chCommitInput) els.chCommitInput.value = '';
+          S.justCommitted = true;
+          if (els.chPushBtn) els.chPushBtn.hidden = false;
+          await refreshChanges();
+          await updateGitReviewBar();
+        } else {
+          toast(`Commit failed: ${r.error || 'Unknown error'}`);
+          await updateGitReviewBar();
+        }
+      });
+    }
+
+    if (els.chPushBtn) {
+      els.chPushBtn.addEventListener('click', async () => {
+        els.chPushBtn.disabled = true;
+        els.chPushBtn.textContent = 'Pushing…';
+        const r = await api.gitPush();
+        els.chPushBtn.disabled = false;
+        if (r.ok) {
+          toast('Successfully pushed all commits to GitHub!');
+          S.justCommitted = false;
+          await updateGitReviewBar();
+        } else {
+          toast(`Push failed: ${r.error || 'Check GitHub authentication'}`);
+          await updateGitReviewBar();
+        }
+      });
+    }
+
+    if (els.chCommitInput) {
+      els.chCommitInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          els.chCommitBtn?.click();
+        }
+      });
     }
   }
 
@@ -2442,8 +2620,15 @@ export class AgentService {
   function openSettings(tab) {
     switchTab(tab || 'general');
     const s = S.app?.settings || {};
-    if ($('afApproval')) $('afApproval').value = s.approvalMode || 'ask';
-    if ($('genPermPreset')) $('genPermPreset').value = s.approvalMode || 'ask';
+    const persona = s.persona || 'software';
+    document.querySelectorAll('#generalPersonaGrid .persona-card').forEach((c) => {
+      c.classList.toggle('on', c.getAttribute('data-persona') === persona);
+    });
+    const mode = s.approvalMode || 'ask';
+    if ($('layoutSE')) $('layoutSE').classList.toggle('on', mode === 'auto');
+    if ($('layoutKW')) $('layoutKW').classList.toggle('on', mode !== 'auto');
+    if ($('afApproval')) $('afApproval').value = mode;
+    if ($('genPermPreset')) $('genPermPreset').value = mode;
     if ($('afSteps')) $('afSteps').value = s.maxSteps || 25;
     if ($('afContext')) $('afContext').value = s.maxContextChars || 120000;
     if ($('afFallback')) $('afFallback').checked = !!s.autoFallback;
@@ -2466,6 +2651,24 @@ export class AgentService {
 
   function selectedProvider() {
     return S.app.settings.providers.find((p) => p.id === S.provSel) || null;
+  }
+
+  function renderModelCapsInSettings(modelName) {
+    if (!els.pfModelCaps || !els.pfModelCapsList) return;
+    const name = String(modelName || '').trim();
+    if (!name) {
+      els.pfModelCaps.hidden = true;
+      els.pfModelCapsList.textContent = '';
+      return;
+    }
+    const caps = getModelCapabilities(name);
+    els.pfModelCapsList.textContent = '';
+    for (const c of caps) {
+      const pill = h('span', 'model-cap-pill ' + (c.class || ''), c.label);
+      if (c.tip) pill.title = c.tip;
+      els.pfModelCapsList.appendChild(pill);
+    }
+    els.pfModelCaps.hidden = false;
   }
 
   function renderProviders() {
@@ -2495,6 +2698,7 @@ export class AgentService {
     dl.textContent = '';
     (p ? p.models : []).forEach((m) => { const o = document.createElement('option'); o.value = m; dl.appendChild(o); });
     $('pfModelHint').textContent = p && p.models.length > 0 ? `${p.models.length} models available. Start typing to filter.` : 'Must support tool calling. Use “Save & fetch models” to see what this provider offers.';
+    renderModelCapsInSettings(p ? p.model : '');
     const preset = p ? (S.app.presets || []).find((x) => x.baseUrl === p.baseUrl) : null;
     $('pfPresetNote').hidden = !(preset && (preset.note || preset.keyUrl));
     $('pfPresetText').textContent = preset ? (preset.free ? 'Free plan available. ' : '') + (preset.note || '') + (preset.free && preset.keyUrl ? ' Limits change, so check the provider’s page.' : '') : '';
@@ -2530,23 +2734,50 @@ export class AgentService {
     });
     $('settingsClose')?.addEventListener('click', () => $('settingsDialog').close());
 
-    // Layout cards
+    // General Persona cards
+    document.querySelectorAll('#generalPersonaGrid .persona-card').forEach((card) => {
+      card.addEventListener('click', async () => {
+        const persona = card.getAttribute('data-persona');
+        document.querySelectorAll('#generalPersonaGrid .persona-card').forEach((c) => c.classList.toggle('on', c === card));
+        const r = await api.setGeneral({ persona });
+        if (r.ok) {
+          applyState(r);
+          toast(`Agent domain set to ${card.querySelector('.persona-title')?.textContent || persona}`);
+        } else {
+          toast(r.error);
+        }
+      });
+    });
+
+    // Layout cards -> Execution Mode (Autonomous vs Supervised)
     const lkw = $('layoutKW');
     const lse = $('layoutSE');
     if (lkw && lse) {
-      lkw.addEventListener('click', () => {
+      lkw.addEventListener('click', async () => {
         lkw.classList.add('on');
         lse.classList.remove('on');
-        S.layoutMode = 'kw';
-        toast('Knowledge Work layout activated');
+        if ($('genPermPreset')) $('genPermPreset').value = 'ask';
+        const r = await api.setGeneral({ approvalMode: 'ask' });
+        if (r.ok) {
+          applyState(r);
+          toast('Supervised Mode activated');
+        }
       });
-      lse.addEventListener('click', () => {
+      lse.addEventListener('click', async () => {
         lse.classList.add('on');
         lkw.classList.remove('on');
-        S.layoutMode = 'se';
-        toast('Software Engineering layout activated');
+        if ($('genPermPreset')) $('genPermPreset').value = 'auto';
+        const r = await api.setGeneral({ approvalMode: 'auto' });
+        if (r.ok) {
+          applyState(r);
+          toast('Autonomous Mode activated');
+        }
       });
     }
+
+    $('pfModel')?.addEventListener('input', (e) => {
+      renderModelCapsInSettings(e.target.value);
+    });
 
     // Permission Preset dropdown sync
     $('genPermPreset')?.addEventListener('change', async (e) => {
@@ -3382,6 +3613,28 @@ export class AgentService {
       }
     });
 
+    // Global typing autofocus to composer input on app start & during work
+    window.addEventListener('keydown', (e) => {
+      if (document.querySelector('dialog[open]')) return;
+      const active = document.activeElement;
+      if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.tagName === 'SELECT' || active.isContentEditable)) {
+        return;
+      }
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (e.key && e.key.length === 1 && !els.input.disabled) {
+        els.input.focus();
+      }
+    });
+
+    window.addEventListener('focus', () => {
+      if (!document.querySelector('dialog[open]') && !els.input.disabled) {
+        els.input.focus();
+      }
+    });
+
+    initGitReviewBar();
+    initOnboarding();
+
     api.onEvent(onAgentEvent);
     api.onTerminal(onTerminalEvent);
     api.onCommand(runCommand);
@@ -3397,6 +3650,46 @@ export class AgentService {
       }
     });
     api.onAccount(onAccountEvent);
+  }
+
+  function openOnboardDialog() {
+    const d = $('onboardDialog');
+    if (!d || d.open) return;
+    d.showModal();
+  }
+
+  function initOnboarding() {
+    S.selectedOnboardPersona = 'software';
+    S.selectedOnboardMode = 'auto';
+
+    document.querySelectorAll('#onboardPersonaGrid .persona-card').forEach((card) => {
+      card.addEventListener('click', () => {
+        document.querySelectorAll('#onboardPersonaGrid .persona-card').forEach((c) => c.classList.remove('on'));
+        card.classList.add('on');
+        S.selectedOnboardPersona = card.getAttribute('data-persona') || 'software';
+      });
+    });
+
+    document.querySelectorAll('#onboardModeGrid .set-layout-card').forEach((card) => {
+      card.addEventListener('click', () => {
+        document.querySelectorAll('#onboardModeGrid .set-layout-card').forEach((c) => c.classList.remove('on'));
+        card.classList.add('on');
+        S.selectedOnboardMode = card.getAttribute('data-mode') || 'auto';
+      });
+    });
+
+    $('onboardSubmitBtn')?.addEventListener('click', async () => {
+      const persona = S.selectedOnboardPersona || 'software';
+      const mode = S.selectedOnboardMode || 'auto';
+      const r = await api.setGeneral({ persona, approvalMode: mode, onboarded: true });
+      store('cr3.onboarded', '1');
+      $('onboardDialog')?.close();
+      if (r.ok) {
+        applyState(r);
+        toast(`CR3-Agentic AI configured for ${persona.toUpperCase()} domain.`);
+      }
+      if (!els.input.disabled) els.input.focus();
+    });
   }
 
   async function init() {
@@ -3423,6 +3716,9 @@ export class AgentService {
       pushNav(r.chatId);
       const existing = (S.allChats || []).find((c) => c.id === r.chatId);
       if (existing) await openChat(r.chatId);
+    }
+    if (!els.input.disabled && !document.querySelector('dialog[open]')) {
+      els.input.focus();
     }
   }
 

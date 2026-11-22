@@ -424,6 +424,10 @@ test('settings: general options and recent folders', () => {
   assert.throws(() => applyGeneral(s, { approvalMode: 'yolo' }), /approval mode/);
   assert.throws(() => applyGeneral(s, { maxSteps: 'abc' }), /number/);
 
+  s = applyGeneral(s, { persona: 'science', onboarded: true });
+  assert.equal(s.persona, 'science');
+  assert.equal(s.onboarded, true);
+
   for (let i = 0; i < 70; i++) s = addRecentFolder(s, `/p/${i}`);
   s = addRecentFolder(s, '/p/68');
   s = addRecentFolder(s, '/p/3');

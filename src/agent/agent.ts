@@ -24,6 +24,7 @@ export interface AgentConfig {
   temperature?: number;
   /** Tried in order when the main model is rate-limited, out of credit or unreachable. */
   fallbacks?: ModelTarget[];
+  persona?: 'software' | 'agent' | 'science' | 'devops' | 'general';
 }
 
 export type Attachment =
@@ -127,11 +128,20 @@ const MAX_TOOL_RESULT_CHARS = 20_000;
 const IMAGE_COST_CHARS = 3_000; // images count against the history budget as if they were this much text
 const MAX_FILE_ATTACHMENT_CHARS = 200_000;
 
-function buildSystemPrompt(root: string, skills: Skill[]): string {
+function buildSystemPrompt(root: string, skills: Skill[], persona: string = 'software'): string {
+  const personaHints: Record<string, string> = {
+    science: 'Primary Focus (Science & Research): Apply empirical scientific rigor, data analysis, reproducible scripts, mathematical precision, and clear research explanations.',
+    agent: 'Primary Focus (AI Agent Building & LLMs): Design resilient agentic workflows, prompt patterns, tool schemas, state persistence, multi-agent coordination, and eval loops.',
+    software: 'Primary Focus (Software & Web Engineering): Write clean, modular, tested software architectures with robust unit tests, edge-case coverage, and clean Git commits.',
+    devops: 'Primary Focus (DevOps & Cloud Systems): Prioritize containerization, reliable CI/CD pipelines, secure shell scripting, configuration management, and infrastructure stability.',
+    general: 'Primary Focus (General Purpose Assistant): Be a versatile, proactive assistant for document creation, task automation, coding, and problem-solving.',
+  };
+  const focus = personaHints[persona] ?? personaHints.software;
   return [
-    "You are a coding agent working inside a project folder on the user's computer.",
+    "You are CR3-Agentic AI, an autonomous agent working inside a project folder on the user's computer.",
     `Project folder: ${root}`,
     `Platform: ${process.platform}`,
+    focus,
     '',
     'You can list, read, search, create and edit files in this folder, run shell commands in it, and fetch web pages, using the provided tools. File paths are relative to the project folder, and the file tools cannot reach anything outside it.',
     '',
@@ -195,7 +205,7 @@ export class Agent {
     this.cfg = cfg;
     this.workspace = workspace;
     this.getSkills = opts.getSkills ?? (() => []);
-    this.messages = [{ role: 'system', content: buildSystemPrompt(workspace.root, this.getSkills()) }];
+    this.messages = [{ role: 'system', content: buildSystemPrompt(workspace.root, this.getSkills(), this.cfg.persona) }];
   }
 
   updateConfig(cfg: AgentConfig): void {
@@ -216,7 +226,7 @@ export class Agent {
   /** Run one user request to completion (possibly many model/tool steps). */
   async run(userText: string, hooks: AgentHooks, signal: AbortSignal, attachments: Attachment[] = []): Promise<void> {
     const skills = this.getSkills();
-    this.messages[0] = { role: 'system', content: buildSystemPrompt(this.workspace.root, skills) };
+    this.messages[0] = { role: 'system', content: buildSystemPrompt(this.workspace.root, skills, this.cfg.persona) };
     this.messages.push(buildUserMessage(userText, attachments));
     const hasImages = attachments.some((a) => a.kind === 'image');
     this.targetStart = 0;

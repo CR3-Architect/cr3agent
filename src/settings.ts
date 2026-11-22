@@ -3,6 +3,9 @@ import * as path from 'node:path';
 import * as crypto from 'node:crypto';
 import type { ApprovalMode } from './agent/agent';
 
+export type AgentPersona = 'software' | 'agent' | 'science' | 'devops' | 'general';
+export const PERSONAS: AgentPersona[] = ['software', 'agent', 'science', 'devops', 'general'];
+
 export interface StoredProvider {
   id: string;
   name: string;
@@ -52,6 +55,8 @@ export interface StoredSettings {
   projectMeta: Record<string, ProjectMeta>;
   oauth: StoredOauth;
   accounts: { github?: StoredAccount; google?: StoredAccount };
+  persona: AgentPersona;
+  onboarded: boolean;
 }
 
 export interface ProviderPreset {
@@ -98,6 +103,8 @@ export const DEFAULT_SETTINGS: StoredSettings = {
   projectMeta: {},
   oauth: { githubClientId: '', googleClientId: '' },
   accounts: {},
+  persona: 'software',
+  onboarded: false,
 };
 
 const MODES: ApprovalMode[] = ['ask', 'edits', 'auto'];
@@ -248,6 +255,8 @@ export interface GeneralUpdate {
   maxSteps?: unknown;
   maxContextChars?: unknown;
   autoFallback?: unknown;
+  persona?: unknown;
+  onboarded?: unknown;
 }
 
 export function applyGeneral(current: StoredSettings, update: GeneralUpdate): StoredSettings {
@@ -267,6 +276,14 @@ export function applyGeneral(current: StoredSettings, update: GeneralUpdate): St
     next.maxContextChars = Math.min(2_000_000, Math.max(8_000, Math.trunc(n)));
   }
   if (update.autoFallback !== undefined) next.autoFallback = update.autoFallback === true;
+  if (update.persona !== undefined) {
+    if (typeof update.persona === 'string' && PERSONAS.includes(update.persona as AgentPersona)) {
+      next.persona = update.persona as AgentPersona;
+    }
+  }
+  if (update.onboarded !== undefined) {
+    next.onboarded = update.onboarded === true;
+  }
   return next;
 }
 
@@ -359,6 +376,8 @@ export function publicSettings(s: StoredSettings) {
       github: s.accounts.github ? { login: s.accounts.github.login, name: s.accounts.github.name, connectedAt: s.accounts.github.connectedAt, hasToken: !!s.accounts.github.token } : undefined,
       google: s.accounts.google ? { login: s.accounts.google.login, name: s.accounts.google.name, email: s.accounts.google.email, connectedAt: s.accounts.google.connectedAt } : undefined,
     },
+    persona: s.persona || 'software',
+    onboarded: !!s.onboarded,
   };
 }
 
@@ -444,6 +463,8 @@ export function migrate(raw: unknown): StoredSettings {
         projectMeta: cleanMeta(r['projectMeta']),
         oauth: cleanOauth(r['oauth']),
         accounts: cleanAccounts(r['accounts']),
+        persona: typeof r['persona'] === 'string' && PERSONAS.includes(r['persona'] as AgentPersona) ? (r['persona'] as AgentPersona) : base.persona,
+        onboarded: typeof r['onboarded'] === 'boolean' ? r['onboarded'] : base.onboarded,
       };
     }
   }

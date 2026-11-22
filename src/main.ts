@@ -100,6 +100,7 @@ function agentConfig(): AgentConfig {
     maxContextChars: settings.maxContextChars,
     approvalMode: settings.approvalMode,
     fallbacks: fallbackProviders(settings).map(target),
+    persona: settings.persona ?? 'software',
   };
 }
 

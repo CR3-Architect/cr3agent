@@ -255,6 +255,24 @@
             </div>
           </div>
 
+          <!-- Git Commit & Push Section inside Review Sidebar -->
+          <div id="chGitBar" class="ch-git-bar">
+            <div class="ch-git-head">
+              <div class="ch-git-branch-tag">
+                <span class="ico tiny" data-icon="branch"></span>
+                <span id="chGitBranchName">main</span>
+              </div>
+              <span id="chGitFilesSummary" class="muted small">0 files changed</span>
+              <span class="spacer"></span>
+              <button type="button" id="chAutoCommitBtn" class="btn tiny" title="Generate commit message from modified files">✨ Auto-generate</button>
+            </div>
+            <div class="ch-git-actions-row">
+              <input type="text" id="chCommitInput" class="ch-commit-input" placeholder="Commit message (e.g. feat: update overview design)…" spellcheck="false" autocomplete="off" />
+              <button type="button" id="chCommitBtn" class="btn small primary" title="Commit all modified files">Commit</button>
+              <button type="button" id="chPushBtn" class="btn small primary-glow" title="Push commits to GitHub" hidden><span class="ico tiny" data-icon="arrowUp"></span>Push to GitHub</button>
+            </div>
+          </div>
+
           <!-- Bottom Action Footer with Batch Operations and Summary -->
           <div class="ch-footer">
             <span id="chSummary" class="ch-footer-summary muted small">No changes yet</span>
@@ -333,6 +351,89 @@
     </form>
   </dialog>
 
+  <!-- ===== First-Run Onboarding Dialog ===== -->
+  <dialog id="onboardDialog" class="dlg wide onboard-modal">
+    <div class="onboard-wrap">
+      <div class="onboard-hero">
+        <img src="icon.png" class="onboard-logo-img" alt="CR3-Agentic AI" />
+        <div>
+          <h1 class="onboard-hero-title">Welcome to CR3-Agentic AI</h1>
+          <p class="onboard-hero-sub">Configure your agent's primary domain and execution mode to tailor prompt intelligence, tool automation, and safety rules.</p>
+        </div>
+      </div>
+
+      <!-- Domain Selection -->
+      <div class="onboard-section">
+        <div class="onboard-section-title">
+          <span class="ico tiny" data-icon="sparkles"></span>
+          <span>1. Select Primary Agent Domain &amp; Focus</span>
+        </div>
+        <div class="persona-cards-grid" id="onboardPersonaGrid">
+          <div class="persona-card on" data-persona="software">
+            <div class="persona-icon">💻</div>
+            <div class="persona-meta">
+              <div class="persona-title">Software Engineering</div>
+              <div class="persona-desc">Modular architecture, TypeScript/Python/React, unit tests, refactoring, and Git commits.</div>
+            </div>
+          </div>
+          <div class="persona-card" data-persona="agent">
+            <div class="persona-icon">🤖</div>
+            <div class="persona-meta">
+              <div class="persona-title">AI Agent Building</div>
+              <div class="persona-desc">Autonomous multi-agent workflows, tool schemas, eval loops, subagents, and LLMs.</div>
+            </div>
+          </div>
+          <div class="persona-card" data-persona="science">
+            <div class="persona-icon">🔬</div>
+            <div class="persona-meta">
+              <div class="persona-title">Science &amp; Research</div>
+              <div class="persona-desc">Empirical scientific rigor, data analysis, reproducible scripts, mathematics, and research papers.</div>
+            </div>
+          </div>
+          <div class="persona-card" data-persona="devops">
+            <div class="persona-icon">☁️</div>
+            <div class="persona-meta">
+              <div class="persona-title">DevOps &amp; Cloud</div>
+              <div class="persona-desc">CI/CD pipelines, Docker, Kubernetes, shell scripts, cloud infrastructure, and stability.</div>
+            </div>
+          </div>
+          <div class="persona-card" data-persona="general">
+            <div class="persona-icon">⚡</div>
+            <div class="persona-meta">
+              <div class="persona-title">General Purpose</div>
+              <div class="persona-desc">Versatile everyday assistant for documents, text analysis, workflow automation, and coding.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Execution Mode Selection -->
+      <div class="onboard-section">
+        <div class="onboard-section-title">
+          <span class="ico tiny" data-icon="shield"></span>
+          <span>2. Choose Agent Execution Mode</span>
+        </div>
+        <div class="set-card-grid" id="onboardModeGrid">
+          <div class="set-layout-card on" data-mode="auto">
+            <div class="set-layout-ico"><span class="ico" data-icon="sparkles"></span></div>
+            <div class="set-layout-name">Autonomous Mode (Recommended)</div>
+            <div class="set-layout-desc">Full autonomous execution: automatically plans, reads/edits code, runs terminal commands, and resolves goals with minimal interruptions.</div>
+          </div>
+          <div class="set-layout-card" data-mode="ask">
+            <div class="set-layout-ico"><span class="ico" data-icon="shield"></span></div>
+            <div class="set-layout-name">Supervised Mode</div>
+            <div class="set-layout-desc">Safety &amp; control: asks for your explicit confirmation before executing terminal commands or modifying files.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="onboard-footer">
+        <span class="muted small">You can change these anytime in Settings → General.</span>
+        <button type="button" id="onboardSubmitBtn" class="btn primary-glow">Get Started with CR3-Agentic AI →</button>
+      </div>
+    </div>
+  </dialog>
+
   <!-- ===== settings ===== -->
   <dialog id="settingsDialog" class="dlg wide settings-modal">
     <!-- Settings Left Sidebar -->
@@ -392,16 +493,59 @@
       <div class="set-body">
         <!-- GENERAL TAB -->
         <div id="tab-general" class="set-pane">
+          <!-- Agent Persona / Focus Domain -->
+          <div class="set-group">
+            <div class="set-group-title">Agent Focus Domain</div>
+            <p class="set-group-desc">Tailors system prompt instructions, architectural choices, and execution strategies.</p>
+            <div class="persona-cards-grid" id="generalPersonaGrid">
+              <div class="persona-card on" data-persona="software">
+                <div class="persona-icon">💻</div>
+                <div class="persona-meta">
+                  <div class="persona-title">Software Engineering</div>
+                  <div class="persona-desc">Modular clean architecture, TypeScript/Python/React, unit tests, refactoring, and Git commits.</div>
+                </div>
+              </div>
+              <div class="persona-card" data-persona="agent">
+                <div class="persona-icon">🤖</div>
+                <div class="persona-meta">
+                  <div class="persona-title">AI Agent Building</div>
+                  <div class="persona-desc">Autonomous multi-agent workflows, tool schemas, eval loops, subagents, and LLMs.</div>
+                </div>
+              </div>
+              <div class="persona-card" data-persona="science">
+                <div class="persona-icon">🔬</div>
+                <div class="persona-meta">
+                  <div class="persona-title">Science &amp; Research</div>
+                  <div class="persona-desc">Empirical scientific rigor, data analysis, reproducible scripts, mathematics, and research papers.</div>
+                </div>
+              </div>
+              <div class="persona-card" data-persona="devops">
+                <div class="persona-icon">☁️</div>
+                <div class="persona-meta">
+                  <div class="persona-title">DevOps &amp; Cloud</div>
+                  <div class="persona-desc">CI/CD pipelines, Docker, Kubernetes, shell scripts, cloud infrastructure, and stability.</div>
+                </div>
+              </div>
+              <div class="persona-card" data-persona="general">
+                <div class="persona-icon">⚡</div>
+                <div class="persona-meta">
+                  <div class="persona-title">General Purpose</div>
+                  <div class="persona-desc">Versatile everyday assistant for documents, text analysis, workflow automation, and coding.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <!-- Agent Operating Mode -->
           <div class="set-group">
             <div class="set-group-title">Agent Execution Mode</div>
             <div class="set-card-grid">
-              <div id="layoutSE" class="set-layout-card on" title="Autonomous Agent Mode">
+              <div id="layoutSE" class="set-layout-card on" data-mode="auto" title="Autonomous Agent Mode">
                 <div class="set-layout-ico"><span class="ico" data-icon="sparkles"></span></div>
                 <div class="set-layout-name">Autonomous Mode</div>
-                <div class="set-layout-desc">Full autonomous execution: plans, edits code, runs terminal commands, and resolves goals.</div>
+                <div class="set-layout-desc">Full autonomous execution: plans, edits code, runs terminal commands, and resolves goals with minimal interruptions.</div>
               </div>
-              <div id="layoutKW" class="set-layout-card" title="Supervised Mode">
+              <div id="layoutKW" class="set-layout-card" data-mode="ask" title="Supervised Mode">
                 <div class="set-layout-ico"><span class="ico" data-icon="shield"></span></div>
                 <div class="set-layout-name">Supervised Mode</div>
                 <div class="set-layout-desc">Interactive review: asks for confirmation before executing commands or modifying files.</div>
@@ -456,7 +600,7 @@
               <img src="icon.png" class="set-about-icon" alt="CR3-Agentic AI" />
               <div class="set-about-meta">
                 <div class="set-about-title">CR3-Agentic AI</div>
-                <div class="set-about-ver">Version 0.3.0 · macOS Desktop Release</div>
+                <div class="set-about-ver">Version 0.3.0 · Desktop Release</div>
                 <div class="set-about-desc">High-performance autonomous agent desktop workspace with native tool orchestration, diff review, and terminal integration.</div>
               </div>
             </div>
@@ -468,35 +612,36 @@
                 <div class="set-row-title">Desktop Engine</div>
                 <div class="set-row-sub">Electron · Chromium · Node.js</div>
               </div>
-              <span class="muted small font-mono">v45.3.4</span>
+              <span class="muted small font-mono">v34.3.4</span>
             </div>
             <div class="set-row">
               <div class="set-row-text">
                 <div class="set-row-title">Target Platform</div>
                 <div class="set-row-sub">macOS Sequoia / Sonoma / Ventura</div>
               </div>
-              <span class="muted small font-mono">Darwin x86_64</span>
+              <span class="muted small font-mono">Darwin x86_64 / arm64</span>
             </div>
           </div>
-        </div>
+          <div class="set-group">
+            <div class="set-group-title">Preferences &amp; Updates</div>
             <div class="set-row">
               <div class="set-row-text">
                 <div class="set-row-title">Version</div>
-                <div class="set-row-sub">Cr3agent v0.3.0 (macOS Darwin x86_64/arm64)</div>
+                <div class="set-row-sub">CR3-Agentic AI v0.3.0 (macOS Darwin x86_64/arm64)</div>
               </div>
               <button id="appCheckUpdateBtn" class="btn small">Check for Updates</button>
             </div>
             <div class="set-row">
               <div class="set-row-text">
                 <div class="set-row-title">Open on Login</div>
-                <div class="set-row-sub">Automatically launch Cr3agent when you log into your Mac.</div>
+                <div class="set-row-sub">Automatically launch CR3-Agentic AI when you log into your Mac.</div>
               </div>
               <label class="check"><input id="appAutoLaunch" type="checkbox" /></label>
             </div>
             <div class="set-row">
               <div class="set-row-text">
                 <div class="set-row-title">Diagnostics &amp; Crash Reports</div>
-                <div class="set-row-sub">Help improve Cr3agent with anonymous diagnostics. Stored locally only.</div>
+                <div class="set-row-sub">Help improve CR3-Agentic AI with anonymous diagnostics. Stored locally only.</div>
               </div>
               <label class="check"><input id="appTelemetry" type="checkbox" checked /></label>
             </div>
@@ -599,6 +744,10 @@
               <label>Model <input id="pfModel" type="text" spellcheck="false" list="pfModels" placeholder="Type a model name, or fetch the list" />
                 <datalist id="pfModels"></datalist>
                 <small id="pfModelHint">Must support tool calling. Use “Fetch models” to see what this provider offers.</small></label>
+              <div id="pfModelCaps" class="model-caps-box" hidden>
+                <span class="model-caps-label">Model Capabilities:</span>
+                <div id="pfModelCapsList" class="model-caps-tags"></div>
+              </div>
               <p id="pfStatus" class="form-status" hidden></p>
               <div class="form-actions">
                 <button type="button" id="pfDelete" class="btn danger-text">Delete</button>
