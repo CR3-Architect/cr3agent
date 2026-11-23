@@ -1616,7 +1616,32 @@
     };
   }
 
-  function createThinkingBlock() {
+  function deriveInitialThinkingLabel(text, atts) {
+    if (atts && atts.length > 0) {
+      const first = atts[0];
+      if (first && first.name) return `Analyzing ${first.name}…`;
+      if (first && first.url) return `Analyzing attached link…`;
+    }
+    const clean = String(text || '').trim();
+    if (!clean) return 'Thinking…';
+    
+    // Look for explicit filename references with extensions like .ts, .js, .py, .json, etc.
+    const fileMatch = clean.match(/(?:^|\s|["'`])([a-zA-Z0-9_\-./]+\.[a-zA-Z0-9]{1,6})(?:$|\s|["'`])/);
+    if (fileMatch && fileMatch[1] && !fileMatch[1].startsWith('http')) {
+      const filename = fileMatch[1].split('/').pop();
+      return `Analyzing ${filename}…`;
+    }
+    
+    if (/\b(?:test|tests|build|run|start)\b/i.test(clean)) {
+      return 'Planning task execution…';
+    }
+    if (/\b(?:search|find|grep|look for)\b/i.test(clean)) {
+      return 'Searching workspace…';
+    }
+    return 'Thinking…';
+  }
+
+  function createThinkingBlock(promptText, atts) {
     stopThinkingTimer();
     const wrap = h('div', 'thinking-wrap');
     const head = h('button', 'thinking-head');
@@ -1628,8 +1653,9 @@
     const pulse = h('span', 'thinking-pulse');
     head.appendChild(pulse);
 
+    const initialLabel = deriveInitialThinkingLabel(promptText, atts);
     const label = h('span', 'thinking-label');
-    const actionEl = h('span', 'thinking-action-text', 'Analyzing workspace context…');
+    const actionEl = h('span', 'thinking-action-text', initialLabel);
     const timerEl = h('span', 'thinking-timer', '0s');
     label.appendChild(actionEl);
     label.appendChild(timerEl);
@@ -1707,9 +1733,6 @@
       }
     };
 
-    // Initial step: Analyzing workspace context
-    addStep({ action: 'Analyzed', badge: 'CTX', text: 'workspace context and project instructions', details: '', status: 'ok' });
-
     const interval = setInterval(() => {
       const elapsed = Math.max(0, Math.floor((Date.now() - startTime) / 1000));
       if (timerEl) timerEl.textContent = formatThinkingTime(elapsed);
@@ -1723,6 +1746,9 @@
       const statusIcon = finalMessage && /error/i.test(finalMessage) ? '⚠️' : '✔';
       const stepsSummary = stepCount > 0 ? ` · ${stepCount} step${stepCount === 1 ? '' : 's'}` : '';
       label.textContent = `${statusIcon} Thought for ${formatThinkingTime(totalElapsed)}${stepsSummary}`;
+      if (stepCount === 0 && !finalMessage) {
+        addStep({ action: 'Completed', badge: 'DONE', text: 'response generated', details: '', status: 'ok' });
+      }
       if (S.changes && S.changes.length > 0) {
         let add = 0, del = 0;
         for (const ch of S.changes) { add += (ch.added || 0); del += (ch.removed || 0); }
@@ -2439,7 +2465,7 @@ export class AgentService {
     addUser(text, atts);
     S.current = null;
     S.turnStartTime = Date.now();
-    createThinkingBlock();
+    createThinkingBlock(text, atts);
     setRunning(true);
     const payload = atts.map((a) => (a.kind === 'image' ? { kind: 'image', name: a.name, dataUrl: a.dataUrl } : a.kind === 'file' ? { kind: 'file', name: a.name, text: a.text } : { kind: 'link', url: a.url }));
     const r = await api.send(text, payload);

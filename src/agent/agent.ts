@@ -499,16 +499,26 @@ export class Agent {
     };
     if (this.cfg.temperature !== undefined) body['temperature'] = this.cfg.temperature;
 
+    const timeout = new AbortController();
+    const timer = setTimeout(() => timeout.abort(new Error('The model server did not answer in 35 seconds.')), 35000);
+    const onAbort = () => timeout.abort(signal.reason);
+    signal.addEventListener('abort', onAbort, { once: true });
+
     let res: Response;
     try {
-      res = await fetch(url, { method: 'POST', headers, body: JSON.stringify(body), signal });
+      res = await fetch(url, { method: 'POST', headers, body: JSON.stringify(body), signal: timeout.signal });
     } catch (err) {
       if (signal.aborted) throw err;
+      const isTimeout = timeout.signal.aborted && !signal.aborted;
+      const desc = isTimeout ? 'The model server did not answer in 35 seconds.' : describeError(err);
       throw new ModelError(
-        `Could not reach the model server at ${target.baseUrl} (${describeError(err)}). Is it running? For Ollama, start it with "ollama serve".`,
+        `Could not reach the model server at ${target.baseUrl} (${desc}). Is it running? For Ollama, start it with "ollama serve".`,
         undefined,
         true,
       );
+    } finally {
+      clearTimeout(timer);
+      signal.removeEventListener('abort', onAbort);
     }
 
     if (!res.ok) {
