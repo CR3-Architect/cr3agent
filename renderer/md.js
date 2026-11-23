@@ -257,7 +257,9 @@
     mention.addEventListener('click', () => {
       const input = document.getElementById('input');
       if (input) {
-        const snippet = `\`\`\`${lang || ''}\n${code}\n\`\`\`\n`;
+        const curCode = box._codeText !== undefined ? box._codeText : code;
+        const curLang = box._lang !== undefined ? box._lang : (lang || '');
+        const snippet = `\`\`\`${curLang}\n${curCode}\n\`\`\`\n`;
         const val = input.value;
         input.value = val ? val + '\n' + snippet : snippet;
         input.dispatchEvent(new Event('input', { bubbles: true }));
@@ -279,7 +281,8 @@
           copy.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>';
         }, 1400);
       };
-      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(code).then(done, () => {});
+      const curCode = box._codeText !== undefined ? box._codeText : code;
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(curCode).then(done, () => {});
       else done();
     });
     actions.appendChild(copy);
@@ -292,6 +295,10 @@
     codeEl.innerHTML = highlightCodeBlock(code, lang);
     pre.appendChild(codeEl);
     box.appendChild(pre);
+
+    box._codeEl = codeEl;
+    box._codeText = code;
+    box._lang = lang;
     return box;
   }
 
@@ -333,16 +340,66 @@
     return root;
   }
 
-  function render(container, text, opts = {}) {
-    container.textContent = '';
+  function buildBlock(b, opts) {
+    if (b.type === 'code') {
+      return codeBlock(b.lang, b.code);
+    }
+    if (b.type === 'heading') {
+      const node = el('h' + b.level);
+      inline(node, b.text, opts);
+      return node;
+    }
+    if (b.type === 'hr') {
+      return el('hr');
+    }
+    if (b.type === 'quote') {
+      const bq = el('blockquote');
+      render(bq, b.raw, opts);
+      return bq;
+    }
+    if (b.type === 'list') {
+      return list(b.items, opts);
+    }
+    if (b.type === 'table') {
+      const head = splitRow(b.head);
+      const table = el('table', 'mdtable');
+      const thead = el('thead');
+      const hr = el('tr');
+      head.forEach((c) => {
+        const th = el('th');
+        inline(th, c, opts);
+        hr.appendChild(th);
+      });
+      thead.appendChild(hr);
+      table.appendChild(thead);
+      const tbody = el('tbody');
+      b.rows.forEach((line) => {
+        const tr = el('tr');
+        splitRow(line).forEach((c) => {
+          const td = el('td');
+          inline(td, c, opts);
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      });
+      table.appendChild(tbody);
+      const wrap = el('div', 'tablewrap');
+      wrap.appendChild(table);
+      return wrap;
+    }
+    const p = el('p');
+    inlineWithBreaks(p, b.raw, opts);
+    return p;
+  }
+
+  function parseBlocks(text) {
     const lines = String(text).replace(/\r\n/g, '\n').split('\n');
+    const blocks = [];
     let i = 0;
     let para = [];
-    const flushPara = () => {
+    const flushPara = (closed) => {
       if (para.length === 0) return;
-      const p = el('p');
-      inlineWithBreaks(p, para.join('\n'), opts);
-      container.appendChild(p);
+      blocks.push({ type: 'p', raw: para.join('\n'), closed: !!closed });
       para = [];
     };
 
@@ -351,85 +408,153 @@
 
       const fence = RE_FENCE.exec(line);
       if (fence) {
-        flushPara();
+        flushPara(true);
         const code = [];
+        const lang = fence[1];
         i++;
         while (i < lines.length && !/^\s{0,3}```\s*$/.test(lines[i])) code.push(lines[i++]);
-        i++; // closing fence (or end of text while streaming)
-        container.appendChild(codeBlock(fence[1], code.join('\n')));
+        const closed = i < lines.length && /^\s{0,3}```\s*$/.test(lines[i]);
+        if (closed) i++;
+        blocks.push({
+          type: 'code',
+          lang,
+          code: code.join('\n'),
+          raw: '```' + lang + '\n' + code.join('\n') + (closed ? '\n```' : ''),
+          closed,
+        });
         continue;
       }
       if (line.trim() === '') {
-        flushPara();
+        flushPara(true);
         i++;
         continue;
       }
       const h = RE_HEADING.exec(line);
       if (h) {
-        flushPara();
-        const level = Math.min(4, h[1].length) + 1; // h2..h5: the page title is the only h1
-        const node = el('h' + level);
-        inline(node, h[2], opts);
-        container.appendChild(node);
+        flushPara(true);
+        const level = Math.min(4, h[1].length) + 1;
+        blocks.push({ type: 'heading', level, text: h[2], raw: line, closed: true });
         i++;
         continue;
       }
       if (RE_HR.test(line)) {
-        flushPara();
-        container.appendChild(el('hr'));
+        flushPara(true);
+        blocks.push({ type: 'hr', raw: line, closed: true });
         i++;
         continue;
       }
       if (RE_QUOTE.test(line)) {
-        flushPara();
+        flushPara(true);
         const q = [];
         while (i < lines.length && RE_QUOTE.test(lines[i])) q.push(RE_QUOTE.exec(lines[i++])[1]);
-        const bq = el('blockquote');
-        render(bq, q.join('\n'), opts);
-        container.appendChild(bq);
+        const closed = i < lines.length;
+        blocks.push({ type: 'quote', raw: q.join('\n'), closed });
         continue;
       }
       if (RE_LIST.test(line)) {
-        flushPara();
+        flushPara(true);
         const items = [];
         while (i < lines.length && lines[i].trim() !== '' && (RE_LIST.test(lines[i]) || /^\s{2,}\S/.test(lines[i]))) items.push(lines[i++]);
-        container.appendChild(list(items, opts));
+        const closed = i < lines.length;
+        blocks.push({ type: 'list', items, raw: items.join('\n'), closed });
         continue;
       }
       if (line.includes('|') && i + 1 < lines.length && RE_TABLE_SEP.test(lines[i + 1]) && lines[i + 1].includes('-')) {
-        flushPara();
-        const head = splitRow(line);
+        flushPara(true);
+        const head = line;
         i += 2;
-        const table = el('table', 'mdtable');
-        const thead = el('thead');
-        const hr = el('tr');
-        head.forEach((c) => {
-          const th = el('th');
-          inline(th, c, opts);
-          hr.appendChild(th);
-        });
-        thead.appendChild(hr);
-        table.appendChild(thead);
-        const tbody = el('tbody');
+        const rows = [];
         while (i < lines.length && lines[i].trim() !== '' && lines[i].includes('|')) {
-          const tr = el('tr');
-          splitRow(lines[i++]).forEach((c) => {
-            const td = el('td');
-            inline(td, c, opts);
-            tr.appendChild(td);
-          });
-          tbody.appendChild(tr);
+          rows.push(lines[i++]);
         }
-        table.appendChild(tbody);
-        const wrap = el('div', 'tablewrap');
-        wrap.appendChild(table);
-        container.appendChild(wrap);
+        const closed = i < lines.length;
+        blocks.push({ type: 'table', head, rows, raw: head + '\n---\n' + rows.join('\n'), closed });
         continue;
       }
       para.push(line);
       i++;
     }
-    flushPara();
+    flushPara(false);
+    return blocks;
+  }
+
+  function render(container, text, opts = {}) {
+    const isStreaming = !!opts.streaming;
+    const newBlocks = parseBlocks(text);
+
+    // If container has not been initialized with blocks, or was cleared externally:
+    if (!container._blocks || container.children.length !== container._blocks.length) {
+      container.textContent = '';
+      container._blocks = [];
+      for (const b of newBlocks) {
+        const dom = buildBlock(b, opts);
+        b.dom = dom;
+        container.appendChild(dom);
+        container._blocks.push(b);
+      }
+      return;
+    }
+
+    const oldBlocks = container._blocks;
+
+    // Find prefix of identical, closed blocks that do not need any updates
+    let common = 0;
+    while (
+      common < oldBlocks.length &&
+      common < newBlocks.length &&
+      oldBlocks[common].closed &&
+      oldBlocks[common].raw === newBlocks[common].raw
+    ) {
+      newBlocks[common].dom = oldBlocks[common].dom;
+      common++;
+    }
+
+    // Update or replace remaining blocks
+    let i = common;
+    while (i < newBlocks.length) {
+      const nb = newBlocks[i];
+      const ob = oldBlocks[i];
+
+      if (ob && ob.type === nb.type && ob.dom) {
+        // Fast path for in-progress paragraph
+        if (nb.type === 'p') {
+          ob.dom.textContent = '';
+          inlineWithBreaks(ob.dom, nb.raw, opts);
+          nb.dom = ob.dom;
+        } else if (nb.type === 'code' && ob.dom._codeEl) {
+          // Fast path for in-progress codeblock
+          ob.dom._codeEl.innerHTML = highlightCodeBlock(nb.code, nb.lang);
+          ob.dom._codeText = nb.code;
+          ob.dom._lang = nb.lang;
+          nb.dom = ob.dom;
+        } else if (ob.raw === nb.raw && (!isStreaming || ob.closed === nb.closed)) {
+          nb.dom = ob.dom;
+        } else {
+          // Replace changed block
+          const dom = buildBlock(nb, opts);
+          nb.dom = dom;
+          container.replaceChild(dom, ob.dom);
+        }
+      } else if (ob && ob.dom) {
+        // Type changed, replace node
+        const dom = buildBlock(nb, opts);
+        nb.dom = dom;
+        container.replaceChild(dom, ob.dom);
+      } else {
+        // New block added to tail
+        const dom = buildBlock(nb, opts);
+        nb.dom = dom;
+        container.appendChild(dom);
+      }
+      i++;
+    }
+
+    // Remove any trailing blocks that are no longer present
+    while (container.children.length > newBlocks.length) {
+      container.lastElementChild.remove();
+    }
+
+    container._blocks = newBlocks;
   }
 
   window.Md = { render, stripAnsi, openImage };

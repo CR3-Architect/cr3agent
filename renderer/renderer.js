@@ -1734,6 +1734,18 @@
       }
     };
 
+    let thinkingStreamEl = null;
+    const appendThinking = (delta) => {
+      if (!delta) return;
+      setHeaderAction('Thinking…');
+      if (!thinkingStreamEl) {
+        thinkingStreamEl = h('div', 'thinking-stream-text');
+        body.appendChild(thinkingStreamEl);
+      }
+      thinkingStreamEl.textContent += delta;
+      if (!body.hidden) body.scrollTop = body.scrollHeight;
+    };
+
     const setHeaderAction = (actionText) => {
       if (actionEl && !wrap.classList.contains('completed')) {
         actionEl.textContent = actionText;
@@ -1773,7 +1785,7 @@
       S.activeThinking = null;
     };
 
-    S.activeThinking = { wrap, head, body, finish, addStep, updateStep, setHeaderAction, startTime, interval };
+    S.activeThinking = { wrap, head, body, finish, addStep, updateStep, setHeaderAction, appendThinking, startTime, interval };
     return S.activeThinking;
   }
 
@@ -1793,10 +1805,13 @@
     S.lastAssistantRecord = S.current;
   }
 
-  function drawAssistant(final) {
+  function drawAssistant(isFinal = false) {
     const c = S.current;
     if (!c) return;
     c.raf = 0;
+    const final = isFinal === true;
+    if (c.lastRenderedRaw === c.raw && !final) return;
+    c.lastRenderedRaw = c.raw;
     const stick = nearBottom();
     Md.render(c.el, c.raw, { streaming: !final });
     if (stick) scrollDown();
@@ -1806,7 +1821,9 @@
     if (S.activeThinking) S.activeThinking.setHeaderAction('Responding…');
     if (!S.current) startAssistant();
     S.current.raw += delta;
-    if (!S.current.raf) S.current.raf = requestAnimationFrame(drawAssistant);
+    if (!S.current.raf) {
+      S.current.raf = requestAnimationFrame(() => drawAssistant(false));
+    }
   }
 
   function flushAssistant() {
