@@ -185,6 +185,26 @@ test('agent: fallback also covers a bad key and an unreachable server, but not a
     await assert.rejects(new Agent(cfg(badRequest.url, { fallbacks: [{ baseUrl: good.url, model: 'b' }] }), new Workspace(root)).run('hi', rec().hooks, noSignal()), /HTTP 400/);
     assert.equal(good.requests.length, 2);
 
+    // when host is unreachable, other models on that same dead host are skipped immediately
+    const deadHost = 'http://127.0.0.1:1/v1';
+    const deadRecorder = rec();
+    await assert.rejects(
+      new Agent(
+        cfg(deadHost, {
+          model: 'm1',
+          fallbacks: [
+            { baseUrl: deadHost, model: 'm2' },
+            { baseUrl: deadHost, model: 'm3' },
+            { baseUrl: deadHost, model: 'm4' },
+          ],
+        }),
+        new Workspace(root),
+      ).run('hi', deadRecorder.hooks, noSignal()),
+      /Could not reach the model server/,
+    );
+    // Should NOT have emitted 3 fallback notices because all models on that dead host were skipped at once
+    assert.equal(deadRecorder.events.filter((e) => e.type === 'notice').length, 0);
+
     // with nothing left to try, the real error is shown
     await assert.rejects(new Agent(cfg(unauthorized.url), new Workspace(root)).run('hi', rec().hooks, noSignal()), /HTTP 401/);
   } finally {

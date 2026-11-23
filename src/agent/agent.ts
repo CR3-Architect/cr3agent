@@ -409,13 +409,22 @@ export class Agent {
     const failures: { target: ModelTarget; error: unknown }[] = [];
     // A rejected key fails every model on that provider, so do not keep asking.
     const deadKeys = new Set<string>();
+    const deadHosts = new Set<string>();
     const targetKey = (t: ModelTarget) => `${t.baseUrl.replace(/\/+$/, '')}\u0000${t.apiKey ?? ''}`;
+    const targetHost = (t: ModelTarget) => {
+      try {
+        return new URL(t.baseUrl).host.toLowerCase();
+      } catch {
+        return t.baseUrl.replace(/\/+$/, '').toLowerCase();
+      }
+    };
+    const MAX_FALLBACK_ATTEMPTS = 3;
     let i = Math.min(this.targetStart, targets.length - 1);
     let payloadRetries = 0;
 
     while (i < targets.length) {
       const t = targets[i]!;
-      if (deadKeys.has(targetKey(t))) {
+      if (deadKeys.has(targetKey(t)) || deadHosts.has(targetHost(t))) {
         i++;
         continue;
       }
@@ -454,10 +463,30 @@ export class Agent {
         failures.push({ target: t, error: e });
         const status = e instanceof ModelError ? e.status : undefined;
         if (status === 401 || status === 403) deadKeys.add(targetKey(t));
-        if (!isRetriable(e) || emitted) throw e;
+
+        // When a host-level network error occurs (DNS failure ENOTFOUND, connection refused ECONNREFUSED,
+        // network unreachable), the server host itself is dead. Retrying other models on that SAME host
+        // is guaranteed to fail with the exact same error, so skip all models sharing this host.
+        const errMsg = (e as Error)?.message ?? '';
+        const isHostUnreachable = (e instanceof ModelError && e.network && status === undefined) ||
+          /ENOTFOUND|ECONNREFUSED|EHOSTUNREACH|ENETUNREACH|getaddrinfo/i.test(errMsg);
+        if (isHostUnreachable) {
+          deadHosts.add(targetHost(t));
+        }
+
+        // Only fallback if the error is retriable, we haven't emitted tokens,
+        // and we haven't exceeded maximum fallback attempts
+        if (!isRetriable(e) || emitted || failures.length >= MAX_FALLBACK_ATTEMPTS) {
+          throw this.allModelsFailed(failures, e);
+        }
 
         let j = i + 1;
-        while (j < targets.length && deadKeys.has(targetKey(targets[j]!))) j++;
+        while (
+          j < targets.length &&
+          (deadKeys.has(targetKey(targets[j]!)) || deadHosts.has(targetHost(targets[j]!)))
+        ) {
+          j++;
+        }
         if (j >= targets.length) throw this.allModelsFailed(failures, e);
 
         const next = targets[j]!;

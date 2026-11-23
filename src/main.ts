@@ -107,8 +107,10 @@ function agentConfig(): AgentConfig {
   // Intra-provider fallback targets: stay strictly within this provider's models.
   // When a user selects a provider (e.g. NVIDIA), it works around that provider's models
   // and will not shift to Groq, OpenAI, or other providers.
+  // Cap to at most 3 alternate models to prevent runaway fallback cascades.
   const alternateTargets: ModelTarget[] = (p.models ?? [])
     .filter((m) => m && m !== p.model && isToolSupportedModel(m))
+    .slice(0, 3)
     .map((m) => ({ baseUrl: p.baseUrl, apiKey: mainTarget.apiKey, model: m }));
 
   return {
@@ -471,7 +473,15 @@ function registerIpc(): void {
     const files = cleanAttachments(attachments);
     if (message === '' && files.length === 0) throw new Error('Message is empty.');
     const s = activeSession();
-    if (s.running) throw new Error('This chat is still working on the previous message.');
+    if (s.running) {
+      stopSession(s);
+      let waitMs = 0;
+      while (s.running && waitMs < 400) {
+        await new Promise((r) => setTimeout(r, 40));
+        waitMs += 40;
+      }
+      s.running = null;
+    }
     const p = activeProvider(settings);
     if (p.model.trim() === '') throw new Error('Choose a model first (Settings → Providers & Models).');
     if (p.apiKey && !decodeKey(p.apiKey)) {
