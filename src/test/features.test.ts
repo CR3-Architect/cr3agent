@@ -352,10 +352,12 @@ test('agent: a saved conversation can be restored, and broken histories are repa
       { role: 'assistant', content: null, tool_calls: [{ id: 't1', type: 'function', function: { name: 'list_dir', arguments: '{}' } }] },
     ];
     const fixed = sanitizeHistory(broken);
-    assert.deepEqual(fixed.map((m) => m.role), ['user', 'assistant', 'tool']);
-    assert.equal(fixed[0]!.content, 'hello\n\nhow are you', 'consecutive user messages are coalesced');
-    assert.match(String(fixed[2]!.content), /interrupted/);
-    assert.equal(fixed[2]!.tool_call_id, 't1');
+    assert.deepEqual(fixed.map((m) => m.role), ['user', 'assistant', 'user', 'assistant', 'tool']);
+    assert.equal(fixed[0]!.content, 'hello');
+    assert.equal(fixed[1]!.content, 'Stopped.');
+    assert.equal(fixed[2]!.content, 'how are you');
+    assert.match(String(fixed[4]!.content), /interrupted/);
+    assert.equal(fixed[4]!.tool_call_id, 't1');
 
     // direct test of coalesceUserMessages
     const coalesced = coalesceUserMessages([

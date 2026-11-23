@@ -245,13 +245,7 @@ export class Agent {
     this.messages[0] = { role: 'system', content: buildSystemPrompt(this.workspace.root, skills, this.cfg.persona) };
     const userMsg = buildUserMessage(userText, attachments);
     userMsg.createdAt = Date.now();
-    const lastMsg = this.messages[this.messages.length - 1];
-    if (lastMsg && lastMsg.role === 'user') {
-      const merged = coalesceUserMessages([lastMsg, userMsg]);
-      this.messages[this.messages.length - 1] = merged[0]!;
-    } else {
-      this.messages.push(userMsg);
-    }
+    this.messages.push(userMsg);
     const hasImages = attachments.some((a) => a.kind === 'image');
     this.targetStart = 0;
     let continues = 0;
@@ -307,11 +301,20 @@ export class Agent {
         message: `Paused after ${this.cfg.maxSteps} steps. Send a message such as "continue" to keep going.`,
       });
     } catch (err) {
-      if (!signal.aborted && (err as Error).name !== 'AbortError') {
+      if (signal.aborted || (err as Error).name === 'AbortError') {
+        this.messages.push({
+          role: 'assistant',
+          content: 'Stopped.',
+          createdAt: Date.now(),
+          duration: Math.max(0.5, (Date.now() - turnStart) / 1000),
+        });
+      } else {
         const errMsg = (err as Error).message ?? String(err);
         this.messages.push({
           role: 'assistant',
           content: `⚠️ ${errMsg}`,
+          createdAt: Date.now(),
+          duration: Math.max(0.5, (Date.now() - turnStart) / 1000),
         });
       }
       throw err;
@@ -789,6 +792,10 @@ export function sanitizeHistory(messages: ChatMessage[]): ChatMessage[] {
       const hasCall = result.some((x) => x.role === 'assistant' && x.tool_calls?.some((tc) => tc.id === m.tool_call_id));
       if (!hasCall) continue;
     }
+    const prev = result[result.length - 1];
+    if (prev && prev.role === 'user' && m.role === 'user') {
+      result.push({ role: 'assistant', content: 'Stopped.' });
+    }
     result.push(m);
     if (m.role === 'assistant' && m.tool_calls) {
       for (const tc of m.tool_calls) {
@@ -800,7 +807,7 @@ export function sanitizeHistory(messages: ChatMessage[]): ChatMessage[] {
       }
     }
   }
-  return coalesceUserMessages(result);
+  return result;
 }
 
 function validJson(text: string): boolean {

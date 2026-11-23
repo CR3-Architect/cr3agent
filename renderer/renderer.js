@@ -253,40 +253,49 @@
     const name = String(modelName || '').toLowerCase();
     const caps = [];
 
-    // Vision / Multimodal / Ink
-    if (/vision|4o|gemini|pixtral|llava|vl|multimodal|claude-3/i.test(name)) {
-      caps.push({ label: '👁️ Vision & Ink', class: 'cap-vision', tip: 'Can inspect and reason over screenshots, mockups, images, diagrams, and handwriting' });
+    // Base modality
+    caps.push({ label: 'Text', class: 'cap-text', tip: 'Supports text generation and comprehension' });
+
+    // Vision / Image modality
+    if (/vision|4o|gemini|pixtral|llava|vl|multimodal|claude-3|gpt-4-turbo/i.test(name)) {
+      caps.push({ label: 'Image', class: 'cap-image', tip: 'Inspects and analyzes images, diagrams, mockups' });
+    }
+
+    // Video modality
+    if (/gemini-1\.5|gemini-2\.0|qwen2-vl|qwen-vl/i.test(name)) {
+      caps.push({ label: 'Video', class: 'cap-video', tip: 'Processes video input' });
+    }
+
+    // Audio modality
+    if (/audio|voice|gemini-2\.0|whisper/i.test(name)) {
+      caps.push({ label: 'Audio', class: 'cap-audio', tip: 'Processes audio input' });
+    }
+
+    // Deep reasoning / Thinking
+    if (/r1|o1|o3|reasoner|thinking|qwq/i.test(name)) {
+      caps.push({ label: 'Reasoning', class: 'cap-reasoning', tip: 'Chain-of-thought deep reasoning and verification' });
     }
 
     // Code specialist
-    if (/coder|code|deepseek-coder|qwen.*coder|codellama/i.test(name)) {
-      caps.push({ label: '💻 Code', class: 'cap-code', tip: 'Specialized for writing, refactoring, and debugging source code' });
-    }
-
-    // Tools / Function calling
-    const noTool = /prompt-guard|guard|embed|allam-2-7b/i.test(name);
-    if (!noTool) {
-      caps.push({ label: '⚡ Tools', class: 'cap-tools', tip: 'Supports function calling and tool execution (reading files, terminal, git)' });
-    }
-
-    // Deep reasoning / Thought
-    if (/r1|o1|o3|reasoner|thinking|qwq/i.test(name)) {
-      caps.push({ label: '🧠 Deep Reasoning', class: 'cap-reasoning', tip: 'Chain-of-thought mathematical reasoning and logic verification' });
+    if (/coder|deepseek-coder|qwen.*coder|codellama|starcoder/i.test(name)) {
+      caps.push({ label: 'Code', class: 'cap-code', tip: 'Specialized for coding, refactoring, and debugging source code' });
     }
 
     // Context Window
     if (/1m|1000k/i.test(name)) {
-      caps.push({ label: '📏 1M Context', class: 'cap-context', tip: 'Ultra-large 1,000,000 token context window' });
+      caps.push({ label: '1M', class: 'cap-context', tip: '1,000,000 token context window' });
     } else if (/128k|llama-3\.3|llama-3\.1|qwen2\.5/i.test(name)) {
-      caps.push({ label: '📏 128k Context', class: 'cap-context', tip: 'Large 128,000 token context window for full repositories' });
+      caps.push({ label: '128k', class: 'cap-context', tip: '128,000 token context window' });
     } else if (/200k|claude/i.test(name)) {
-      caps.push({ label: '📏 200k Context', class: 'cap-context', tip: '200,000 token context window' });
+      caps.push({ label: '200k', class: 'cap-context', tip: '200,000 token context window' });
     } else if (/32k|mistral/i.test(name)) {
-      caps.push({ label: '📏 32k Context', class: 'cap-context', tip: '32,000 token context window' });
+      caps.push({ label: '32k', class: 'cap-context', tip: '32,000 token context window' });
     }
 
-    // Docs & Text
-    caps.push({ label: '📄 Docs & Text', class: 'cap-docs', tip: 'Processes Markdown, source files, structured JSON, YAML, and logs' });
+    // Free tier
+    if (/:free/i.test(name)) {
+      caps.push({ label: 'Free', class: 'cap-free', tip: 'Free tier model with no API charge' });
+    }
 
     return caps;
   }
@@ -2242,7 +2251,13 @@
           append(rec.card);
         }
         const text = textOfContent(m.content).trim();
-        if (text) addStaticAssistant(text, m.createdAt, m.duration);
+        if (text === 'Stopped.') {
+          append(h('div', 'stopped', 'Stopped.'));
+        } else if (text.startsWith('⚠️ ')) {
+          append(h('div', 'error-msg', text));
+        } else if (text) {
+          addStaticAssistant(text, m.createdAt, m.duration);
+        }
       }
     }
     scrollDown();
