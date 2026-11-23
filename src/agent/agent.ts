@@ -70,6 +70,7 @@ export type ContentPart = { type: 'text'; text: string } | { type: 'image_url'; 
 export interface ChatMessage {
   role: 'system' | 'user' | 'assistant' | 'tool';
   content: string | ContentPart[] | null;
+  name?: string;
   tool_calls?: ToolCallMessage[];
   tool_call_id?: string;
   createdAt?: number;
@@ -312,7 +313,7 @@ export class Agent {
         const errMsg = (err as Error).message ?? String(err);
         this.messages.push({
           role: 'assistant',
-          content: `⚠️ ${errMsg}`,
+          content: `[Error] ${errMsg}`,
           createdAt: Date.now(),
           duration: Math.max(0.5, (Date.now() - turnStart) / 1000),
         });
@@ -491,12 +492,12 @@ export class Agent {
 
   private async callModel(target: ModelTarget, hooks: AgentHooks, signal: AbortSignal, withSkills: boolean, hasImages: boolean): Promise<Turn> {
     const url = `${target.baseUrl.replace(/\/+$/, '')}/chat/completions`;
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    const headers: Record<string, string> = { 'Content-Type': 'application/json', 'Connection': 'keep-alive' };
     if (target.apiKey) headers['Authorization'] = `Bearer ${target.apiKey}`;
 
     const body: Record<string, unknown> = {
       model: target.model,
-      messages: coalesceUserMessages(this.messages),
+      messages: cleanMessagesForApi(this.messages),
       tools: openAiToolSchemas(withSkills),
       stream: true,
     };
@@ -526,6 +527,23 @@ export class Agent {
 
     if (!res.ok) {
       const text = (await res.text().catch(() => '')).slice(0, 600);
+
+      // If the model rejected the request with HTTP 400 and tools was included,
+      // retry once without tools. This allows chat-only or community free models without function-calling
+      // support to still answer user queries smoothly instead of failing with invalid_request.
+      if (res.status === 400 && body['tools'] && !signal.aborted) {
+        const retryBody = { ...body };
+        delete retryBody['tools'];
+        const retryRes = await fetch(url, { method: 'POST', headers, body: JSON.stringify(retryBody), signal }).catch(() => null);
+        if (retryRes && retryRes.ok) {
+          const contentType = retryRes.headers.get('content-type') ?? '';
+          if (contentType.includes('application/json')) {
+            return this.parseWholeResponse(await retryRes.json(), hooks);
+          }
+          return this.parseStream(retryRes, hooks, signal);
+        }
+      }
+
       let hint = '';
       if (res.status === 400 && /image|vision|multimodal/i.test(text)) {
         hint = ' This model may not support images. Remove the image or choose a vision model.';
@@ -642,10 +660,22 @@ export class Agent {
       handleData(data, onText);
     };
 
+    let idleTimer: NodeJS.Timeout | undefined;
+    let didIdleTimeout = false;
+    const resetIdleTimer = () => {
+      if (idleTimer) clearTimeout(idleTimer);
+      idleTimer = setTimeout(() => {
+        didIdleTimeout = true;
+        try { reader.cancel('Stream idle timeout').catch(() => {}); } catch {}
+      }, 25000);
+    };
+
     try {
       for (;;) {
+        resetIdleTimer();
         const { done, value } = await reader.read();
         if (done) break;
+        resetIdleTimer();
         buffer += decoder.decode(value, { stream: true });
         let nl: number;
         let chunkDelta = '';
@@ -667,8 +697,12 @@ export class Agent {
       }
     } catch (err) {
       if (signal.aborted) throw err;
+      if (didIdleTimeout) {
+        throw new ModelError('The model server stopped streaming tokens (idle stream timed out after 25s).', undefined, true);
+      }
       throw err instanceof Error ? err : new Error(String(err));
     } finally {
+      if (idleTimer) clearTimeout(idleTimer);
       reader.releaseLock?.();
     }
 
@@ -781,6 +815,66 @@ export function coalesceUserMessages(messages: ChatMessage[]): ChatMessage[] {
     }
   }
   return result;
+}
+
+/**
+ * Prepare messages for standard OpenAI-compatible API calls:
+ * - Coalesce consecutive user messages into one
+ * - Strip internal bookkeeping fields (createdAt, duration, status)
+ * - Exclude transient client-side error notifications from the context sent to the LLM
+ * - Ensure proper typing and structure for tool calls
+ */
+export function cleanMessagesForApi(messages: ChatMessage[]): Array<Record<string, unknown>> {
+  const coalesced = coalesceUserMessages(messages);
+  const out: Array<Record<string, unknown>> = [];
+
+  for (const m of coalesced) {
+    if (!m || typeof m !== 'object') continue;
+
+    // Filter out client-side error alerts recorded as assistant messages so they don't break LLM completion
+    if (m.role === 'assistant') {
+      const isClientErr = typeof m.content === 'string' && (/^(\[Error\]|⚠️|Model server returned HTTP|No model could answer)/i.test(m.content));
+      if (isClientErr && (!m.tool_calls || m.tool_calls.length === 0)) {
+        continue;
+      }
+    }
+
+    const item: Record<string, unknown> = {
+      role: m.role,
+    };
+
+    if (m.content !== undefined) {
+      item.content = m.content;
+    }
+
+    if (m.name) {
+      item.name = m.name;
+    }
+
+    if (m.tool_call_id) {
+      item.tool_call_id = m.tool_call_id;
+    }
+
+    if (Array.isArray(m.tool_calls) && m.tool_calls.length > 0) {
+      item.tool_calls = m.tool_calls.map((tc) => ({
+        id: tc.id,
+        type: 'function',
+        function: {
+          name: tc.function.name,
+          arguments: tc.function.arguments,
+        },
+      }));
+    }
+
+    out.push(item);
+  }
+
+  // Ensure conversation history starts with a valid role (system or user)
+  while (out.length > 0 && out[0]?.role !== 'system' && out[0]?.role !== 'user') {
+    out.shift();
+  }
+
+  return out;
 }
 
 /**

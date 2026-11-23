@@ -165,7 +165,10 @@ function skillDirs(folder: string | null): SkillDir[] {
   return dirs;
 }
 
-async function refreshSkills(folder: string | null = activeFolder): Promise<Skill[]> {
+async function refreshSkills(folder: string | null = activeFolder, force = false): Promise<Skill[]> {
+  if (!force && folder && skillCache.has(folder)) {
+    return skillCache.get(folder)!;
+  }
   const list = await loadSkills(skillDirs(folder));
   if (folder) skillCache.set(folder, list);
   return list;
@@ -509,7 +512,7 @@ function registerIpc(): void {
         files,
       );
       run.catch(() => undefined); // handled below; this only stops a second report while we save
-      await saveChat(s); // the user's message is already in the history
+      void saveChat(s); // background save, don't block model execution
       await run;
       emitAgent(s, { type: 'done' });
     } catch (err) {
@@ -611,7 +614,7 @@ function registerIpc(): void {
       description: String(input?.description ?? ''),
       instructions: String(input?.instructions ?? ''),
     });
-    await refreshSkills();
+    await refreshSkills(activeFolder, true);
     return { skills: publicSkills() };
   });
   handle('skills:import', async () => {
@@ -623,12 +626,12 @@ function registerIpc(): void {
     });
     if (r.canceled || !r.filePaths[0]) return { canceled: true, skills: publicSkills() };
     await importSkill(globalSkillsDir, r.filePaths[0]);
-    await refreshSkills();
+    await refreshSkills(activeFolder, true);
     return { skills: publicSkills() };
   });
   handle('skills:delete', async (dir: string) => {
     await deleteSkill(globalSkillsDir, String(dir));
-    await refreshSkills();
+    await refreshSkills(activeFolder, true);
     return { skills: publicSkills() };
   });
   handle('skills:openFolder', async () => {

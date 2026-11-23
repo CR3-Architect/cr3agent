@@ -71,6 +71,8 @@
     terminalPrompt: '<polyline points="4 14 8 10 4 6"/><line x1="10" y1="14" x2="16" y2="14"/>',
     thumbsUp: '<path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/>',
     thumbsDown: '<path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-3"/>',
+    alertTriangle: '<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>',
+    zap: '<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>',
   };
 
   function icon(name) {
@@ -253,32 +255,24 @@
     const name = String(modelName || '').toLowerCase();
     const caps = [];
 
-    // Base modality
-    caps.push({ label: 'Text', class: 'cap-text', tip: 'Supports text generation and comprehension' });
-
     // Vision / Image modality
     if (/vision|4o|gemini|pixtral|llava|vl|multimodal|claude-3|gpt-4-turbo/i.test(name)) {
-      caps.push({ label: 'Image', class: 'cap-image', tip: 'Inspects and analyzes images, diagrams, mockups' });
+      caps.push({ label: 'Vision', icon: 'image', class: 'cap-vision', tip: 'Inspects and analyzes images, diagrams, mockups' });
     }
 
     // Video modality
     if (/gemini-1\.5|gemini-2\.0|qwen2-vl|qwen-vl/i.test(name)) {
-      caps.push({ label: 'Video', class: 'cap-video', tip: 'Processes video input' });
-    }
-
-    // Audio modality
-    if (/audio|voice|gemini-2\.0|whisper/i.test(name)) {
-      caps.push({ label: 'Audio', class: 'cap-audio', tip: 'Processes audio input' });
+      caps.push({ label: 'Video', icon: 'monitor', class: 'cap-video', tip: 'Processes video input' });
     }
 
     // Deep reasoning / Thinking
     if (/r1|o1|o3|reasoner|thinking|qwq/i.test(name)) {
-      caps.push({ label: 'Reasoning', class: 'cap-reasoning', tip: 'Chain-of-thought deep reasoning and verification' });
+      caps.push({ label: 'Reasoning', icon: 'sparkles', class: 'cap-reasoning', tip: 'Chain-of-thought deep reasoning and verification' });
     }
 
     // Code specialist
     if (/coder|deepseek-coder|qwen.*coder|codellama|starcoder/i.test(name)) {
-      caps.push({ label: 'Code', class: 'cap-code', tip: 'Specialized for coding, refactoring, and debugging source code' });
+      caps.push({ label: 'Code', icon: 'code', class: 'cap-code', tip: 'Specialized for coding, refactoring, and debugging source code' });
     }
 
     // Context Window
@@ -293,8 +287,8 @@
     }
 
     // Free tier
-    if (/:free/i.test(name)) {
-      caps.push({ label: 'Free', class: 'cap-free', tip: 'Free tier model with no API charge' });
+    if (/:free\b/i.test(name) || /-free\b/i.test(name)) {
+      caps.push({ label: 'FREE', class: 'cap-free', tip: 'Free tier model with no API charge' });
     }
 
     return caps;
@@ -394,7 +388,11 @@
         if (it.caps && it.caps.length) {
           const capWrap = h('div', 'pm-model-caps');
           for (const c of it.caps) {
-            const pill = h('span', 'model-cap-pill ' + (c.class || ''), c.label);
+            const pill = h('span', 'model-cap-pill ' + (c.class || ''));
+            if (c.icon) {
+              pill.appendChild(iconSpan(c.icon, 'cap-ico'));
+            }
+            pill.appendChild(h('span', 'cap-txt', c.label));
             if (c.tip) pill.title = c.tip;
             capWrap.appendChild(pill);
           }
@@ -1752,9 +1750,17 @@
       clearInterval(interval);
       const totalElapsed = Math.max(1, Math.floor((Date.now() - startTime) / 1000));
       pulse.remove();
-      const statusIcon = finalMessage && /error/i.test(finalMessage) ? '⚠️' : '✔';
+      label.textContent = '';
+      const isErr = finalMessage && /error/i.test(finalMessage);
+      const isStopped = finalMessage && /stopped/i.test(finalMessage);
+      const statusIco = isErr
+        ? iconSpan('alertTriangle', 'thinking-fail-ico')
+        : isStopped
+          ? iconSpan('stop', 'thinking-stop-ico')
+          : iconSpan('check', 'thinking-check-ico');
+      label.appendChild(statusIco);
       const stepsSummary = stepCount > 0 ? ` · ${stepCount} step${stepCount === 1 ? '' : 's'}` : '';
-      label.textContent = `${statusIcon} Thought for ${formatThinkingTime(totalElapsed)}${stepsSummary}`;
+      label.appendChild(h('span', '', ` Thought for ${formatThinkingTime(totalElapsed)}${stepsSummary}`));
       if (stepCount === 0 && !finalMessage) {
         addStep({ action: 'Completed', badge: 'DONE', text: 'response generated', details: '', status: 'ok' });
       }
@@ -2210,7 +2216,9 @@
     const durStr = duration ? formatThinkingTime(Math.round(duration)) : (stepCount > 0 ? 'a moment' : '');
     const stepsSummary = stepCount > 0 ? ` · ${stepCount} step${stepCount === 1 ? '' : 's'}` : '';
     const label = h('span', 'thinking-label');
-    const actionEl = h('span', 'thinking-action-text', `✔ Thought ${durStr ? 'for ' + durStr : ''}${stepsSummary}`);
+    const actionEl = h('span', 'thinking-action-text');
+    actionEl.appendChild(iconSpan('check', 'thinking-check-ico'));
+    actionEl.appendChild(h('span', '', ` Thought ${durStr ? 'for ' + durStr : ''}${stepsSummary}`));
     label.appendChild(actionEl);
     head.appendChild(label);
     wrap.appendChild(head);
@@ -2308,14 +2316,25 @@
         const text = textOfContent(m.content).trim();
         if (text === 'Stopped.') {
           append(h('div', 'stopped', 'Stopped.'));
-        } else if (text.startsWith('⚠️ ')) {
-          append(h('div', 'error-msg', text));
+        } else if (text.startsWith('[Error]') || text.startsWith('⚠️') || text.startsWith('Model server returned HTTP') || text.startsWith('No model could answer')) {
+          append(createErrorElement(text));
         } else if (text) {
           addStaticAssistant(text, m.createdAt, m.duration);
         }
       }
     }
     scrollDown();
+  }
+
+  function createErrorElement(rawMsg) {
+    const clean = String(rawMsg || '')
+      .replace(/^(\[Error\]|⚠️)\s*/, '')
+      .trim();
+    const el = h('div', 'error-msg');
+    el.appendChild(iconSpan('alertTriangle', 'error-ico'));
+    const txtSpan = h('span', 'error-text', clean);
+    el.appendChild(txtSpan);
+    return el;
   }
 
   // ---------- running ----------
@@ -2341,7 +2360,7 @@
       case 'tool_output': onToolOutput(ev); break;
       case 'tool_result': onToolResult(ev); break;
       case 'notice': flushAssistant(); append(h('div', 'notice', ev.message)); break;
-      case 'error': flushAssistant(); if (S.activeThinking) S.activeThinking.finish(ev.message); finalizeTurnFooter(); append(h('div', 'error-msg', ev.message)); setRunning(false); processNextQueued(); break;
+      case 'error': flushAssistant(); if (S.activeThinking) S.activeThinking.finish(ev.message); finalizeTurnFooter(); append(createErrorElement(ev.message)); setRunning(false); processNextQueued(); break;
       case 'stopped': flushAssistant(); if (S.activeThinking) S.activeThinking.finish('Stopped'); finalizeTurnFooter(); append(h('div', 'stopped', 'Stopped.')); setRunning(false); processNextQueued(); break;
       case 'done': flushAssistant(); if (S.activeThinking) S.activeThinking.finish(); finalizeTurnFooter(); setRunning(false); processNextQueued(); break;
     }
@@ -2540,7 +2559,7 @@ export class AgentService {
     const payload = atts.map((a) => (a.kind === 'image' ? { kind: 'image', name: a.name, dataUrl: a.dataUrl } : a.kind === 'file' ? { kind: 'file', name: a.name, text: a.text } : { kind: 'link', url: a.url }));
     const r = await api.send(text, payload);
     if (!r.ok) {
-      append(h('div', 'error-msg', r.error || 'Could not send the message.'));
+      append(createErrorElement(r.error || 'Could not send the message.'));
       setRunning(false);
       processNextQueued();
     }
@@ -2620,7 +2639,7 @@ export class AgentService {
       items.push({ type: 'head', label: 'Switch any time, even mid-chat. Auto-switch is on: if this model fails, the next one takes over.' });
     }
     for (const p of s.providers) {
-      const keyStatus = p.keyDecryptionFailed ? ' · ⚠️ key re-entry needed' : p.hasApiKey ? ' · key saved' : '';
+      const keyStatus = p.keyDecryptionFailed ? ' · (key re-entry needed)' : p.hasApiKey ? ' · key saved' : '';
       items.push({ type: 'head', label: p.name + keyStatus });
       const list = p.models.length > 0 ? p.models.slice(0, 40) : p.model ? [p.model] : [];
       if (list.length === 0) items.push({ label: 'No model chosen yet', disabled: true });
@@ -3378,31 +3397,31 @@ export class AgentService {
 
   const PERSONA_META = {
     software: {
-      icon: '💻',
+      icon: 'code',
       tag: 'SOFTWARE',
       title: 'Software Engineering',
       desc: 'Modular clean architecture, TypeScript/Python/React, unit tests, refactoring, and Git commits.'
     },
     agent: {
-      icon: '🤖',
+      icon: 'sparkles',
       tag: 'AI AGENTS',
       title: 'AI Agent Building',
       desc: 'Autonomous multi-agent workflows, tool schemas, eval loops, subagents, and LLMs.'
     },
     science: {
-      icon: '🔬',
+      icon: 'globe',
       tag: 'RESEARCH',
       title: 'Science & Research',
       desc: 'Empirical scientific rigor, data analysis, reproducible scripts, mathematics, and research papers.'
     },
     devops: {
-      icon: '☁️',
+      icon: 'terminal',
       tag: 'SYSTEMS',
       title: 'DevOps & Cloud',
       desc: 'CI/CD pipelines, Docker, Kubernetes, shell scripts, cloud infrastructure, and stability.'
     },
     general: {
-      icon: '⚡',
+      icon: 'command',
       tag: 'GENERAL',
       title: 'General Purpose',
       desc: 'Versatile everyday assistant for documents, text analysis, workflow automation, and coding.'
@@ -3417,7 +3436,10 @@ export class AgentService {
     const tagEl = $('activeDomainTag');
     const titleEl = $('activeDomainTitle');
     const descEl = $('activeDomainDesc');
-    if (iconEl) iconEl.textContent = info.icon;
+    if (iconEl) {
+      iconEl.textContent = '';
+      iconEl.appendChild(icon(info.icon));
+    }
     if (tagEl) tagEl.textContent = info.tag;
     if (titleEl) titleEl.textContent = info.title;
     if (descEl) descEl.textContent = info.desc;
@@ -3501,7 +3523,7 @@ export class AgentService {
     $('pfModel').value = p ? p.model : '';
     $('pfKey').value = '';
     if (p && p.keyDecryptionFailed) {
-      $('pfKey').placeholder = '⚠️ Key could not be decrypted';
+      $('pfKey').placeholder = 'Key could not be decrypted (re-enter)';
       $('pfKeyHint').textContent = 'The operating system could not decrypt the saved key. Please paste your API key again to save a fresh copy.';
     } else {
       $('pfKey').placeholder = p && p.hasApiKey ? '••••••••  (saved)' : 'Paste your API key';
@@ -4615,13 +4637,13 @@ export class AgentService {
   }
 
   const SLASH_COMMANDS = [
-    { cmd: '/clear', desc: 'Start a fresh new chat session' },
-    { cmd: '/compact', desc: 'Summarize earlier turns to save context window' },
-    { cmd: '/review', desc: 'Review all pending git changes and diffs in project' },
-    { cmd: '/git', desc: 'Check git status, branch and uncommitted files' },
-    { cmd: '/test', desc: 'Ask agent to run the test suite and verify changes' },
-    { cmd: '/terminal', desc: 'Toggle the terminal panel' },
-    { cmd: '/help', desc: 'List available agent skills and slash commands' },
+    { cmd: '/clear', desc: 'Start a fresh new chat session', ico: 'x' },
+    { cmd: '/compact', desc: 'Summarize earlier turns to save context window', ico: 'overview' },
+    { cmd: '/review', desc: 'Review all pending git changes and diffs in project', ico: 'fileDiff' },
+    { cmd: '/git', desc: 'Check git status, branch and uncommitted files', ico: 'branch' },
+    { cmd: '/test', desc: 'Ask agent to run the test suite and verify changes', ico: 'code' },
+    { cmd: '/terminal', desc: 'Toggle the terminal panel', ico: 'terminal' },
+    { cmd: '/help', desc: 'List available agent skills and slash commands', ico: 'sparkles' },
   ];
 
   function initComposerAutocomplete() {
@@ -4668,7 +4690,9 @@ export class AgentService {
       menu.hidden = false;
 
       const head = h('div', 'cm-head');
-      const titleSpan = h('span', '', mode === 'slash' ? '⚡ Slash Commands' : '@ Mention Project File');
+      const titleSpan = h('span', 'cm-head-title');
+      titleSpan.appendChild(iconSpan(mode === 'slash' ? 'terminalPrompt' : 'file', 'cm-head-ico'));
+      titleSpan.appendChild(h('span', '', mode === 'slash' ? ' Slash Commands' : ' Mention Project File'));
       const countSpan = h('span', 'cm-count', `${items.length} ${items.length === 1 ? 'option' : 'options'}`);
       head.append(titleSpan, countSpan);
       menu.appendChild(head);
@@ -4678,7 +4702,7 @@ export class AgentService {
         row.type = 'button';
 
         if (mode === 'slash') {
-          const ico = h('span', 'cm-ico', '/');
+          const ico = iconSpan(item.ico || 'terminalPrompt', 'cm-ico');
           const main = h('span', 'cm-main');
           const lbl = h('span', 'cm-label', item.cmd);
           const desc = h('span', 'cm-desc', item.desc);
@@ -4686,7 +4710,7 @@ export class AgentService {
           const hint = h('span', 'cm-hint', '↵ Run');
           row.append(ico, main, hint);
         } else {
-          const ico = h('span', 'cm-ico', '📄');
+          const ico = iconSpan('file', 'cm-file-ico');
           const main = h('span', 'cm-main');
           const parts = String(item).split('/');
           const filename = parts.pop() || item;

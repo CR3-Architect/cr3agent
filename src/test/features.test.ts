@@ -7,7 +7,7 @@ import * as http from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { Workspace } from '../agent/workspace';
 import { findTool, applyEdit } from '../agent/tools';
-import { Agent, AgentConfig, AgentEvent, ToolCallInfo, buildUserMessage, sanitizeHistory, coalesceUserMessages, ChatMessage } from '../agent/agent';
+import { Agent, AgentConfig, AgentEvent, ToolCallInfo, buildUserMessage, sanitizeHistory, coalesceUserMessages, cleanMessagesForApi, ChatMessage } from '../agent/agent';
 import { htmlToText, fetchUrlText, parseHttpUrl } from '../agent/web';
 import { compactDiff, diffText } from '../agent/diff';
 import { createSkill, loadSkills } from '../agent/skills';
@@ -370,6 +370,22 @@ test('agent: a saved conversation can be restored, and broken histories are repa
     assert.deepEqual(coalesced.map((m) => m.role), ['user', 'assistant', 'user']);
     assert.equal(coalesced[0]!.content, 'first\n\nsecond\n\nthird');
     assert.equal(coalesced[2]!.content, 'fourth');
+
+    // direct test of cleanMessagesForApi
+    const cleaned = cleanMessagesForApi([
+      { role: 'system', content: 'system prompt' },
+      { role: 'user', content: 'hi', createdAt: 12345, duration: 1.2 },
+      { role: 'assistant', content: '⚠️ Model server returned HTTP 400: invalid_request', createdAt: 12346, duration: 0.5 },
+      { role: 'user', content: 'what is issue', createdAt: 12347, duration: 0.8 },
+    ]);
+    assert.equal(cleaned.length, 3);
+    assert.equal(cleaned[0]!.role, 'system');
+    assert.equal(cleaned[1]!.role, 'user');
+    assert.equal(cleaned[1]!.content, 'hi');
+    assert.equal('createdAt' in cleaned[1]!, false, 'createdAt must be stripped');
+    assert.equal('duration' in cleaned[1]!, false, 'duration must be stripped');
+    assert.equal(cleaned[2]!.role, 'user');
+    assert.equal(cleaned[2]!.content, 'what is issue');
   } finally {
     await mock.close();
     await fs.rm(root, { recursive: true, force: true });
