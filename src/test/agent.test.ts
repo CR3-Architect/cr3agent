@@ -542,3 +542,57 @@ test('agent: old turns are dropped to stay within the context budget', async () 
     await fs.rm(root, { recursive: true, force: true });
   }
 });
+
+test('agent: extracts reasoning_content into thinking events', async () => {
+  const root = await tmpDir('fa-think-');
+  const mock = await startMock([
+    () => ({
+      sse: [
+        { choices: [{ delta: { reasoning_content: 'Analyzing the request...' } }] },
+        { choices: [{ delta: { content: 'Here is the fast answer.' } }] },
+        { choices: [{ delta: {}, finish_reason: 'stop' }] },
+      ],
+    }),
+  ]);
+  try {
+    const rec = recorder();
+    await new Agent(baseConfig(mock.url), new Workspace(root)).run('solve problem', rec.hooks, new AbortController().signal);
+    const thinking = rec.events.filter((e) => e.type === 'thinking');
+    const text = rec.events.filter((e) => e.type === 'text');
+    assert.ok(thinking.length > 0);
+    assert.equal(thinking.map((t: any) => t.delta).join(''), 'Analyzing the request...');
+    assert.ok(text.length > 0);
+    assert.equal(text.map((t: any) => t.delta).join(''), 'Here is the fast answer.');
+  } finally {
+    await mock.close();
+    await fs.rm(root, { recursive: true, force: true });
+  }
+});
+
+test('agent: remembers models without tools and skips tools on subsequent requests', async () => {
+  const root = await tmpDir('fa-notool-');
+  let firstCall = true;
+  const mock = await startMock([
+    (body) => {
+      if (firstCall && body.tools) {
+        firstCall = false;
+        return { status: 400, text: 'This model does not support tools.' };
+      }
+      return textReply('hello without tools');
+    },
+    () => textReply('second answer'),
+  ]);
+  try {
+    const agent = new Agent(baseConfig(mock.url, { model: 'no-tool-model' }), new Workspace(root));
+    await agent.run('first', recorder().hooks, new AbortController().signal);
+    assert.equal(mock.requests.length, 2, 'first call should have failed with 400, then retried without tools');
+    assert.equal(mock.requests[1].tools, undefined, 'retry should omit tools');
+
+    await agent.run('second', recorder().hooks, new AbortController().signal);
+    assert.equal(mock.requests.length, 3, 'second call should succeed in 1 request');
+    assert.equal(mock.requests[2].tools, undefined, 'subsequent call should skip tools immediately');
+  } finally {
+    await mock.close();
+    await fs.rm(root, { recursive: true, force: true });
+  }
+});
