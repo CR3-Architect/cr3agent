@@ -2368,11 +2368,21 @@
     if (!on && S.app && S.app.folder) els.input.focus();
   }
 
+  function onThinking(delta) {
+    if (!S.activeThinking) {
+      createThinkingBlock('Thinking…', []);
+    }
+    if (S.activeThinking && S.activeThinking.appendThinking) {
+      S.activeThinking.appendThinking(delta);
+    }
+  }
+
   function onAgentEvent(ev) {
     // another chat is working in the background: its events are not drawn here (the sidebar dot shows it)
     if (ev.chat && S.app && ev.chat !== S.app.chatId) return;
     switch (ev.type) {
       case 'text': onText(ev.delta); break;
+      case 'thinking': onThinking(ev.delta); break;
       case 'tool_call': onToolCall(ev); break;
       case 'tool_output': onToolOutput(ev); break;
       case 'tool_result': onToolResult(ev); break;
