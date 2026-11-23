@@ -409,6 +409,13 @@ test('settings: add, update, switch and delete providers; keys never reach the w
   s = upsertProvider(s, { id: added.id, baseUrl: 'https://other.example/v1' }, enc).settings;
   assert.deepEqual(s.providers.find((x) => x.id === added.id)!.models, []);
 
+  // the provider's list is authoritative: no invented models, and a stale
+  // selection that the account cannot use is replaced with a current one
+  s = setActive(s, added.id, 'qwen/y');
+  s = setProviderModels(s, added.id, ['llama-3.3-70b-versatile', 'qwen/qwen3.8-27b', 'openai/gpt-oss-120b']);
+  assert.deepEqual(s.providers.find((x) => x.id === added.id)!.models, ['openai/gpt-oss-120b', 'qwen/qwen3.8-27b', 'llama-3.3-70b-versatile']);
+  assert.equal(s.providers.find((x) => x.id === added.id)!.model, 'openai/gpt-oss-120b');
+
   s = setActive(s, added.id, 'qwen/y');
   assert.equal(activeProvider(s).id, added.id);
   assert.equal(activeProvider(s).model, 'qwen/y');

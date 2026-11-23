@@ -16,11 +16,122 @@
     return String(s).replace(ANSI, '');
   }
 
+  // ---------- safe media & links ----------
+
+  function safeImageUrl(raw) {
+    const url = String(raw || '').trim();
+    if (!url) return '';
+    if (/^data:image\/(?:png|jpe?g|gif|webp|avif|bmp);base64,[a-z0-9+/=\s]+$/i.test(url)) return url;
+    try {
+      const u = new URL(url);
+      return u.protocol === 'https:' ? u.href : '';
+    } catch {
+      return '';
+    }
+  }
+
+  let lightbox = null;
+
+  function ensureLightbox() {
+    if (lightbox) return lightbox;
+    const dialog = el('dialog', 'img-lightbox');
+    const close = el('button', 'img-lightbox-close', '×');
+    close.type = 'button';
+    close.setAttribute('aria-label', 'Close image');
+    const inner = el('div', 'img-lightbox-inner');
+    const img = el('img');
+    const caption = el('div', 'img-lightbox-caption');
+    inner.appendChild(img);
+    inner.appendChild(caption);
+    dialog.appendChild(close);
+    dialog.appendChild(inner);
+    close.addEventListener('click', () => dialog.close());
+    dialog.addEventListener('click', (e) => {
+      if (e.target === dialog) dialog.close();
+    });
+    document.body.appendChild(dialog);
+    lightbox = { dialog, img, caption };
+    return lightbox;
+  }
+
+  function openImage(raw, alt) {
+    const src = safeImageUrl(raw);
+    if (!src) return;
+    const lb = ensureLightbox();
+    lb.img.src = src;
+    lb.img.alt = alt || 'Image';
+    lb.caption.textContent = alt || '';
+    lb.caption.hidden = !alt;
+    lb.img.hidden = false;
+    if (!lb.dialog.open) lb.dialog.showModal();
+  }
+
+  function imageNode(raw, alt, opts) {
+    const url = safeImageUrl(raw);
+    if (!url) {
+      const fallback = el('span', 'md-image-broken');
+      fallback.appendChild(el('span', 'md-image-broken-title', alt || 'Image'));
+      const detail = String(raw || '').startsWith('data:') ? 'This image could not be decoded.' : String(raw || '');
+      if (detail) fallback.appendChild(el('span', 'md-image-broken-url', detail));
+      return fallback;
+    }
+    if (opts.streaming) return el('span', 'md-image-pending', alt ? `Image · ${alt}` : 'Image');
+    const wrap = el('span', 'md-image');
+    const img = el('img');
+    img.src = url;
+    img.alt = alt || 'Image';
+    img.loading = 'lazy';
+    img.decoding = 'async';
+    img.referrerPolicy = 'no-referrer';
+    wrap.title = alt ? `Open ${alt}` : 'Open image';
+    wrap.tabIndex = 0;
+    wrap.setAttribute('role', 'button');
+    const open = () => openImage(url, alt);
+    wrap.addEventListener('click', open);
+    wrap.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        open();
+      }
+    });
+    img.addEventListener('error', () => {
+      wrap.classList.add('broken');
+      wrap.textContent = '';
+      wrap.removeAttribute('role');
+      wrap.tabIndex = -1;
+      wrap.appendChild(el('span', 'md-image-broken-title', alt || 'Image unavailable'));
+      wrap.appendChild(el('span', 'md-image-broken-url', 'The image could not be loaded.'));
+    });
+    wrap.appendChild(img);
+    return wrap;
+  }
+
+  function linkNode(label, raw) {
+    const url = String(raw || '').trim();
+    if (/^https:\/\//i.test(url)) {
+      const a = el('a', 'link', label);
+      a.href = url;
+      a.target = '_blank';
+      a.rel = 'noreferrer noopener';
+      a.title = url;
+      a.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (window.api && window.api.openWeb) {
+          window.api.openWeb(url).catch(() => {});
+        }
+      });
+      return a;
+    }
+    const s = el('span', 'link filelink', label);
+    s.title = url;
+    return s;
+  }
+
   // ---------- inline ----------
 
-  const INLINE = /(`[^`\n]+`)|(\*\*[^*\n]+?\*\*)|(\[[^\]\n]+\]\([^)\s]+\))|(\*[^*\s][^*\n]*?\*)|((?:^|(?<=[\s(]))_[^_\s][^_\n]*?_(?=$|[\s).,;:!?]))/g;
+  const INLINE = /(!\[[^\]\n]*\]\([^)\s]+\))|(`[^`\n]+`)|(\*\*[^*\n]+?\*\*)|(~~[^~\n]+~~)|(\[[^\]\n]+\]\([^)\s]+\))|(<https?:\/\/[^>\s]+>)|(\*[^*\s][^*\n]*?\*)|((?:^|(?<=[\s(]))_[^_\s][^_\n]*?_(?=$|[\s).,;:!?]))/g;
 
-  function inline(parent, text) {
+  function inline(parent, text, opts = {}) {
     let last = 0;
     // A fresh regex per call: the nested calls below (bold / italic) must not reset this loop's position.
     const re = new RegExp(INLINE.source, 'g');
@@ -29,21 +140,35 @@
       if (m.index > last) parent.appendChild(document.createTextNode(text.slice(last, m.index)));
       const tok = m[0];
       if (m[1]) {
-        parent.appendChild(el('code', '', tok.slice(1, -1)));
+        const close = tok.indexOf('](');
+        const alt = tok.slice(2, close);
+        const url = tok.slice(close + 2, -1);
+        parent.appendChild(imageNode(url, alt, opts));
       } else if (m[2]) {
-        const b = el('strong');
-        inline(b, tok.slice(2, -2));
-        parent.appendChild(b);
+        parent.appendChild(el('code', '', tok.slice(1, -1)));
       } else if (m[3]) {
+        const b = el('strong');
+        inline(b, tok.slice(2, -2), opts);
+        parent.appendChild(b);
+      } else if (m[4]) {
+        const s = el('s');
+        inline(s, tok.slice(2, -2), opts);
+        parent.appendChild(s);
+      } else if (m[5]) {
         const close = tok.indexOf('](');
         const label = tok.slice(1, close);
         const url = tok.slice(close + 2, -1);
-        const a = el('span', 'link', label);
-        a.title = url;
-        parent.appendChild(a);
+        parent.appendChild(linkNode(label, url));
+      } else if (m[6]) {
+        const url = tok.slice(1, -1);
+        parent.appendChild(linkNode(url, url));
+      } else if (m[7]) {
+        const i = el('em');
+        inline(i, tok.slice(1, -1), opts);
+        parent.appendChild(i);
       } else {
         const i = el('em');
-        inline(i, tok.slice(1, -1));
+        inline(i, tok.slice(1, -1), opts);
         parent.appendChild(i);
       }
       last = m.index + tok.length;
@@ -51,11 +176,11 @@
     if (last < text.length) parent.appendChild(document.createTextNode(text.slice(last)));
   }
 
-  function inlineWithBreaks(parent, text) {
+  function inlineWithBreaks(parent, text, opts = {}) {
     const lines = text.split('\n');
     lines.forEach((line, i) => {
       if (i > 0) parent.appendChild(el('br'));
-      inline(parent, line);
+      inline(parent, line, opts);
     });
   }
 
@@ -177,7 +302,7 @@
     return t.split('|').map((c) => c.trim());
   }
 
-  function list(lines) {
+  function list(lines, opts) {
     // lines: array of raw list lines (may include indented continuation items)
     const first = RE_LIST.exec(lines[0]);
     const baseIndent = first ? first[1].length : 0;
@@ -186,7 +311,7 @@
     let item = null;
     let nested = [];
     const flushNested = () => {
-      if (item && nested.length > 0) item.appendChild(list(nested));
+      if (item && nested.length > 0) item.appendChild(list(nested, opts));
       nested = [];
     };
     for (const line of lines) {
@@ -194,21 +319,21 @@
       if (m && m[1].length <= baseIndent) {
         flushNested();
         item = el('li');
-        inlineWithBreaks(item, m[3]);
+        inlineWithBreaks(item, m[3], opts);
         root.appendChild(item);
       } else if (m) {
         nested.push(line);
       } else if (item) {
         // continuation text of the current item
         item.appendChild(el('br'));
-        inline(item, line.trim());
+        inline(item, line.trim(), opts);
       }
     }
     flushNested();
     return root;
   }
 
-  function render(container, text) {
+  function render(container, text, opts = {}) {
     container.textContent = '';
     const lines = String(text).replace(/\r\n/g, '\n').split('\n');
     let i = 0;
@@ -216,7 +341,7 @@
     const flushPara = () => {
       if (para.length === 0) return;
       const p = el('p');
-      inlineWithBreaks(p, para.join('\n'));
+      inlineWithBreaks(p, para.join('\n'), opts);
       container.appendChild(p);
       para = [];
     };
@@ -244,7 +369,7 @@
         flushPara();
         const level = Math.min(4, h[1].length) + 1; // h2..h5: the page title is the only h1
         const node = el('h' + level);
-        inline(node, h[2]);
+        inline(node, h[2], opts);
         container.appendChild(node);
         i++;
         continue;
@@ -260,7 +385,7 @@
         const q = [];
         while (i < lines.length && RE_QUOTE.test(lines[i])) q.push(RE_QUOTE.exec(lines[i++])[1]);
         const bq = el('blockquote');
-        render(bq, q.join('\n'));
+        render(bq, q.join('\n'), opts);
         container.appendChild(bq);
         continue;
       }
@@ -268,7 +393,7 @@
         flushPara();
         const items = [];
         while (i < lines.length && lines[i].trim() !== '' && (RE_LIST.test(lines[i]) || /^\s{2,}\S/.test(lines[i]))) items.push(lines[i++]);
-        container.appendChild(list(items));
+        container.appendChild(list(items, opts));
         continue;
       }
       if (line.includes('|') && i + 1 < lines.length && RE_TABLE_SEP.test(lines[i + 1]) && lines[i + 1].includes('-')) {
@@ -280,7 +405,7 @@
         const hr = el('tr');
         head.forEach((c) => {
           const th = el('th');
-          inline(th, c);
+          inline(th, c, opts);
           hr.appendChild(th);
         });
         thead.appendChild(hr);
@@ -290,7 +415,7 @@
           const tr = el('tr');
           splitRow(lines[i++]).forEach((c) => {
             const td = el('td');
-            inline(td, c);
+            inline(td, c, opts);
             tr.appendChild(td);
           });
           tbody.appendChild(tr);
@@ -307,5 +432,5 @@
     flushPara();
   }
 
-  window.Md = { render, stripAnsi };
+  window.Md = { render, stripAnsi, openImage };
 })();

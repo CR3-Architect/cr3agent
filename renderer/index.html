@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self'; script-src 'self'; img-src 'self' data: blob:" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self'; script-src 'self'; img-src 'self' data: blob: https:" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>CR3-Agentic AI</title>
   <link rel="icon" type="image/png" href="icon.png" />
@@ -154,7 +154,7 @@
                 <button id="attachBtn" class="icon-btn" title="Add pictures, files or a link" aria-label="Attach"></button>
                 <button id="approvalBtn" class="pill" title="When the agent must ask you first"><span class="ico" data-icon="shield"></span><span id="approvalLabel">Ask first</span><span class="ico tiny" data-icon="chevron"></span></button>
                 <span class="spacer"></span>
-                <button id="modelBtn" class="pill" title="Provider and model"><span id="modelLabel">Model</span><span class="ico tiny" data-icon="chevron"></span></button>
+                <button id="modelBtn" class="pill model-pill" title="Provider and model"><span class="model-pill-dot" aria-hidden="true"></span><span id="modelLabel" class="model-pill-label">Model</span><span id="modelProvider" class="model-pill-provider"></span><span class="ico tiny" data-icon="chevron"></span></button>
                 <button id="sendBtn" class="send-btn" title="Send (Enter)" aria-label="Send" disabled></button>
                 <button id="stopBtn" class="send-btn stop" title="Stop" aria-label="Stop" hidden></button>
               </div>
@@ -974,7 +974,7 @@
             <div class="two-col">
               <label>Max steps per message <input id="afSteps" type="number" min="1" max="300" /></label>
               <label>Memory per chat (characters) <input id="afContext" type="number" min="8000" max="2000000" step="1000" />
-                <small>Older messages are dropped past this. Raise it for models with a big context window.</small></label>
+                <small>Older messages are dropped past this. Raise it for models with a big context window; lower it for free tiers with a tokens-per-minute limit.</small></label>
             </div>
             <label class="check"><input id="afFallback" type="checkbox" /> If a model is rate-limited, out of credit or down, switch to the next provider’s model and keep going</label>
             <p class="muted small">The next models are the other providers in your list that have a model chosen, in list order. Long replies that hit a model’s output limit are continued automatically.</p>

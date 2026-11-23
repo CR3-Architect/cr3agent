@@ -72,6 +72,8 @@ export interface ChatMessage {
   content: string | ContentPart[] | null;
   tool_calls?: ToolCallMessage[];
   tool_call_id?: string;
+  createdAt?: number;
+  duration?: number;
 }
 
 interface Turn {
@@ -100,8 +102,15 @@ export function isRetriable(err: unknown): boolean {
   if (err.network) return true;
   const s = err.status;
   if (s === undefined) return false;
-  if (s === 429 || s === 408 || s === 402 || s === 401 || s === 403 || s === 404 || s >= 500) return true;
-  return s === 400 && /tool|image|vision|context|too long|too large/i.test(err.body);
+  if (s === 413 || s === 429 || s === 408 || s === 402 || s === 401 || s === 403 || s === 404 || s >= 500) return true;
+  return s === 400 && /tool|image|vision|context|too long|too large|tokens/i.test(err.body);
+}
+
+/** The server rejected the request because the prompt/context was too big. */
+function isContextTooLarge(err: unknown): err is ModelError {
+  if (!(err instanceof ModelError)) return false;
+  if (err.status === 413) return true;
+  return (err.status === 400 || err.status === 422) && /context length|maximum context|too many tokens|request too large|reduce your message size|tokens per minute|tpm/i.test(err.body);
 }
 
 export const AUTO_CONTINUE = 'Continue exactly where you stopped.';
@@ -202,6 +211,8 @@ export class Agent {
   private getSkills: () => Skill[];
   private targetStart = 0;
   private cutOff = false;
+  /** A smaller context budget learned from a provider/size error during this run. */
+  private contextCharLimit?: number;
 
   constructor(cfg: AgentConfig, workspace: Workspace, opts: AgentOptions = {}) {
     this.cfg = cfg;
@@ -212,6 +223,9 @@ export class Agent {
 
   updateConfig(cfg: AgentConfig): void {
     this.cfg = cfg;
+    // The target list may have changed (for example after auto-switching provider).
+    this.targetStart = 0;
+    this.contextCharLimit = undefined;
   }
 
   /** The conversation without the system prompt (used to save a chat). */
@@ -230,6 +244,7 @@ export class Agent {
     const skills = this.getSkills();
     this.messages[0] = { role: 'system', content: buildSystemPrompt(this.workspace.root, skills, this.cfg.persona) };
     const userMsg = buildUserMessage(userText, attachments);
+    userMsg.createdAt = Date.now();
     const lastMsg = this.messages[this.messages.length - 1];
     if (lastMsg && lastMsg.role === 'user') {
       const merged = coalesceUserMessages([lastMsg, userMsg]);
@@ -240,50 +255,67 @@ export class Agent {
     const hasImages = attachments.some((a) => a.kind === 'image');
     this.targetStart = 0;
     let continues = 0;
+    const turnStart = Date.now();
 
-    for (let step = 0; step < this.cfg.maxSteps; step++) {
-      if (signal.aborted) throw abortError();
-      this.trimHistory();
+    try {
+      for (let step = 0; step < this.cfg.maxSteps; step++) {
+        if (signal.aborted) throw abortError();
+        this.trimHistory();
 
-      const turn = await this.callWithFallback(hooks, signal, skills.length > 0, hasImages);
+        const turn = await this.callWithFallback(hooks, signal, skills.length > 0, hasImages);
 
-      const assistant: ChatMessage = { role: 'assistant', content: turn.content === '' ? null : turn.content };
-      if (turn.toolCalls.length > 0) {
-        assistant.tool_calls = turn.toolCalls.map((tc) => ({
-          id: tc.id,
-          type: 'function' as const,
-          function: { name: tc.name, arguments: tc.args.trim() !== '' && validJson(tc.args) ? tc.args : '{}' },
-        }));
-      }
-      this.messages.push(assistant);
-
-      if (turn.toolCalls.length === 0) {
-        // The model hit its output limit in the middle of an answer: ask it to carry on.
-        if (turn.finish === 'length' && continues < MAX_AUTO_CONTINUES) {
-          continues++;
-          hooks.onEvent({ type: 'notice', message: 'The reply reached the model’s output limit. Continuing…' });
-          this.messages.push({ role: 'user', content: AUTO_CONTINUE });
-          continue;
+        const assistant: ChatMessage = {
+          role: 'assistant',
+          content: turn.content === '' ? null : turn.content,
+          createdAt: Date.now(),
+          duration: Math.max(0.5, (Date.now() - turnStart) / 1000),
+        };
+        if (turn.toolCalls.length > 0) {
+          assistant.tool_calls = turn.toolCalls.map((tc) => ({
+            id: tc.id,
+            type: 'function' as const,
+            function: { name: tc.name, arguments: tc.args.trim() !== '' && validJson(tc.args) ? tc.args : '{}' },
+          }));
         }
-        return;
-      }
-      if (turn.finish === 'length' && turn.toolCalls.some((tc) => !validJson(tc.args))) {
-        hooks.onEvent({ type: 'notice', message: 'The model ran out of output space in the middle of a tool call. It will retry with smaller pieces.' });
-        this.cutOff = true;
+        this.messages.push(assistant);
+
+        if (turn.toolCalls.length === 0) {
+          // The model hit its output limit in the middle of an answer: ask it to carry on.
+          if (turn.finish === 'length' && continues < MAX_AUTO_CONTINUES) {
+            continues++;
+            hooks.onEvent({ type: 'notice', message: 'The reply reached the model’s output limit. Continuing…' });
+            this.messages.push({ role: 'user', content: AUTO_CONTINUE });
+            continue;
+          }
+          return;
+        }
+        if (turn.finish === 'length' && turn.toolCalls.some((tc) => !validJson(tc.args))) {
+          hooks.onEvent({ type: 'notice', message: 'The model ran out of output space in the middle of a tool call. It will retry with smaller pieces.' });
+          this.cutOff = true;
+        }
+
+        for (const tc of turn.toolCalls) {
+          const result = signal.aborted ? 'Cancelled by the user.' : await this.executeTool(tc, hooks, signal);
+          this.messages.push({ role: 'tool', tool_call_id: tc.id, content: result });
+        }
+        this.cutOff = false;
+        if (signal.aborted) throw abortError();
       }
 
-      for (const tc of turn.toolCalls) {
-        const result = signal.aborted ? 'Cancelled by the user.' : await this.executeTool(tc, hooks, signal);
-        this.messages.push({ role: 'tool', tool_call_id: tc.id, content: result });
+      hooks.onEvent({
+        type: 'notice',
+        message: `Paused after ${this.cfg.maxSteps} steps. Send a message such as "continue" to keep going.`,
+      });
+    } catch (err) {
+      if (!signal.aborted && (err as Error).name !== 'AbortError') {
+        const errMsg = (err as Error).message ?? String(err);
+        this.messages.push({
+          role: 'assistant',
+          content: `⚠️ ${errMsg}`,
+        });
       }
-      this.cutOff = false;
-      if (signal.aborted) throw abortError();
+      throw err;
     }
-
-    hooks.onEvent({
-      type: 'notice',
-      message: `Paused after ${this.cfg.maxSteps} steps. Send a message such as "continue" to keep going.`,
-    });
   }
 
   // ---------- tool execution ----------
@@ -370,9 +402,19 @@ export class Agent {
         hooks.onEvent(e);
       },
     };
-    let last: unknown;
-    for (let i = Math.min(this.targetStart, targets.length - 1); i < targets.length; i++) {
+    const failures: { target: ModelTarget; error: unknown }[] = [];
+    // A rejected key fails every model on that provider, so do not keep asking.
+    const deadKeys = new Set<string>();
+    const targetKey = (t: ModelTarget) => `${t.baseUrl.replace(/\/+$/, '')}\u0000${t.apiKey ?? ''}`;
+    let i = Math.min(this.targetStart, targets.length - 1);
+    let payloadRetries = 0;
+
+    while (i < targets.length) {
       const t = targets[i]!;
+      if (deadKeys.has(targetKey(t))) {
+        i++;
+        continue;
+      }
       try {
         let turn: Turn;
         try {
@@ -393,14 +435,55 @@ export class Agent {
         return turn;
       } catch (e) {
         if (signal.aborted) throw e;
-        last = e;
-        if (!isRetriable(e) || emitted || i === targets.length - 1) throw e;
-        const next = targets[i + 1]!;
-        const why = (e as ModelError).status ? `HTTP ${(e as ModelError).status}` : 'not reachable';
-        hooks.onEvent({ type: 'notice', message: `${t.model} did not answer (${why}). Switching to ${next.model}.` });
+
+        // The request itself is too large (context window, or a provider's
+        // tokens-per-minute limit). Drop old context and try the same model again.
+        if (isContextTooLarge(e) && !emitted && payloadRetries < 3 && this.shrinkForTokenLimit(e)) {
+          payloadRetries++;
+          hooks.onEvent({
+            type: 'notice',
+            message: 'The request was larger than this model’s token limit. Dropping older context and retrying…',
+          });
+          continue;
+        }
+
+        failures.push({ target: t, error: e });
+        const status = e instanceof ModelError ? e.status : undefined;
+        if (status === 401 || status === 403) deadKeys.add(targetKey(t));
+        if (!isRetriable(e) || emitted) throw e;
+
+        let j = i + 1;
+        while (j < targets.length && deadKeys.has(targetKey(targets[j]!))) j++;
+        if (j >= targets.length) throw this.allModelsFailed(failures, e);
+
+        const next = targets[j]!;
+        const why = status ? `HTTP ${status}` : 'not reachable';
+        const message = status === 401 || status === 403
+          ? `${t.baseUrl} rejected its API key (${why}). Skipping the other models on that key and switching to ${next.model}. Update the key in Settings if this keeps happening.`
+          : `${t.model} did not answer (${why}). Switching to ${next.model}.`;
+        hooks.onEvent({ type: 'notice', message });
+        i = j;
+        payloadRetries = 0;
       }
     }
-    throw last;
+    throw this.allModelsFailed(failures, failures[failures.length - 1]?.error);
+  }
+
+  /** When everything fails, keep the individual reasons visible instead of only the last one. */
+  private allModelsFailed(failures: { target: ModelTarget; error: unknown }[], last: unknown): Error {
+    if (failures.length <= 1) return last instanceof Error ? last : new Error(String(last));
+    const lines = failures.map(({ target, error }) => {
+      const e = error instanceof ModelError ? error : undefined;
+      const why = e?.status ? `HTTP ${e.status}` : 'not reachable';
+      let hint = '';
+      if (e?.status === 401 || e?.status === 403) hint = ' — check this provider’s API key in Settings';
+      else if (e?.status === 402) hint = ' — out of credits (HTTP 402); add balance or use a free model (e.g. :free)';
+      else if (e?.status === 404) hint = ' — this model is not available to your account; fetch the model list again';
+      return `• ${target.model} (${target.baseUrl}): ${why}${hint}`;
+    });
+    const lastError = last instanceof ModelError ? last : undefined;
+    const tail = lastError ? `\n\nLast error: ${lastError.message}` : '';
+    return new ModelError(`No model could answer. Tried:\n${lines.join('\n')}${tail}`, lastError?.status, false, undefined, lastError?.body);
   }
 
   private async callModel(target: ModelTarget, hooks: AgentHooks, signal: AbortSignal, withSkills: boolean, hasImages: boolean): Promise<Turn> {
@@ -439,8 +522,12 @@ export class Agent {
         hint = ' If you attached an image, this model may not support images.';
       } else if (res.status === 401 || res.status === 403) {
         hint = ' Check the API key for this provider in Settings.';
+      } else if (res.status === 402) {
+        hint = ' Your account is out of credits (HTTP 402 Payment Required). Add credits or choose a free model (e.g. models ending in :free on OpenRouter).';
       } else if (res.status === 404) {
         hint = ' Check the model name and base URL in Settings.';
+      } else if (res.status === 413) {
+        hint = ' The request is larger than this model’s token limit. The agent will drop older context and retry; if it persists, shorten attachments or choose a model with a larger limit.';
       } else if (res.status === 429) {
         hint = ' The provider is rate-limiting you. Wait a moment or check your plan and credits.';
       }
@@ -579,9 +666,8 @@ export class Agent {
     return n;
   }
 
-  /** Keep history within budget: drop whole old turns first, then shrink old tool output. */
-  private trimHistory(): void {
-    const limit = this.cfg.maxContextChars;
+  /** Keep history within budget: drop whole old turns first, then shrink old output. */
+  private trimHistory(limit = Math.min(this.cfg.maxContextChars, this.contextCharLimit ?? Number.POSITIVE_INFINITY)): void {
     while (this.historySize() > limit) {
       const firstUser = this.messages.findIndex((m, i) => i > 0 && m.role === 'user');
       if (firstUser === -1) break;
@@ -597,6 +683,53 @@ export class Agent {
         }
       }
     }
+    if (this.historySize() > limit) {
+      const lastUser = this.messages.map((m) => m.role).lastIndexOf('user');
+      for (let i = 1; i < this.messages.length; i++) {
+        if (this.historySize() <= limit) break;
+        const m = this.messages[i]!;
+        // Keep the newest user request intact; old replies are safe to shorten.
+        if (i !== lastUser && m.role === 'assistant' && typeof m.content === 'string' && m.content.length > 600) {
+          m.content = m.content.slice(0, 400) + '\n[older reply trimmed to save context]';
+        }
+      }
+    }
+  }
+
+  /**
+   * Use the server's reported request/limit numbers to drop enough old context
+   * to fit, and remember the smaller budget for the next steps in this run.
+   * Returns false when there is nothing left to shrink safely.
+   */
+  private shrinkForTokenLimit(err: ModelError): boolean {
+    const text = `${err.message}\n${err.body}`;
+    const requested = Number(
+      /requested\s+(\d+)/i.exec(text)?.[1] ?? /resulted in\s+(\d+)/i.exec(text)?.[1] ?? Number.NaN,
+    );
+    const limit = Number(
+      /limit\s+(\d+)/i.exec(text)?.[1] ??
+        /maximum context length (?:is|of)\s+(\d+)/i.exec(text)?.[1] ??
+        /context length is\s+(\d+)/i.exec(text)?.[1] ??
+        Number.NaN,
+    );
+
+    const before = this.historySize();
+    let targetChars: number;
+    if (Number.isFinite(requested) && Number.isFinite(limit) && requested > 0 && limit > 0) {
+      const estimatedHistoryTokens = Math.ceil(before / 4);
+      const overhead = Math.max(0, requested - estimatedHistoryTokens);
+      const targetTokens = Math.floor(limit * 0.8) - overhead;
+      targetChars = Math.max(2_000, targetTokens * 4);
+      if (targetChars >= before) targetChars = Math.floor(before * 0.7);
+    } else {
+      targetChars = Math.floor(before * 0.7);
+    }
+
+    this.trimHistory(Math.max(1, Math.min(targetChars, before - 1)));
+    const after = this.historySize();
+    if (after >= before) return false;
+    this.contextCharLimit = Math.max(2_000, targetChars);
+    return true;
   }
 }
 

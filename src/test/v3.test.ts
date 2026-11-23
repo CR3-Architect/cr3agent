@@ -195,6 +195,82 @@ test('agent: fallback also covers a bad key and an unreachable server, but not a
   }
 });
 
+test('agent: a rejected key skips the other models on that provider but not other keys', async () => {
+  const root = await tmp('fa-fb-key-');
+  const unauthorized = await mock([() => ({ status: 401, text: 'invalid api key' })]);
+  const good = await mock([() => say('ok from another provider')]);
+  try {
+    const agent = new Agent(cfg(unauthorized.url, {
+      model: 'a',
+      fallbacks: [
+        { baseUrl: unauthorized.url, model: 'b' },
+        { baseUrl: unauthorized.url, model: 'c', apiKey: 'different-key' },
+        { baseUrl: good.url, model: 'worked' },
+      ],
+    }), new Workspace(root));
+    const r = rec();
+    await agent.run('hi', r.hooks, noSignal());
+
+    assert.deepEqual(unauthorized.requests.map((x) => x.model), ['a', 'c'], 'model b shares the rejected key and is skipped');
+    assert.equal(good.requests.length, 1);
+    assert.ok(r.events.some((e) => e.type === 'notice' && /rejected its API key/.test(e.message)));
+  } finally {
+    await unauthorized.close();
+    await good.close();
+    await fs.rm(root, { recursive: true, force: true });
+  }
+});
+
+test('agent: when every model fails, the error lists each provider reason', async () => {
+  const root = await tmp('fa-fb-all-');
+  const unauthorized = await mock([() => ({ status: 401, text: 'invalid api key' })]);
+  const missing = await mock([() => ({ status: 404, text: 'model not found' })]);
+  try {
+    const agent = new Agent(cfg(unauthorized.url, { model: 'a', fallbacks: [{ baseUrl: missing.url, model: 'gone' }] }), new Workspace(root));
+    await assert.rejects(agent.run('hi', rec().hooks, noSignal()), (err: Error) => {
+      assert.match(err.message, /No model could answer/);
+      assert.match(err.message, /a .*HTTP 401/);
+      assert.match(err.message, /gone .*HTTP 404/);
+      return true;
+    });
+  } finally {
+    await unauthorized.close();
+    await missing.close();
+    await fs.rm(root, { recursive: true, force: true });
+  }
+});
+
+test('agent: a 413 token limit drops old context and retries the same model', async () => {
+  const root = await tmp('fa-413-');
+  const srv = await mock([
+    () => ({ status: 413, text: 'Request too large. Requested 12000 tokens, limit 8000 tokens per minute.' }),
+    () => say('fits now'),
+  ]);
+  try {
+    const agent = new Agent(cfg(srv.url, { maxContextChars: 200_000 }), new Workspace(root));
+    const long = 'x'.repeat(15_000);
+    agent.loadMessages([
+      { role: 'user', content: `old question one ${long}` },
+      { role: 'assistant', content: `old answer one ${long}` },
+      { role: 'user', content: `old question two ${long}` },
+      { role: 'assistant', content: `old answer two ${long}` },
+    ]);
+    const r = rec();
+    await agent.run('the new question', r.hooks, noSignal());
+
+    assert.equal(srv.requests.length, 2);
+    assert.ok(srv.requests[1].messages.length < srv.requests[0].messages.length, 'older turns were dropped');
+    assert.ok(r.events.some((e) => e.type === 'notice' && /token limit/.test(e.message)));
+    assert.ok(r.events.some((e) => e.type === 'text' && e.delta === 'fits now'));
+
+    // the retry no longer carries the oldest turn
+    assert.ok(!JSON.stringify(srv.requests[1].messages).includes('old question one'));
+  } finally {
+    await srv.close();
+    await fs.rm(root, { recursive: true, force: true });
+  }
+});
+
 test('agent: a short rate limit is retried once on the same model before moving on', async () => {
   const root = await tmp('fa-429-');
   const srv = await mock([() => ({ status: 429, headers: { 'retry-after': '1' }, text: 'slow down' }), () => say('worked')]);

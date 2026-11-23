@@ -18,7 +18,6 @@ import {
   addAllowRule,
   addRecentFolder,
   clearAccount,
-  fallbackProviders,
   removeAllowRule,
   setAccount,
   setOauthConfig,
@@ -104,19 +103,19 @@ function agentConfig(): AgentConfig {
   const p = activeProvider(settings);
   const mainTarget = target(p);
 
-  // Intra-provider fallback targets: try the other tool-supported models of this provider first
+  // Intra-provider fallback targets: stay strictly within this provider's models.
+  // When a user selects a provider (e.g. NVIDIA), it works around that provider's models
+  // and will not shift to Groq, OpenAI, or other providers.
   const alternateTargets: ModelTarget[] = (p.models ?? [])
     .filter((m) => m && m !== p.model && isToolSupportedModel(m))
     .map((m) => ({ baseUrl: p.baseUrl, apiKey: mainTarget.apiKey, model: m }));
-
-  const otherProviderTargets = fallbackProviders(settings).map(target);
 
   return {
     ...mainTarget,
     maxSteps: settings.maxSteps,
     maxContextChars: settings.maxContextChars,
     approvalMode: settings.approvalMode,
-    fallbacks: [...alternateTargets, ...otherProviderTargets],
+    fallbacks: settings.autoFallback ? alternateTargets : [],
     persona: settings.persona ?? 'software',
   };
 }
@@ -399,6 +398,10 @@ function registerIpc(): void {
     const live = sessions.get(id);
     if (live && live.folder === project.workspace.root) {
       activeChat = id;
+      const msgs = live.agent.getMessages();
+      if (msgs.length === 0 && chat.messages.length > 0) {
+        live.agent.loadMessages(chat.messages);
+      }
       return { messages: live.agent.getMessages(), live: liveInfo(live), ...appState() };
     }
     await refreshSkills();
@@ -490,11 +493,15 @@ function registerIpc(): void {
             }),
           preApproved: (name, args) => isPreApproved(settings.allowRules[s.folder] ?? [], name, args),
           onModelSwitched: (newTarget) => {
-            const currentP = activeProvider(settings);
-            if (currentP.baseUrl === newTarget.baseUrl && currentP.model !== newTarget.model) {
-              persistSettings(setActive(settings, currentP.id, newTarget.model));
-              send('app:changed', { what: 'settings' });
-            }
+            // Stay on whichever saved provider/model actually worked. Match the key too,
+            // because two providers can share a base URL with different keys.
+            const match = settings.providers.find(
+              (p) => p.baseUrl === newTarget.baseUrl && decodeKey(p.apiKey) === newTarget.apiKey,
+            );
+            if (!match) return;
+            if (settings.activeProviderId === match.id && match.model === newTarget.model) return;
+            persistSettings(setActive(settings, match.id, newTarget.model));
+            send('app:changed', { what: 'settings' });
           },
         },
         controller.signal,

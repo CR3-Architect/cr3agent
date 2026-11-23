@@ -180,7 +180,7 @@
     chAutoCommitBtn: $('chAutoCommitBtn'), chCommitInput: $('chCommitInput'), chCommitBtn: $('chCommitBtn'), chPushBtn: $('chPushBtn'),
     onboardDialog: $('onboardDialog'), onboardSubmitBtn: $('onboardSubmitBtn'),
     pfModelCaps: $('pfModelCaps'), pfModelCapsList: $('pfModelCapsList'),
-    approvalLabel: $('approvalLabel'), modelLabel: $('modelLabel'),
+    approvalLabel: $('approvalLabel'), modelBtn: $('modelBtn'), modelLabel: $('modelLabel'), modelProvider: $('modelProvider'),
     topChatMenuBtn: $('topChatMenuBtn'), topOverviewBtn: $('topOverviewBtn'), topPanelToggleBtn: $('topPanelToggleBtn'),
     changesBtn: $('changesBtn'), changesBadge: $('changesBadge'), changesPane: $('changesPane'), splitter: $('splitter'),
     overviewToggleBtn: $('overviewToggleBtn'), overviewPane: $('overviewPane'), ovReviewBtn: $('ovReviewBtn'), ovDiffStat: $('ovDiffStat'),
@@ -847,7 +847,15 @@
     const s = S.app.settings;
     els.approvalLabel.textContent = (APPROVAL[s.approvalMode] || APPROVAL.ask).label;
     const p = activeProvider();
-    els.modelLabel.textContent = p ? (p.model ? `${p.name} · ${p.model}` : `${p.name} · choose a model`) : 'No provider';
+    const model = p && p.model ? p.model : '';
+    els.modelLabel.textContent = model || (p ? 'Choose a model' : 'No provider');
+    if (els.modelProvider) els.modelProvider.textContent = p ? p.name : '';
+    if (els.modelBtn) {
+      els.modelBtn.classList.toggle('model-missing', !model);
+      els.modelBtn.title = p
+        ? `${p.name}\n${model || 'No model selected'}\nClick to switch provider or model`
+        : 'No provider configured. Open Settings → Providers & Models.';
+    }
   }
 
   const SUGGESTIONS = [
@@ -1392,27 +1400,130 @@
     showEmpty(true);
   }
 
-  function chipFor(att) {
+  // ---------- attachment cards ----------
+  const FILE_KINDS = {
+    ts: ['TS', 'TypeScript', 'code'], tsx: ['TSX', 'TypeScript', 'code'], js: ['JS', 'JavaScript', 'code'], jsx: ['JSX', 'JavaScript', 'code'],
+    py: ['PY', 'Python', 'code'], rs: ['RS', 'Rust', 'code'], go: ['GO', 'Go', 'code'], java: ['JAVA', 'Java', 'code'],
+    css: ['CSS', 'CSS', 'code'], scss: ['SCSS', 'Sass', 'code'], html: ['HTML', 'HTML', 'code'], sh: ['SH', 'Shell', 'code'],
+    json: ['JSON', 'JSON', 'data'], yml: ['YML', 'YAML', 'data'], yaml: ['YAML', 'YAML', 'data'], csv: ['CSV', 'CSV', 'data'],
+    xml: ['XML', 'XML', 'data'], sql: ['SQL', 'SQL', 'data'], md: ['MD', 'Markdown', 'doc'], txt: ['TXT', 'Text', 'doc'],
+    pdf: ['PDF', 'PDF', 'pdf'], doc: ['DOC', 'Document', 'doc'], docx: ['DOCX', 'Document', 'doc'],
+    zip: ['ZIP', 'Archive', 'archive'], tar: ['TAR', 'Archive', 'archive'], gz: ['GZ', 'Archive', 'archive'],
+    png: ['PNG', 'Image', 'image'], jpg: ['JPG', 'Image', 'image'], jpeg: ['JPEG', 'Image', 'image'], webp: ['WEBP', 'Image', 'image'], gif: ['GIF', 'Image', 'image'],
+  };
+
+  function fileInfo(att) {
+    const name = att.name || 'File';
+    const ext = (name.includes('.') ? name.split('.').pop() : '').toLowerCase();
+    const known = FILE_KINDS[ext];
+    const size = typeof att.size === 'number' ? fmtSize(att.size) : '';
+    return {
+      badge: known ? known[0] : (ext ? ext.slice(0, 4).toUpperCase() : 'FILE'),
+      kind: known ? known[1] : 'File',
+      tone: known ? known[2] : 'file',
+      meta: [known ? known[1] : 'Attached file', size].filter(Boolean).join(' · '),
+    };
+  }
+
+  function linkInfo(url) {
+    try {
+      const u = new URL(url);
+      const host = u.hostname.replace(/^www\./i, '');
+      const path = (u.pathname === '/' ? '' : u.pathname) + u.search + u.hash;
+      return { host: host || u.href, path: path || 'Open link' };
+    } catch {
+      return { host: url, path: 'Link' };
+    }
+  }
+
+  function openAttachmentLink(url) {
+    if (!/^https:\/\//i.test(url)) {
+      toast('Only secure https links can be opened from chat.');
+      return;
+    }
+    if (window.api?.openWeb) window.api.openWeb(url).catch(() => toast('Could not open that link.'));
+  }
+
+  function addRemoveButton(card, opts) {
+    if (!opts.removable) return;
+    const rm = h('button', 'rm');
+    rm.type = 'button';
+    rm.title = 'Remove';
+    rm.setAttribute('aria-label', 'Remove attachment');
+    setIcon(rm, 'x');
+    rm.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      opts.onRemove?.();
+    });
+    card.appendChild(rm);
+  }
+
+  function chipFor(att, opts = {}) {
     if (att.kind === 'image') {
-      const c = h('div', 'att image');
+      const card = h('div', 'att att-image' + (opts.compact ? ' compact' : ''));
       if (att.dataUrl) {
         const img = h('img');
         img.src = att.dataUrl;
-        img.alt = att.name || 'image';
-        c.appendChild(img);
+        img.alt = att.name || 'Attached image';
+        img.loading = 'lazy';
+        img.decoding = 'async';
+        card.appendChild(img);
+        const open = () => window.Md?.openImage?.(att.dataUrl, att.name || 'Attached image');
+        card.classList.add('clickable');
+        card.tabIndex = 0;
+        card.setAttribute('role', 'button');
+        card.title = att.name ? `Open ${att.name}` : 'Open image';
+        card.addEventListener('click', open);
+        card.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            open();
+          }
+        });
       } else {
-        c.appendChild(iconSpan('image'));
+        card.classList.add('no-img');
+        card.appendChild(iconSpan('image', 'big'));
+        card.appendChild(h('span', 'att-image-name', att.name || 'Image'));
+        card.title = att.name || 'Image';
       }
-      return c;
+      addRemoveButton(card, opts);
+      return card;
     }
-    const c = h('div', 'att');
-    c.appendChild(iconSpan(att.kind === 'link' ? 'link' : 'file'));
-    const name = att.kind === 'link' ? att.url : att.name;
-    const n = h('span', 'name', name);
-    n.title = name;
-    c.appendChild(n);
-    if (att.kind === 'file' && att.size !== undefined) c.appendChild(h('span', 'sizelbl', fmtSize(att.size)));
-    return c;
+
+    if (att.kind === 'link') {
+      const info = linkInfo(att.url);
+      const card = h('div', 'att att-link clickable');
+      card.tabIndex = 0;
+      card.setAttribute('role', 'link');
+      card.title = att.url;
+      card.appendChild(iconSpan('link', 'att-link-ico'));
+      const copy = h('span', 'att-info');
+      copy.appendChild(h('span', 'name', info.host));
+      copy.appendChild(h('span', 'meta', info.path));
+      card.appendChild(copy);
+      const open = () => openAttachmentLink(att.url);
+      card.addEventListener('click', open);
+      card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          open();
+        }
+      });
+      addRemoveButton(card, opts);
+      return card;
+    }
+
+    const info = fileInfo(att);
+    const card = h('div', 'att att-file');
+    card.title = att.name || 'Attached file';
+    card.appendChild(h('span', 'att-badge tone-' + info.tone, info.badge));
+    const copy = h('span', 'att-info');
+    copy.appendChild(h('span', 'name', att.name || 'File'));
+    copy.appendChild(h('span', 'meta', info.meta));
+    card.appendChild(copy);
+    addRemoveButton(card, opts);
+    return card;
   }
 
   function addUser(text, atts) {
@@ -1421,7 +1532,7 @@
     if (text) box.appendChild(document.createTextNode(text));
     if (atts && atts.length > 0) {
       const row = h('div', 'msg-atts');
-      for (const a of atts) row.appendChild(chipFor(a));
+      for (const a of atts) row.appendChild(chipFor(a, { message: true }));
       box.appendChild(row);
     }
     wrap.appendChild(box);
@@ -1438,6 +1549,73 @@
     return `${h}h ${remM}m ${s}s`;
   }
 
+  function formatToolStep(name, args, summary) {
+    const ext = (path) => {
+      const parts = String(path || '').split('.');
+      const m = parts.length > 1 ? parts.pop().toLowerCase() : '';
+      return FILE_KINDS[m]?.[0] || m.toUpperCase().slice(0, 4) || 'FILE';
+    };
+    const basename = (p) => String(p || '').split('/').pop() || String(p || '');
+
+    if (name === 'read_file') {
+      const p = String(args?.path || 'file');
+      const b = ext(p);
+      const lines = args?.start_line ? `#L${args.start_line}${args.end_line ? '-' + args.end_line : ''}` : '';
+      return {
+        header: `Analyzing ${basename(p)}…`,
+        step: { action: 'Analyzed', badge: b, text: p, details: lines, status: 'running' },
+      };
+    }
+    if (name === 'edit_file') {
+      const p = String(args?.path || 'file');
+      const b = ext(p);
+      return {
+        header: `Editing ${basename(p)}…`,
+        step: { action: 'Edited', badge: b, text: p, details: '', status: 'running' },
+      };
+    }
+    if (name === 'write_file') {
+      const p = String(args?.path || 'file');
+      const b = ext(p);
+      return {
+        header: `Writing ${basename(p)}…`,
+        step: { action: 'Wrote', badge: b, text: p, details: '', status: 'running' },
+      };
+    }
+    if (name === 'run_command') {
+      const cmd = String(args?.command || '').trim();
+      return {
+        header: `Running: ${cmd.slice(0, 40)}…`,
+        step: { action: 'Ran', badge: 'CMD', text: cmd.slice(0, 80), details: '', status: 'running' },
+      };
+    }
+    if (name === 'search') {
+      const pat = String(args?.pattern || '');
+      return {
+        header: `Searching for /${pat}/…`,
+        step: { action: 'Searched', badge: 'FIND', text: `/${pat}/`, details: args?.path ? `in ${args.path}` : '', status: 'running' },
+      };
+    }
+    if (name === 'list_dir') {
+      const p = String(args?.path || '.');
+      return {
+        header: `Listing ${p}…`,
+        step: { action: 'Listed', badge: 'DIR', text: p, details: '', status: 'running' },
+      };
+    }
+    if (name === 'fetch_url') {
+      const u = String(args?.url || '');
+      return {
+        header: `Fetching url…`,
+        step: { action: 'Fetched', badge: 'WEB', text: u.slice(0, 60), details: '', status: 'running' },
+      };
+    }
+    return {
+      header: `Executing ${name}…`,
+      step: { action: 'Executed', badge: 'TOOL', text: summary || name, details: '', status: 'running' },
+    };
+  }
+
   function createThinkingBlock() {
     stopThinkingTimer();
     const wrap = h('div', 'thinking-wrap');
@@ -1451,7 +1629,10 @@
     head.appendChild(pulse);
 
     const label = h('span', 'thinking-label');
-    label.innerHTML = `Thinking for <span class="thinking-timer">0s</span>`;
+    const actionEl = h('span', 'thinking-action-text', 'Analyzing workspace context…');
+    const timerEl = h('span', 'thinking-timer', '0s');
+    label.appendChild(actionEl);
+    label.appendChild(timerEl);
     head.appendChild(label);
 
     wrap.appendChild(head);
@@ -1471,38 +1652,87 @@
     append(wrap);
 
     const startTime = Date.now();
-    const timerEl = label.querySelector('.thinking-timer');
+    let stepCount = 0;
+    const stepElements = new Map();
 
-    const addStep = (stepText) => {
-      if (!stepText) return;
+    const addStep = (info) => {
+      if (!info) return;
+      stepCount++;
       const li = h('li', 'thinking-step-item');
-      li.textContent = stepText;
+      if (typeof info === 'string') {
+        const dot = h('span', 'thinking-step-status ok');
+        const textSpan = h('span', 'thinking-step-text', info);
+        li.append(dot, textSpan);
+      } else {
+        const statusSpan = h('span', 'thinking-step-status ' + (info.status || 'ok'));
+        li.appendChild(statusSpan);
+        if (info.action) {
+          const actSpan = h('span', 'thinking-step-action', info.action);
+          li.appendChild(actSpan);
+        }
+        if (info.badge) {
+          const badgeSpan = h('span', 'thinking-step-badge', info.badge);
+          li.appendChild(badgeSpan);
+        }
+        if (info.text) {
+          const textSpan = h('span', 'thinking-step-text', info.text);
+          li.appendChild(textSpan);
+        }
+        if (info.details) {
+          const detSpan = h('span', 'thinking-step-details', info.details);
+          li.appendChild(detSpan);
+        }
+        if (info.id) stepElements.set(info.id, { li, statusSpan, info });
+      }
       list.appendChild(li);
     };
 
-    addStep('Analyzing workspace context and project instructions…');
+    const updateStep = (id, result) => {
+      const entry = stepElements.get(id);
+      if (!entry) return;
+      entry.statusSpan.className = 'thinking-step-status ' + (result.ok ? 'ok' : 'fail');
+      if (result.details) {
+        let detSpan = entry.li.querySelector('.thinking-step-details');
+        if (!detSpan) {
+          detSpan = h('span', 'thinking-step-details');
+          entry.li.appendChild(detSpan);
+        }
+        detSpan.textContent = result.details;
+      }
+    };
+
+    const setHeaderAction = (actionText) => {
+      if (actionEl && !wrap.classList.contains('completed')) {
+        actionEl.textContent = actionText;
+      }
+    };
+
+    // Initial step: Analyzing workspace context
+    addStep({ action: 'Analyzed', badge: 'CTX', text: 'workspace context and project instructions', details: '', status: 'ok' });
 
     const interval = setInterval(() => {
       const elapsed = Math.max(0, Math.floor((Date.now() - startTime) / 1000));
       if (timerEl) timerEl.textContent = formatThinkingTime(elapsed);
     }, 1000);
 
-    const finish = () => {
+    const finish = (finalMessage) => {
       if (!S.activeThinking) return;
       clearInterval(interval);
       const totalElapsed = Math.max(1, Math.floor((Date.now() - startTime) / 1000));
       pulse.remove();
-      label.textContent = `Thought for ${formatThinkingTime(totalElapsed)}`;
+      const statusIcon = finalMessage && /error/i.test(finalMessage) ? '⚠️' : '✔';
+      const stepsSummary = stepCount > 0 ? ` · ${stepCount} step${stepCount === 1 ? '' : 's'}` : '';
+      label.textContent = `${statusIcon} Thought for ${formatThinkingTime(totalElapsed)}${stepsSummary}`;
       if (S.changes && S.changes.length > 0) {
         let add = 0, del = 0;
         for (const ch of S.changes) { add += (ch.added || 0); del += (ch.removed || 0); }
-        addStep(`Modified ${S.changes.length} file${S.changes.length === 1 ? '' : 's'} (+${add}, -${del})`);
+        addStep({ action: 'Modified', badge: 'DIFF', text: `${S.changes.length} file${S.changes.length === 1 ? '' : 's'}`, details: `(+${add}, -${del})`, status: 'ok' });
       }
       wrap.classList.add('completed');
       S.activeThinking = null;
     };
 
-    S.activeThinking = { wrap, head, body, finish, addStep, startTime, interval };
+    S.activeThinking = { wrap, head, body, finish, addStep, updateStep, setHeaderAction, startTime, interval };
     return S.activeThinking;
   }
 
@@ -1522,17 +1752,17 @@
     S.lastAssistantRecord = S.current;
   }
 
-  function drawAssistant() {
+  function drawAssistant(final) {
     const c = S.current;
     if (!c) return;
     c.raf = 0;
     const stick = nearBottom();
-    Md.render(c.el, c.raw);
+    Md.render(c.el, c.raw, { streaming: !final });
     if (stick) scrollDown();
   }
 
   function onText(delta) {
-    if (S.activeThinking) S.activeThinking.finish();
+    if (S.activeThinking) S.activeThinking.setHeaderAction('Responding…');
     if (!S.current) startAssistant();
     S.current.raw += delta;
     if (!S.current.raf) S.current.raf = requestAnimationFrame(drawAssistant);
@@ -1542,7 +1772,7 @@
     const c = S.current;
     if (!c) return;
     if (c.raf) cancelAnimationFrame(c.raf);
-    drawAssistant();
+    drawAssistant(true);
     if (S.lastAssistantRecord) {
       S.lastAssistantRecord.duration = S.turnStartTime ? Math.max(0.5, (Date.now() - S.turnStartTime) / 1000) : 0;
       S.lastAssistantRecord.completedAt = Date.now();
@@ -1699,13 +1929,13 @@
     }
   }
 
-  function addStaticAssistant(text) {
+  function addStaticAssistant(text, completedAt, duration) {
     const wrap = h('div', 'msg-assistant-wrap');
     const el = h('div', 'msg-assistant');
     Md.render(el, text);
     wrap.appendChild(el);
     append(wrap);
-    attachAssistantFooter({ wrap, el, raw: text }, true);
+    attachAssistantFooter({ wrap, el, raw: text, completedAt, duration }, true);
   }
 
   // ---------- tool cards ----------
@@ -1821,7 +2051,11 @@
 
   function onToolCall(ev) {
     flushAssistant();
-    if (S.activeThinking) S.activeThinking.addStep(ev.summary || summarizeCall(ev.name, ev.args));
+    const formatted = formatToolStep(ev.name, ev.args, ev.summary);
+    if (S.activeThinking) {
+      S.activeThinking.setHeaderAction(formatted.header);
+      S.activeThinking.addStep({ id: ev.id, ...formatted.step });
+    }
     const rec = makeToolCard(ev.id, ev.name, ev.summary, ev.args, ev.awaitingApproval, ev.preview);
     if (ev.awaitingApproval) {
       const row = h('div', 'approve-row');
@@ -1894,11 +2128,19 @@
       rec.state.textContent = ev.ok ? 'done' : 'failed';
     }
     if (S.activeThinking) {
-      if (rec.name === 'write_file' || rec.name === 'edit_file') {
-        S.activeThinking.addStep((ev.ok ? 'Updated ' : 'Failed updating ') + (rec.args?.path || 'file'));
-      } else if (rec.name === 'run_command') {
-        S.activeThinking.addStep((ev.ok ? 'Finished: ' : 'Command error: ') + (rec.args?.command || '').slice(0, 50));
+      let details = '';
+      if (rec.name === 'run_command') {
+        const exitMatch = (ev.output || '').match(/\[exit code (\d+)\]/);
+        details = exitMatch ? `• Exited ${exitMatch[1]}` : ev.ok ? '• Completed' : '• Failed';
+      } else if (rec.name === 'edit_file' || rec.name === 'write_file') {
+        details = ev.ok ? '• Saved' : '• Error';
+      } else if (rec.name === 'read_file') {
+        details = ev.ok ? '• Read' : '• Error';
+      } else {
+        details = ev.ok ? '• Done' : '• Failed';
       }
+      S.activeThinking.updateStep(ev.id, { ok: ev.ok, details });
+      S.activeThinking.setHeaderAction('Thinking…');
     }
     const text = Md.stripAnsi(ev.output || '');
     if (rec.name === 'run_command') {
@@ -1939,12 +2181,16 @@
           list.split('\n').forEach((l) => l.startsWith('- ') && atts.push({ kind: 'link', url: l.slice(2).trim() }));
           return '';
         });
-        if (Array.isArray(m.content)) m.content.forEach((p) => p && p.type === 'image_url' && atts.push({ kind: 'image', name: 'image' }));
+        if (Array.isArray(m.content)) {
+          m.content.forEach((p) => {
+            if (!p || p.type !== 'image_url') return;
+            const url = typeof p.image_url === 'string' ? p.image_url : p.image_url?.url;
+            atts.push({ kind: 'image', name: 'Attached image', dataUrl: typeof url === 'string' ? url : '' });
+          });
+        }
         text = text.replace(/\[image attached earlier, not kept\]/g, '').replace(/\(see attached image\)/g, '').trim();
         addUser(text, atts);
       } else if (m.role === 'assistant') {
-        const text = textOfContent(m.content).trim();
-        if (text) addStaticAssistant(text);
         for (const tc of m.tool_calls || []) {
           if (pendingIds.has(tc.id)) continue; // shown below with its Approve buttons
           let args = {};
@@ -1969,6 +2215,8 @@
           }
           append(rec.card);
         }
+        const text = textOfContent(m.content).trim();
+        if (text) addStaticAssistant(text, m.createdAt, m.duration);
       }
     }
     scrollDown();
@@ -1997,8 +2245,8 @@
       case 'tool_output': onToolOutput(ev); break;
       case 'tool_result': onToolResult(ev); break;
       case 'notice': flushAssistant(); append(h('div', 'notice', ev.message)); break;
-      case 'error': flushAssistant(); if (S.activeThinking) S.activeThinking.finish(); finalizeTurnFooter(); append(h('div', 'error-msg', ev.message)); setRunning(false); processNextQueued(); break;
-      case 'stopped': flushAssistant(); if (S.activeThinking) S.activeThinking.finish(); finalizeTurnFooter(); append(h('div', 'stopped', 'Stopped.')); setRunning(false); processNextQueued(); break;
+      case 'error': flushAssistant(); if (S.activeThinking) S.activeThinking.finish(ev.message); finalizeTurnFooter(); append(h('div', 'error-msg', ev.message)); setRunning(false); processNextQueued(); break;
+      case 'stopped': flushAssistant(); if (S.activeThinking) S.activeThinking.finish('Stopped'); finalizeTurnFooter(); append(h('div', 'stopped', 'Stopped.')); setRunning(false); processNextQueued(); break;
       case 'done': flushAssistant(); if (S.activeThinking) S.activeThinking.finish(); finalizeTurnFooter(); setRunning(false); processNextQueued(); break;
     }
   }
@@ -2027,7 +2275,7 @@
       els.qcAtts.textContent = '';
       if (item.atts && item.atts.length > 0) {
         els.qcAtts.hidden = false;
-        for (const a of item.atts) els.qcAtts.appendChild(chipFor(a));
+        for (const a of item.atts) els.qcAtts.appendChild(chipFor(a, { compact: true }));
       } else {
         els.qcAtts.hidden = true;
       }
@@ -2375,18 +2623,13 @@ export class AgentService {
     row.textContent = '';
     row.hidden = S.attachments.length === 0;
     S.attachments.forEach((a, i) => {
-      const chip = chipFor(a);
-      const rm = h('button', 'rm');
-      rm.type = 'button';
-      rm.title = 'Remove';
-      rm.setAttribute('aria-label', 'Remove attachment');
-      setIcon(rm, 'x');
-      rm.addEventListener('click', () => {
-        S.attachments.splice(i, 1);
-        renderAttachments();
-      });
-      chip.appendChild(rm);
-      row.appendChild(chip);
+      row.appendChild(chipFor(a, {
+        removable: true,
+        onRemove: () => {
+          S.attachments.splice(i, 1);
+          renderAttachments();
+        },
+      }));
     });
   }
 
@@ -3117,7 +3360,7 @@ export class AgentService {
     if ($('afApproval')) $('afApproval').value = mode;
     if ($('genPermPreset')) $('genPermPreset').value = mode;
     if ($('afSteps')) $('afSteps').value = s.maxSteps || 25;
-    if ($('afContext')) $('afContext').value = s.maxContextChars || 120000;
+    if ($('afContext')) $('afContext').value = s.maxContextChars || 24000;
     if ($('afFallback')) $('afFallback').checked = !!s.autoFallback;
     if ($('afStatus')) $('afStatus').hidden = true;
     renderRules();
