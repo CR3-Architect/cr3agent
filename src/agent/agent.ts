@@ -44,6 +44,7 @@ export interface ToolCallInfo {
 
 export type AgentEvent =
   | { type: 'text'; delta: string }
+  | { type: 'thinking'; delta: string }
   | { type: 'tool_call'; id: string; name: string; summary: string; args: Args; awaitingApproval: boolean; preview?: Preview; always?: RuleOffer | null }
   | { type: 'tool_output'; id: string; chunk: string }
   | { type: 'tool_result'; id: string; ok: boolean; output: string }
@@ -402,7 +403,7 @@ export class Agent {
     const wrapped: AgentHooks = {
       ...hooks,
       onEvent: (e) => {
-        if (e.type === 'text') emitted = true;
+        if (e.type === 'text' || e.type === 'thinking') emitted = true;
         hooks.onEvent(e);
       },
     };
