@@ -206,6 +206,9 @@ function contentSize(c: ChatMessage['content']): number {
   return c.reduce((n, p) => n + (p.type === 'text' ? p.text.length : IMAGE_COST_CHARS), 0);
 }
 
+/** Cache of models known not to support function calling/tools schemas (avoids repeating HTTP 400 roundtrips). */
+const modelsWithoutTools = new Set<string>();
+
 export class Agent {
   private messages: ChatMessage[];
   readonly workspace: Workspace;
@@ -524,13 +527,22 @@ export class Agent {
     const url = `${target.baseUrl.replace(/\/+$/, '')}/chat/completions`;
     const headers: Record<string, string> = { 'Content-Type': 'application/json', 'Connection': 'keep-alive' };
     if (target.apiKey) headers['Authorization'] = `Bearer ${target.apiKey}`;
+    if (target.baseUrl.includes('openrouter.ai')) {
+      headers['HTTP-Referer'] = 'https://github.com/cr3-architect/cr3agent';
+      headers['X-Title'] = 'CR3-Agentic AI';
+    }
+
+    const modelToolKey = `${target.baseUrl.replace(/\/+$/, '')}\u0000${target.model}`;
+    const supportsTools = !modelsWithoutTools.has(modelToolKey);
 
     const body: Record<string, unknown> = {
       model: target.model,
       messages: cleanMessagesForApi(this.messages),
-      tools: openAiToolSchemas(withSkills),
       stream: true,
     };
+    if (supportsTools) {
+      body['tools'] = openAiToolSchemas(withSkills);
+    }
     if (this.cfg.temperature !== undefined) body['temperature'] = this.cfg.temperature;
 
     const timeout = new AbortController();
@@ -559,9 +571,10 @@ export class Agent {
       const text = (await res.text().catch(() => '')).slice(0, 600);
 
       // If the model rejected the request with HTTP 400 and tools was included,
-      // retry once without tools. This allows chat-only or community free models without function-calling
-      // support to still answer user queries smoothly instead of failing with invalid_request.
+      // remember that this model does not support tools and retry once without tools.
+      // This allows chat-only or community free models to answer user queries smoothly at full speed.
       if (res.status === 400 && body['tools'] && !signal.aborted) {
+        modelsWithoutTools.add(modelToolKey);
         const retryBody = { ...body };
         delete retryBody['tools'];
         const retryRes = await fetch(url, { method: 'POST', headers, body: JSON.stringify(retryBody), signal }).catch(() => null);
@@ -606,6 +619,12 @@ export class Agent {
   private parseWholeResponse(json: unknown, hooks: AgentHooks): Turn {
     const msg = (json as { choices?: { message?: Record<string, unknown> }[] })?.choices?.[0]?.message ?? {};
     const content = typeof msg['content'] === 'string' ? (msg['content'] as string) : '';
+    const reasoning = typeof msg['reasoning_content'] === 'string'
+      ? (msg['reasoning_content'] as string)
+      : typeof msg['reasoning'] === 'string'
+        ? (msg['reasoning'] as string)
+        : '';
+    if (reasoning) hooks.onEvent({ type: 'thinking', delta: reasoning });
     if (content) hooks.onEvent({ type: 'text', delta: content });
     const toolCalls: Turn['toolCalls'] = [];
     const raw = Array.isArray(msg['tool_calls']) ? (msg['tool_calls'] as Record<string, any>[]) : [];
@@ -631,7 +650,7 @@ export class Agent {
     let idCounter = 0;
     let finish: string | undefined;
 
-    const handleData = (data: string, onText: (t: string) => void) => {
+    const handleData = (data: string, onText: (t: string) => void, onThinking: (t: string) => void) => {
       let json: any;
       try {
         json = JSON.parse(data);
@@ -646,6 +665,17 @@ export class Agent {
       if (typeof fr === 'string' && fr) finish = fr;
       const delta = json?.choices?.[0]?.delta;
       if (!delta) return;
+
+      const rDelta = typeof delta.reasoning_content === 'string'
+        ? delta.reasoning_content
+        : typeof delta.reasoning === 'string'
+          ? delta.reasoning
+          : typeof delta.thought === 'string'
+            ? delta.thought
+            : '';
+      if (rDelta !== '') {
+        onThinking(rDelta);
+      }
 
       if (typeof delta.content === 'string' && delta.content !== '') {
         content += delta.content;
@@ -682,12 +712,12 @@ export class Agent {
       }
     };
 
-    const processLine = (line: string, onText: (t: string) => void) => {
+    const processLine = (line: string, onText: (t: string) => void, onThinking: (t: string) => void) => {
       const l = line.trim();
       if (!l.startsWith('data:')) return;
       const data = l.slice(5).trim();
       if (data === '' || data === '[DONE]') return;
-      handleData(data, onText);
+      handleData(data, onText, onThinking);
     };
 
     let idleTimer: NodeJS.Timeout | undefined;
@@ -709,9 +739,17 @@ export class Agent {
         buffer += decoder.decode(value, { stream: true });
         let nl: number;
         let chunkDelta = '';
+        let chunkThinking = '';
         while ((nl = buffer.indexOf('\n')) !== -1) {
-          processLine(buffer.slice(0, nl), (d) => { chunkDelta += d; });
+          processLine(
+            buffer.slice(0, nl),
+            (d) => { chunkDelta += d; },
+            (r) => { chunkThinking += r; },
+          );
           buffer = buffer.slice(nl + 1);
+        }
+        if (chunkThinking !== '') {
+          hooks.onEvent({ type: 'thinking', delta: chunkThinking });
         }
         if (chunkDelta !== '') {
           hooks.onEvent({ type: 'text', delta: chunkDelta });
@@ -720,7 +758,15 @@ export class Agent {
       buffer += decoder.decode();
       if (buffer.trim() !== '') {
         let chunkDelta = '';
-        processLine(buffer, (d) => { chunkDelta += d; });
+        let chunkThinking = '';
+        processLine(
+          buffer,
+          (d) => { chunkDelta += d; },
+          (r) => { chunkThinking += r; },
+        );
+        if (chunkThinking !== '') {
+          hooks.onEvent({ type: 'thinking', delta: chunkThinking });
+        }
         if (chunkDelta !== '') {
           hooks.onEvent({ type: 'text', delta: chunkDelta });
         }
