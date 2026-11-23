@@ -153,7 +153,7 @@
 
   const els = {
     app: $('app'), messages: $('messages'), empty: $('empty'), emptyTitle: $('emptyTitle'), emptyText: $('emptyText'), emptyActions: $('emptyActions'),
-    input: $('input'), sendBtn: $('sendBtn'), stopBtn: $('stopBtn'), status: $('status'), composer: $('composer'),
+    input: $('input'), sendBtn: $('sendBtn'), stopBtn: $('stopBtn'), status: $('status'), composer: $('composer'), composerMenu: $('composerMenu'),
     attachRow: $('attachRow'), fileInput: $('fileInput'),
     projectList: $('projectList'), chatList: $('chatList'), projName: $('projName'), projPath: $('projPath'),
     projBreadcrumb: $('projBreadcrumb'), topSep: $('topSep'), chatTitleTop: $('chatTitleTop'),
@@ -2198,6 +2198,56 @@
 
   const AUTO_CONTINUE = 'Continue exactly where you stopped.';
 
+  function createStaticThinkingBlock(duration, toolCalls, results, unfinished) {
+    const wrap = h('div', 'thinking-wrap completed');
+    const head = h('button', 'thinking-head');
+    head.type = 'button';
+
+    const chev = iconSpan('chevronRight', 'thinking-chev');
+    head.appendChild(chev);
+
+    const stepCount = (toolCalls || []).length;
+    const durStr = duration ? formatThinkingTime(Math.round(duration)) : (stepCount > 0 ? 'a moment' : '');
+    const stepsSummary = stepCount > 0 ? ` · ${stepCount} step${stepCount === 1 ? '' : 's'}` : '';
+    const label = h('span', 'thinking-label');
+    const actionEl = h('span', 'thinking-action-text', `✔ Thought ${durStr ? 'for ' + durStr : ''}${stepsSummary}`);
+    label.appendChild(actionEl);
+    head.appendChild(label);
+    wrap.appendChild(head);
+
+    const body = h('div', 'thinking-body');
+    body.hidden = true;
+    const list = h('ul', 'thinking-steps');
+    body.appendChild(list);
+
+    for (const tc of toolCalls || []) {
+      let args = {};
+      try { args = JSON.parse(tc.function.arguments || '{}'); } catch (e) { args = {}; }
+      const formatted = formatToolStep(tc.function.name, args, summarizeCall(tc.function.name, args));
+      const res = results ? results.get(tc.id) : undefined;
+      const isFail = res && res.startsWith('Error:');
+      const isUnfin = unfinished && unfinished.has(tc.id);
+      const li = h('li', 'thinking-step-item');
+      const dot = h('span', 'thinking-step-status ' + (isFail ? 'fail' : isUnfin ? 'running' : 'ok'));
+      li.appendChild(dot);
+      if (formatted.step.action) li.appendChild(h('span', 'thinking-step-action', formatted.step.action));
+      if (formatted.step.badge) li.appendChild(h('span', 'thinking-step-badge', formatted.step.badge));
+      if (formatted.step.text) li.appendChild(h('span', 'thinking-step-text', formatted.step.text));
+      if (formatted.step.details) li.appendChild(h('span', 'thinking-step-details', formatted.step.details));
+      list.appendChild(li);
+    }
+    wrap.appendChild(body);
+
+    head.addEventListener('click', () => {
+      const isHidden = body.hidden;
+      body.hidden = !isHidden;
+      wrap.classList.toggle('open', !isHidden);
+    });
+
+    append(wrap);
+    return wrap;
+  }
+
   function renderHistory(messages, live) {
     const pendingIds = new Set(((live && live.pending) || []).map((p) => p.id));
     const unfinished = new Set((live && live.unfinished) || []);
@@ -2226,6 +2276,11 @@
         text = text.replace(/\[image attached earlier, not kept\]/g, '').replace(/\(see attached image\)/g, '').trim();
         addUser(text, atts);
       } else if (m.role === 'assistant') {
+        const hasTools = (m.tool_calls && m.tool_calls.length > 0);
+        const hasDuration = (typeof m.duration === 'number' && m.duration >= 0.5);
+        if (hasTools || hasDuration) {
+          createStaticThinkingBlock(m.duration, m.tool_calls, results, unfinished);
+        }
         for (const tc of m.tool_calls || []) {
           if (pendingIds.has(tc.id)) continue; // shown below with its Approve buttons
           let args = {};
@@ -4559,6 +4614,228 @@ export class AgentService {
     });
   }
 
+  const SLASH_COMMANDS = [
+    { cmd: '/clear', desc: 'Start a fresh new chat session' },
+    { cmd: '/compact', desc: 'Summarize earlier turns to save context window' },
+    { cmd: '/review', desc: 'Review all pending git changes and diffs in project' },
+    { cmd: '/git', desc: 'Check git status, branch and uncommitted files' },
+    { cmd: '/test', desc: 'Ask agent to run the test suite and verify changes' },
+    { cmd: '/terminal', desc: 'Toggle the terminal panel' },
+    { cmd: '/help', desc: 'List available agent skills and slash commands' },
+  ];
+
+  function initComposerAutocomplete() {
+    const menu = els.composerMenu;
+    if (!menu || !els.input) return;
+
+    let active = false;
+    let mode = null; // 'slash' | 'file'
+    let items = [];
+    let selectedIndex = 0;
+    let triggerPos = 0;
+    let cachedFiles = null;
+    let cachedFilesTime = 0;
+
+    const close = () => {
+      active = false;
+      mode = null;
+      items = [];
+      menu.hidden = true;
+      menu.textContent = '';
+    };
+
+    const fetchFiles = async (query) => {
+      if (!cachedFiles || Date.now() - cachedFilesTime > 8000) {
+        try {
+          const r = api.listFiles ? await api.listFiles('') : null;
+          cachedFiles = (r && r.files) || [];
+          cachedFilesTime = Date.now();
+        } catch (e) {
+          cachedFiles = [];
+        }
+      }
+      const q = query.toLowerCase();
+      if (!q) return cachedFiles.slice(0, 15);
+      return cachedFiles.filter((f) => f.toLowerCase().includes(q)).slice(0, 15);
+    };
+
+    const render = () => {
+      if (!active || items.length === 0) {
+        close();
+        return;
+      }
+      menu.textContent = '';
+      menu.hidden = false;
+
+      const head = h('div', 'cm-head');
+      const titleSpan = h('span', '', mode === 'slash' ? '⚡ Slash Commands' : '@ Mention Project File');
+      const countSpan = h('span', 'cm-count', `${items.length} ${items.length === 1 ? 'option' : 'options'}`);
+      head.append(titleSpan, countSpan);
+      menu.appendChild(head);
+
+      items.forEach((item, idx) => {
+        const row = h('button', 'cm-item' + (idx === selectedIndex ? ' selected' : ''));
+        row.type = 'button';
+
+        if (mode === 'slash') {
+          const ico = h('span', 'cm-ico', '/');
+          const main = h('span', 'cm-main');
+          const lbl = h('span', 'cm-label', item.cmd);
+          const desc = h('span', 'cm-desc', item.desc);
+          main.append(lbl, desc);
+          const hint = h('span', 'cm-hint', '↵ Run');
+          row.append(ico, main, hint);
+        } else {
+          const ico = h('span', 'cm-ico', '📄');
+          const main = h('span', 'cm-main');
+          const parts = String(item).split('/');
+          const filename = parts.pop() || item;
+          const dir = parts.length > 0 ? parts.join('/') + '/' : '';
+          const pathSpan = h('span', 'cm-path');
+          if (dir) pathSpan.appendChild(h('span', 'cm-dir', dir));
+          pathSpan.appendChild(h('span', 'cm-file', filename));
+          main.appendChild(pathSpan);
+          const hint = h('span', 'cm-hint', '↵ Attach');
+          row.append(ico, main, hint);
+        }
+
+        row.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          apply(idx);
+        });
+
+        menu.appendChild(row);
+      });
+
+      const selEl = menu.querySelector('.cm-item.selected');
+      if (selEl) selEl.scrollIntoView({ block: 'nearest' });
+    };
+
+    const apply = async (idx) => {
+      const item = items[idx];
+      if (!item) return;
+
+      if (mode === 'slash') {
+        close();
+        els.input.value = '';
+        autoGrow();
+        switch (item.cmd) {
+          case '/clear':
+            await newChat();
+            toast('Started a fresh conversation.');
+            break;
+          case '/compact':
+            toast('Requesting context compaction…');
+            send('Summarize our conversation so far and compact the history to save context.');
+            break;
+          case '/review':
+            send('Review all recent uncommitted changes and diffs in this project. Check for any bugs or syntax issues.');
+            break;
+          case '/git':
+            send('Check git status and summarize recent branches, commits, and modified files.');
+            break;
+          case '/test':
+            send('Run the project test suite and verify that all unit and integration tests pass.');
+            break;
+          case '/terminal':
+            const termBtn = $('termToggleBtn') || $('termBtn');
+            if (termBtn) termBtn.click();
+            break;
+          case '/help':
+            send('List all available skills, tools, and slash commands you can execute in this workspace.');
+            break;
+          default:
+            send(item.cmd);
+            break;
+        }
+      } else if (mode === 'file') {
+        const val = els.input.value;
+        const before = val.slice(0, triggerPos);
+        const after = val.slice(els.input.selectionStart);
+        els.input.value = `${before}@${item} ${after}`;
+        const newPos = triggerPos + String(item).length + 2;
+        els.input.selectionStart = els.input.selectionEnd = newPos;
+        autoGrow();
+        close();
+
+        try {
+          if (api.readProjectFile) {
+            const res = await api.readProjectFile(item);
+            if (res && res.text !== undefined) {
+              S.attachments.push({ kind: 'file', name: item, text: res.text, size: res.size });
+              renderAttachments();
+              toast(`Attached ${item} to context.`);
+            }
+          }
+        } catch (err) {
+          toast(`Could not attach ${item}: ${err.message || String(err)}`);
+        }
+        els.input.focus();
+      }
+    };
+
+    els.input.addEventListener('keydown', (e) => {
+      if (!active || menu.hidden) return;
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        selectedIndex = (selectedIndex + 1) % items.length;
+        render();
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        selectedIndex = (selectedIndex - 1 + items.length) % items.length;
+        render();
+      } else if (e.key === 'Enter' || e.key === 'Tab') {
+        e.preventDefault();
+        apply(selectedIndex);
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        close();
+      }
+    });
+
+    els.input.addEventListener('input', async () => {
+      const pos = els.input.selectionStart || 0;
+      const val = els.input.value;
+      const beforeCursor = val.slice(0, pos);
+
+      // Slash command: starts with '/' and no spaces before cursor
+      if (beforeCursor.startsWith('/') && !beforeCursor.includes(' ')) {
+        const q = beforeCursor.slice(1).toLowerCase();
+        items = SLASH_COMMANDS.filter((s) => s.cmd.slice(1).toLowerCase().startsWith(q));
+        mode = 'slash';
+        triggerPos = 0;
+        selectedIndex = 0;
+        active = items.length > 0;
+        render();
+        return;
+      }
+
+      // File mention: '@' preceded by start of input or space, no spaces after '@'
+      const lastAt = beforeCursor.lastIndexOf('@');
+      if (lastAt !== -1 && (lastAt === 0 || /\s/.test(beforeCursor[lastAt - 1]))) {
+        const q = beforeCursor.slice(lastAt + 1);
+        if (!/\s/.test(q)) {
+          triggerPos = lastAt;
+          mode = 'file';
+          items = await fetchFiles(q);
+          selectedIndex = 0;
+          active = items.length > 0;
+          render();
+          return;
+        }
+      }
+
+      close();
+    });
+
+    document.addEventListener('click', (e) => {
+      if (active && !menu.contains(e.target) && e.target !== els.input) {
+        close();
+      }
+    });
+  }
+
   async function init() {
     applyTheme(store('cr3.theme') || 'dark');
     if (store('cr3.diffMode')) S.diffMode = store('cr3.diffMode');
@@ -4571,6 +4848,7 @@ export class AgentService {
     initGit();
     initHistory();
     initEvents();
+    initComposerAutocomplete();
     applyDisplayDensity();
     if (store('fa.sidebar') === '0') setSidebar(false);
     if (store('cr3.changes') === '0') toggleChanges(false);

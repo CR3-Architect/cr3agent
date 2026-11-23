@@ -36,6 +36,7 @@ import {
   upsertProvider,
 } from './settings';
 import { ChatStore, newChatId } from './chats';
+import { walkFiles, looksBinary } from './agent/fsutil';
 
 // ---------- state ----------
 
@@ -550,6 +551,31 @@ function registerIpc(): void {
   handle('files:reveal', async (p: string) => {
     shell.showItemInFolder(await needProject().workspace.resolve(String(p)));
     return {};
+  });
+  handle('files:list', async (query?: unknown) => {
+    const project = needProject();
+    const q = typeof query === 'string' ? query.toLowerCase().trim() : '';
+    const files: string[] = [];
+    const root = project.workspace.root;
+    for await (const full of walkFiles(root)) {
+      const rel = path.relative(root, full).split(path.sep).join('/');
+      if (!q || rel.toLowerCase().includes(q)) {
+        files.push(rel);
+        if (files.length >= 250) break;
+      }
+    }
+    return { files };
+  });
+  handle('files:read', async (relPath: unknown) => {
+    const project = needProject();
+    if (typeof relPath !== 'string') throw new Error('Path must be a string');
+    const full = await project.workspace.resolve(relPath);
+    const stat = await fs.stat(full);
+    if (!stat.isFile()) throw new Error('Not a file');
+    if (stat.size > 500_000) throw new Error('File too large to attach (max 500KB)');
+    const buf = await fs.readFile(full);
+    if (looksBinary(buf)) throw new Error('Binary files cannot be attached');
+    return { name: relPath, text: buf.toString('utf8'), size: stat.size };
   });
 
   // ----- terminal (commands you type yourself; not an interactive shell) -----

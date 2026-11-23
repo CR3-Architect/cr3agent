@@ -66,6 +66,8 @@ contextBridge.exposeInMainWorld('api', {
   acceptAll: () => call('changes:acceptAll'),
   revertAll: () => call('changes:revertAll'),
   reveal: (p: string) => call('files:reveal', p),
+  listFiles: (query?: string) => call('files:list', query),
+  readProjectFile: (p: string) => call('files:read', p),
 
   // terminal
   runTerminal: (cmd: string) => call('terminal:run', cmd),
