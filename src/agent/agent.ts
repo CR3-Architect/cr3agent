@@ -583,7 +583,7 @@ export class Agent {
     let idCounter = 0;
     let finish: string | undefined;
 
-    const handleData = (data: string) => {
+    const handleData = (data: string, onText: (t: string) => void) => {
       let json: any;
       try {
         json = JSON.parse(data);
@@ -601,7 +601,7 @@ export class Agent {
 
       if (typeof delta.content === 'string' && delta.content !== '') {
         content += delta.content;
-        hooks.onEvent({ type: 'text', delta: delta.content });
+        onText(delta.content);
       }
       if (Array.isArray(delta.tool_calls)) {
         for (const tc of delta.tool_calls) {
@@ -634,12 +634,12 @@ export class Agent {
       }
     };
 
-    const processLine = (line: string) => {
+    const processLine = (line: string, onText: (t: string) => void) => {
       const l = line.trim();
       if (!l.startsWith('data:')) return;
       const data = l.slice(5).trim();
       if (data === '' || data === '[DONE]') return;
-      handleData(data);
+      handleData(data, onText);
     };
 
     try {
@@ -648,13 +648,23 @@ export class Agent {
         if (done) break;
         buffer += decoder.decode(value, { stream: true });
         let nl: number;
+        let chunkDelta = '';
         while ((nl = buffer.indexOf('\n')) !== -1) {
-          processLine(buffer.slice(0, nl));
+          processLine(buffer.slice(0, nl), (d) => { chunkDelta += d; });
           buffer = buffer.slice(nl + 1);
+        }
+        if (chunkDelta !== '') {
+          hooks.onEvent({ type: 'text', delta: chunkDelta });
         }
       }
       buffer += decoder.decode();
-      if (buffer.trim() !== '') processLine(buffer);
+      if (buffer.trim() !== '') {
+        let chunkDelta = '';
+        processLine(buffer, (d) => { chunkDelta += d; });
+        if (chunkDelta !== '') {
+          hooks.onEvent({ type: 'text', delta: chunkDelta });
+        }
+      }
     } catch (err) {
       if (signal.aborted) throw err;
       throw err instanceof Error ? err : new Error(String(err));
